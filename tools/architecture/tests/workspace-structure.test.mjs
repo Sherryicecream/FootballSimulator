@@ -21,7 +21,7 @@ const packages = {
 };
 
 const allowedWorkspaceDependencies = {
-  '@football/web': ['@football/application', '@football/contracts'],
+  '@football/web': ['@football/application', '@football/content', '@football/contracts'],
   '@football/local-ai': ['@football/contracts'],
   '@football/contracts': [],
   '@football/simulation': ['@football/contracts'],
