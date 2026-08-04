@@ -7,6 +7,8 @@
     "node": ">=24.16.0"
   },
   "scripts": {
+    "dev": "pnpm --filter @football/web exec vite",
+    "build": "pnpm --filter @football/web exec vite build",
     "test:architecture": "node --test tools/architecture/tests/repository-config.test.mjs tools/architecture/tests/workspace-policy.test.mjs tools/architecture/tests/workspace-structure.test.mjs",
     "format:check": "prettier --check .",
     "lint": "eslint . --max-warnings=0",
