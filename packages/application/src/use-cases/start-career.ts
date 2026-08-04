@@ -27,7 +27,7 @@ export function createCareerSave(params: StartCareerParams): CareerSave {
       name: params.playerName,
       hometown: params.hometown,
       primaryPosition: params.primaryPosition,
-      secondaryPosition: params.secondaryPosition,
+      ...(params.secondaryPosition !== undefined ? { secondaryPosition: params.secondaryPosition } : {}),
       preferredFoot: params.preferredFoot,
       weakFootLevel: params.weakFootLevel,
       growthBackground: params.growthBackground,

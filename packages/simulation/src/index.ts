@@ -8,3 +8,4 @@ export { simulateMatch } from './match/match-engine';
 export { createLeagueStandings, updateStandings, getStandings } from './world/league-season';
 export { filterEligibleEvents, selectEvent } from './events/event-selector';
 export type { PlayerContext } from './events/event-selector';
+export { createPerson, updateRelationship, addMemory, getRelationshipLabel } from './relationships/relationship-manager';
