@@ -24,7 +24,10 @@ export const MatchResultSchema = z.object({
   awayShotsOnTarget: z.number().int().min(0),
   weekNumber: z.number().int().min(1).max(52),
   season: z.number().int().min(2000).max(2100),
-});
+}).refine(
+  (m) => m.homePossession + m.awayPossession === 100,
+  { message: '主客队控球率之和必须为 100' },
+);
 
 export type MatchResult = z.infer<typeof MatchResultSchema>;
 
@@ -40,6 +43,9 @@ export const LeagueStandingSchema = z.object({
 }).refine(
   (s) => s.won + s.drawn + s.lost === s.played,
   { message: '胜场+平局+负场必须等于比赛场次' },
+).refine(
+  (s) => s.points === s.won * 3 + s.drawn,
+  { message: '积分必须等于胜场×3 + 平局' },
 );
 
 export type LeagueStanding = z.infer<typeof LeagueStandingSchema>;

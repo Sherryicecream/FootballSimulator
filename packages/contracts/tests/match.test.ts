@@ -53,6 +53,19 @@ describe('MatchResult', () => {
       weekNumber: 1, season: 2024,
     })).toThrow();
   });
+
+  it('拒绝控球率之和不等于100', () => {
+    expect(() => MatchResultSchema.parse({
+      homeTeam: 'a', awayTeam: 'b',
+      homeScore: 1, awayScore: 1,
+      homeStrength: { attack: 50, midfield: 50, defence: 50, overall: 50 },
+      awayStrength: { attack: 50, midfield: 50, defence: 50, overall: 50 },
+      homePossession: 60, awayPossession: 35,
+      homeShots: 0, awayShots: 0,
+      homeShotsOnTarget: 0, awayShotsOnTarget: 0,
+      weekNumber: 1, season: 2024,
+    })).toThrow();
+  });
 });
 
 describe('LeagueStanding', () => {
@@ -74,6 +87,13 @@ describe('LeagueStanding', () => {
     expect(() => LeagueStandingSchema.parse({
       clubId: 'test', played: 5, won: 6, drawn: 0, lost: 0,
       goalsFor: 10, goalsAgainst: 5, points: 18,
+    })).toThrow();
+  });
+
+  it('拒绝积分与胜平不一致', () => {
+    expect(() => LeagueStandingSchema.parse({
+      clubId: 'test', played: 5, won: 3, drawn: 1, lost: 1,
+      goalsFor: 10, goalsAgainst: 5, points: 99,
     })).toThrow();
   });
 });
