@@ -18,6 +18,55 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
 
+  apps/local-ai:
+    dependencies:
+      '@football/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+
+  apps/web:
+    dependencies:
+      '@football/application':
+        specifier: workspace:*
+        version: link:../../packages/application
+      '@football/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+
+  packages/application:
+    dependencies:
+      '@football/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@football/simulation':
+        specifier: workspace:*
+        version: link:../simulation
+
+  packages/content:
+    dependencies:
+      '@football/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+
+  packages/contracts: {}
+
+  packages/simulation:
+    dependencies:
+      '@football/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+
+  tools/architecture: {}
+
+  tools/balance:
+    dependencies:
+      '@football/content':
+        specifier: workspace:*
+        version: link:../../packages/content
+      '@football/simulation':
+        specifier: workspace:*
+        version: link:../../packages/simulation
+
 packages:
 
   '@eslint-community/eslint-utils@4.10.1':
