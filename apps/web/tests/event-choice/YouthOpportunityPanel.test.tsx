@@ -16,16 +16,17 @@ const mockOpportunity: YouthOpportunity = {
 describe('YouthOpportunityPanel', () => {
   it('renders all offers', () => {
     render(<YouthOpportunityPanel opportunity={mockOpportunity} onChoose={() => {}} />);
-    expect(screen.getByText('根宝青训基地')).toBeDefined();
-    expect(screen.getByText('校园精英计划')).toBeDefined();
-    expect(screen.getByText('鲁能足校（外地）')).toBeDefined();
+    // 使用函数匹配器，因为文本被 emoji 分隔
+    expect(screen.getByText((content) => content.includes('根宝青训基地'))).toBeDefined();
+    expect(screen.getByText((content) => content.includes('校园精英计划'))).toBeDefined();
+    expect(screen.getByText((content) => content.includes('鲁能足校'))).toBeDefined();
   });
 
   it('shows risk labels', () => {
     render(<YouthOpportunityPanel opportunity={mockOpportunity} onChoose={() => {}} />);
-    expect(screen.getByText('风险：低')).toBeDefined();
-    expect(screen.getByText('风险：中')).toBeDefined();
-    expect(screen.getByText('风险：高')).toBeDefined();
+    expect(screen.getByText((content) => content.includes('风险：低'))).toBeDefined();
+    expect(screen.getByText((content) => content.includes('风险：中'))).toBeDefined();
+    expect(screen.getByText((content) => content.includes('风险：高'))).toBeDefined();
   });
 
   it('calls onChoose with selected offer id', async () => {
@@ -33,7 +34,9 @@ describe('YouthOpportunityPanel', () => {
     const onChoose = vi.fn();
     render(<YouthOpportunityPanel opportunity={mockOpportunity} onChoose={onChoose} />);
 
-    await user.click(screen.getByText('根宝青训基地'));
+    // 点击第一个 role="button" 的选项
+    const options = screen.getAllByRole('button');
+    await user.click(options[0]!);
     await user.click(screen.getByText('确认选择'));
     expect(onChoose).toHaveBeenCalledWith('offer-1');
   });
@@ -46,14 +49,15 @@ describe('YouthOpportunityPanel', () => {
   it('disables all interactions after choice', async () => {
     const user = userEvent.setup();
     const onChoose = vi.fn();
-    render(<YouthOpportunityPanel opportunity={mockOpportunity} onChoose={onChoose} />);
+    const { rerender } = render(<YouthOpportunityPanel opportunity={mockOpportunity} onChoose={onChoose} />);
 
-    await user.click(screen.getByText('根宝青训基地'));
+    const options = screen.getAllByRole('button');
+    await user.click(options[0]!);
     await user.click(screen.getByText('确认选择'));
     expect(onChoose).toHaveBeenCalled();
 
-    // 模拟父组件 disabled 状态
-    render(<YouthOpportunityPanel opportunity={mockOpportunity} onChoose={() => {}} disabled={true} />);
+    // 模拟父组件 disabled 状态 - use rerender instead of render
+    rerender(<YouthOpportunityPanel opportunity={mockOpportunity} onChoose={() => {}} disabled={true} />);
     expect(screen.getByText('确认选择')).toBeDisabled();
   });
 });
