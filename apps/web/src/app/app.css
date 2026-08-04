@@ -1,0 +1,32 @@
+@import '../design-system/tokens.css';
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-serif);
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+input, select, button, textarea {
+  font-family: var(--font-sans);
+}
+
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--space-2xl) var(--space-lg);
+  min-height: 100vh;
+}
+
+@media (max-width: 720px) {
+  .app {
+    padding: var(--space-lg) var(--space-md);
+  }
+}
