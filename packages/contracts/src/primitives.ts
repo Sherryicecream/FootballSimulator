@@ -11,14 +11,9 @@ export const Position = {
 
 export type Position = (typeof Position)[keyof typeof Position];
 
-export const PositionSchema = z.enum([
-  'CENTER_BACK',
-  'FULL_BACK',
-  'DEFENSIVE_MIDFIELDER',
-  'MIDFIELDER',
-  'WINGER',
-  'FORWARD',
-]);
+export const PositionSchema = z.enum(
+  Object.values(Position) as [string, ...string[]]
+);
 
 export const Foot = {
   Left: 'LEFT',
@@ -28,7 +23,9 @@ export const Foot = {
 
 export type Foot = (typeof Foot)[keyof typeof Foot];
 
-export const FootSchema = z.enum(['LEFT', 'RIGHT', 'BOTH']);
+export const FootSchema = z.enum(
+  Object.values(Foot) as [string, ...string[]]
+);
 
 export const CareerStage = {
   Youth: 'YOUTH',
@@ -40,10 +37,6 @@ export const CareerStage = {
 
 export type CareerStage = (typeof CareerStage)[keyof typeof CareerStage];
 
-export const CareerStageSchema = z.enum([
-  'YOUTH',
-  'PROFESSIONAL',
-  'PEAK',
-  'DECLINE',
-  'RETIRED',
-]);
+export const CareerStageSchema = z.enum(
+  Object.values(CareerStage) as [string, ...string[]]
+);

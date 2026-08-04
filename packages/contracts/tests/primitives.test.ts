@@ -1,5 +1,4 @@
 import { describe, it, expect } from 'vitest';
-import { z } from 'zod';
 import { Position, Foot, CareerStage, PositionSchema, FootSchema, CareerStageSchema } from '../src/primitives';
 
 describe('Position', () => {
