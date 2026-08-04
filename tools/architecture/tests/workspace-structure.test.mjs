@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { access, readFile } from 'node:fs/promises';
+import { access, readFile, readdir } from 'node:fs/promises';
 import test from 'node:test';
 
 const packages = {
@@ -98,14 +98,39 @@ test('required domain directories exist', async () => {
   );
 });
 
-test('generic dumping-ground directories are forbidden', async () => {
-  const forbidden = ['utils', 'helpers', 'common', 'shared'];
+const architectureRoots = ['apps', 'packages', 'tools'];
+const forbiddenDirectoryNames = new Set(['utils', 'helpers', 'common', 'shared']);
 
-  for (const directory of requiredDirectories) {
-    assert.equal(
-      forbidden.includes(directory.split('/').at(-1)),
-      false,
-      `generic directory is not allowed: ${directory}`,
-    );
-  }
+const findForbiddenDirectories = async (directory) => {
+  const entries = await readdir(
+    new URL(`../../../${directory}`, import.meta.url),
+    { withFileTypes: true },
+  );
+  const nestedDirectories = await Promise.all(
+    entries
+      .filter((entry) => entry.isDirectory())
+      .map(async (entry) => {
+        const nestedDirectory = `${directory}/${entry.name}`;
+
+        if (forbiddenDirectoryNames.has(entry.name)) {
+          return [nestedDirectory];
+        }
+
+        return findForbiddenDirectories(nestedDirectory);
+      }),
+  );
+
+  return nestedDirectories.flat();
+};
+
+test('generic dumping-ground directories are forbidden', async () => {
+  const forbiddenDirectories = (
+    await Promise.all(architectureRoots.map(findForbiddenDirectories))
+  ).flat();
+
+  assert.deepEqual(
+    forbiddenDirectories,
+    [],
+    `generic directories are not allowed: ${forbiddenDirectories.join(', ')}`,
+  );
 });
