@@ -9,16 +9,21 @@
   "scripts": {
     "dev": "pnpm --filter @football/web exec vite",
     "build": "pnpm --filter @football/web exec vite build",
+    "test": "pnpm test:unit && pnpm test:architecture",
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test",
     "test:architecture": "node --test tools/architecture/tests/repository-config.test.mjs tools/architecture/tests/workspace-policy.test.mjs tools/architecture/tests/workspace-structure.test.mjs",
     "format:check": "prettier --check .",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "pnpm -r --if-present typecheck"
   },
   "devDependencies": {
+    "@playwright/test": "1.62.1",
     "@typescript/native": "npm:typescript@7.0.2",
     "eslint": "10.8.0",
     "prettier": "3.9.6",
     "typescript": "npm:@typescript/typescript6@6.0.2",
-    "typescript-eslint": "8.65.0"
+    "typescript-eslint": "8.65.0",
+    "vitest": "4.1.10"
   }
 }
