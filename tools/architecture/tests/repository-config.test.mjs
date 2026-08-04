@@ -32,6 +32,7 @@ test('local and generated artifacts are ignored', async () => {
     '.worktrees/',
     '.superpowers/',
     'node_modules/',
+    '.pnpm-store/',
     'dist/',
     'coverage/',
     '.env',
