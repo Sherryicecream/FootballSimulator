@@ -33,11 +33,17 @@ export const createSeededRandomSource = (seed: number): SeededRandomSource => {
   };
 
   const pick = <T>(items: readonly T[]): T => {
+    if (items.length === 0) throw new Error('Cannot pick from an empty array');
     return items[nextInt(0, items.length - 1)];
   };
 
   const pickWeighted = <T>(items: readonly T[], weights: readonly number[]): T => {
+    if (items.length === 0) throw new Error('Cannot pick from an empty array');
+    if (items.length !== weights.length) throw new Error('Items and weights must have the same length');
+
     const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+    if (totalWeight <= 0) throw new Error('Total weight must be greater than 0');
+
     let random = next() * totalWeight;
     for (let i = 0; i < items.length; i++) {
       random -= weights[i]!;
