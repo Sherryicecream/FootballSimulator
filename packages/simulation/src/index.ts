@@ -2,12 +2,22 @@ export { createSeededRandomSource } from './randomness';
 export type { SeededRandomSource } from './randomness';
 export { createPlayer } from './player-development/player-factory';
 export type { CreatePlayerParams } from './player-development/player-factory';
-export { createCalendar, advanceOneWeek, advanceToNextMonth, getSeasonWeekRange } from './career/calendar';
+export {
+  createCalendar,
+  advanceOneWeek,
+  advanceToNextMonth,
+  getSeasonWeekRange,
+} from './career/calendar';
 export type { CalendarState } from './career/calendar';
 export { generateYouthOpportunity, chooseYouthOpportunity } from './career/youth-opportunity';
 export { simulateMatch } from './match/match-engine';
 export { createLeagueStandings, updateStandings, getStandings } from './world/league-season';
 export { filterEligibleEvents, selectEvent } from './events/event-selector';
 export type { PlayerContext } from './events/event-selector';
-export { createPerson, updateRelationship, addMemory, getRelationshipLabel } from './relationships/relationship-manager';
+export {
+  createPerson,
+  updateRelationship,
+  addMemory,
+  getRelationshipLabel,
+} from './relationships/relationship-manager';
 export { renderTemplate, generateEventNarrative } from './events/narrative';

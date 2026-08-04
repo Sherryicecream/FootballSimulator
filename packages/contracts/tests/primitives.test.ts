@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { Position, Foot, CareerStage, PositionSchema, FootSchema, CareerStageSchema } from '../src/primitives';
+import {
+  Position,
+  Foot,
+  CareerStage,
+  PositionSchema,
+  FootSchema,
+  CareerStageSchema,
+} from '../src/primitives';
 
 describe('Position', () => {
   it('has all outfield positions excluding goalkeeper', () => {

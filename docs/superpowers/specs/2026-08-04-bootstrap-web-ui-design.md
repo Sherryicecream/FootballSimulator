@@ -36,14 +36,14 @@
 
 ### 3.2 视觉语言：体育杂志风
 
-| 令牌 | 值 | 用途 |
-|---|---|---|
-| 画布背景 | `#f8f6f2` | 米白编辑画布 |
-| 油墨文字 | `#1a1a1a` | 主要文本 |
-| 红色点缀 | `#c0392b` | 标题下划线、按钮、选中态 |
-| 卡片背景 | `#ffffff` | 表单字段、选项卡片 |
-| 边界线 | `#dddddd` | 卡片分隔 |
-| 字体 | `Georgia, serif` | 杂志风格 |
+| 令牌     | 值               | 用途                     |
+| -------- | ---------------- | ------------------------ |
+| 画布背景 | `#f8f6f2`        | 米白编辑画布             |
+| 油墨文字 | `#1a1a1a`        | 主要文本                 |
+| 红色点缀 | `#c0392b`        | 标题下划线、按钮、选中态 |
+| 卡片背景 | `#ffffff`        | 表单字段、选项卡片       |
+| 边界线   | `#dddddd`        | 卡片分隔                 |
+| 字体     | `Georgia, serif` | 杂志风格                 |
 
 正文字号：14-15px，标题：20-24px，小标签：13px。
 
@@ -93,6 +93,7 @@ User Input → CareerCreationForm
 ## 6. 组件 props 接口
 
 ### CareerCreationForm
+
 ```ts
 interface CareerCreationFormProps {
   onComplete: (save: CareerSave) => void;
@@ -101,6 +102,7 @@ interface CareerCreationFormProps {
 ```
 
 ### YouthOpportunityPanel
+
 ```ts
 interface YouthOpportunityPanelProps {
   opportunity: YouthOpportunity;
@@ -110,6 +112,7 @@ interface YouthOpportunityPanelProps {
 ```
 
 ### BootstrapCareerSummary
+
 ```ts
 interface BootstrapCareerSummaryProps {
   save: CareerSave;
@@ -118,17 +121,17 @@ interface BootstrapCareerSummaryProps {
 
 ## 7. 表单字段与校验
 
-| 字段 | 类型 | 必填 | 约束 |
-|---|---|---|---|
-| 姓名 | text | 是 | 1-40 字符 |
-| 家乡 | select | 是 | 从 14 个地区中选 |
-| 主位置 | select | 是 | 6 个外场位置 |
-| 次位置 | select | 否 | 不能与主位置相同 |
-| 惯用脚 | radio | 是 | 左/右/双 |
-| 逆足 | select | 是 | 1-5 |
-| 成长背景 | select | 是 | academy/school/community/late-bloomer |
-| 性格倾向 | select | 是 | ambitious/composed/disciplined/expressive |
-| 种子 | text | 否 | 留空时自动生成 |
+| 字段     | 类型   | 必填 | 约束                                      |
+| -------- | ------ | ---- | ----------------------------------------- |
+| 姓名     | text   | 是   | 1-40 字符                                 |
+| 家乡     | select | 是   | 从 14 个地区中选                          |
+| 主位置   | select | 是   | 6 个外场位置                              |
+| 次位置   | select | 否   | 不能与主位置相同                          |
+| 惯用脚   | radio  | 是   | 左/右/双                                  |
+| 逆足     | select | 是   | 1-5                                       |
+| 成长背景 | select | 是   | academy/school/community/late-bloomer     |
+| 性格倾向 | select | 是   | ambitious/composed/disciplined/expressive |
+| 种子     | text   | 否   | 留空时自动生成                            |
 
 ## 8. 状态管理
 
@@ -145,6 +148,7 @@ const [save, setSave] = useState<CareerSave | null>(null);
 ## 9. 测试
 
 ### 组件测试（Vitest + Testing Library）
+
 - 表单渲染所有字段
 - 提交有效数据后调用 onComplete
 - 显示校验错误消息
@@ -153,6 +157,7 @@ const [save, setSave] = useState<CareerSave | null>(null);
 - 生涯摘要显示正确信息
 
 ### 端到端测试（Playwright）
+
 - 桌面端（1440×900）完整流程
 - 移动端（Pixel 7）完整流程
 - 同一种子产生相同结果

@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { createLeagueStandings, updateStandings, getStandings } from '../../src/world/league-season';
+import {
+  createLeagueStandings,
+  updateStandings,
+  getStandings,
+} from '../../src/world/league-season';
 import { LeagueStandingSchema } from '@football/contracts';
 
 describe('LeagueSeason', () => {
@@ -18,8 +22,8 @@ describe('LeagueSeason', () => {
     const standings = createLeagueStandings(clubs);
     const updated = updateStandings(standings, 'shanghai-wings', 'beijing-dragons', 2, 0);
 
-    const home = updated.find(s => s.clubId === 'shanghai-wings')!;
-    const away = updated.find(s => s.clubId === 'beijing-dragons')!;
+    const home = updated.find((s) => s.clubId === 'shanghai-wings')!;
+    const away = updated.find((s) => s.clubId === 'beijing-dragons')!;
 
     expect(home.played).toBe(1);
     expect(home.won).toBe(1);
@@ -36,7 +40,7 @@ describe('LeagueSeason', () => {
     const standings = createLeagueStandings(clubs);
     const updated = updateStandings(standings, 'shanghai-wings', 'beijing-dragons', 1, 1);
 
-    const home = updated.find(s => s.clubId === 'shanghai-wings')!;
+    const home = updated.find((s) => s.clubId === 'shanghai-wings')!;
     expect(home.drawn).toBe(1);
     expect(home.points).toBe(1);
   });

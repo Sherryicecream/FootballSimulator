@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { CareerSave, Position, Foot } from '@football/contracts';
+import type { CareerSave } from '@football/contracts';
 import { createBootstrapContent } from './bootstrap-dependencies';
 import { CareerCreationForm } from '../career-creation/CareerCreationForm';
 import { YouthOpportunityPanel } from '../event-choice/YouthOpportunityPanel';
@@ -11,7 +11,7 @@ type FlowStep = 'creation' | 'opportunity' | 'summary';
 
 const content = createBootstrapContent();
 const advanceToDecision = createAdvanceToDecision(content);
-const submitYouthChoice = createSubmitYouthChoice(content);
+const submitYouthChoice = createSubmitYouthChoice();
 
 export function App() {
   const [step, setStep] = useState<FlowStep>('creation');
@@ -22,17 +22,7 @@ export function App() {
     setSave(careerSave);
     setLoading(true);
     try {
-      const pending = advanceToDecision({
-        playerName: careerSave.player.identity.name,
-        hometown: careerSave.player.identity.hometown,
-        primaryPosition: careerSave.player.identity.primaryPosition as Position,
-        preferredFoot: careerSave.player.identity.preferredFoot as Foot,
-        weakFootLevel: careerSave.player.identity.weakFootLevel,
-        growthBackground: careerSave.player.identity.growthBackground,
-        personalityTendency: careerSave.player.identity.personalityTendency,
-        regionId: careerSave.player.identity.hometown,
-        seed: careerSave.randomState.seed,
-      });
+      const pending = advanceToDecision(careerSave);
       setSave(pending);
       setStep('opportunity');
     } catch (err) {
@@ -51,12 +41,14 @@ export function App() {
 
   return (
     <div className="app" role="main">
-      <h1 style={{
-        fontSize: 'var(--text-2xl)',
-        color: 'var(--color-ink)',
-        marginBottom: 'var(--space-2xl)',
-        letterSpacing: '1px',
-      }}>
+      <h1
+        style={{
+          fontSize: 'var(--text-2xl)',
+          color: 'var(--color-ink)',
+          marginBottom: 'var(--space-2xl)',
+          letterSpacing: '1px',
+        }}
+      >
         足球生涯模拟器
       </h1>
 
@@ -72,9 +64,7 @@ export function App() {
         />
       )}
 
-      {step === 'summary' && save && (
-        <BootstrapCareerSummary save={save} />
-      )}
+      {step === 'summary' && save && <BootstrapCareerSummary save={save} />}
     </div>
   );
 }

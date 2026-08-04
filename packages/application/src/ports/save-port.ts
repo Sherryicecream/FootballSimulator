@@ -7,7 +7,7 @@ export interface SavePort {
   delete(slotId: string): Promise<void>;
 }
 
-export interface InMemorySaveStore extends SavePort {}
+export type InMemorySaveStore = SavePort;
 
 export function createInMemorySaveStore(): InMemorySaveStore {
   const store = new Map<string, CareerSave>();

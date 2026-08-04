@@ -6,7 +6,7 @@ describe('中国地域数据', () => {
   it('返回所有重点地区', () => {
     const keyRegions = getKeyRegions();
     expect(keyRegions.length).toBeGreaterThanOrEqual(6);
-    const ids = keyRegions.map(r => r.id);
+    const ids = keyRegions.map((r) => r.id);
     expect(ids).toContain('shanghai');
     expect(ids).toContain('shandong');
     expect(ids).toContain('xinjiang');
@@ -33,5 +33,12 @@ describe('中国地域数据', () => {
   it('返回所有地区（重点 + 非重点）', () => {
     const allRegions = getAllRegions();
     expect(allRegions.length).toBeGreaterThan(10);
+  });
+
+  it('地域文案不使用现实俱乐部品牌或固化身体天赋', () => {
+    const forbidden = /根宝|鲁能|恒大|天赋出众|身体对抗优势|适合体能训练/;
+    for (const region of getAllRegions()) {
+      expect(`${region.description} ${region.footballCulture}`).not.toMatch(forbidden);
+    }
   });
 });

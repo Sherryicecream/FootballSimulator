@@ -27,10 +27,7 @@ export function createPerson(
  * 更新关系维度（信任、尊重、亲近）
  * 所有维度值限制在 [0, 100] 范围内
  */
-export function updateRelationship(
-  person: Person,
-  delta: Partial<RelationshipDimension>,
-): Person {
+export function updateRelationship(person: Person, delta: Partial<RelationshipDimension>): Person {
   const clamp = (value: number): number => Math.min(100, Math.max(0, value));
 
   return {

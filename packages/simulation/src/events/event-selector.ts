@@ -30,10 +30,12 @@ export function filterEligibleEvents(
     if (cooldown !== undefined && cooldown > 0) return false;
 
     // 故事线互斥：该事件要求排除某个已完成的故事线
-    if (c.excludeStoryId && context.storyState.completedStoryIds.includes(c.excludeStoryId)) return false;
+    if (c.excludeStoryId && context.storyState.completedStoryIds.includes(c.excludeStoryId))
+      return false;
 
     // 需要前置故事线
-    if (c.requireStoryId && !context.storyState.completedStoryIds.includes(c.requireStoryId)) return false;
+    if (c.requireStoryId && !context.storyState.completedStoryIds.includes(c.requireStoryId))
+      return false;
 
     return true;
   });

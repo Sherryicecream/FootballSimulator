@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { generateYouthOpportunity, chooseYouthOpportunity } from '../../src/career/youth-opportunity';
+import {
+  generateYouthOpportunity,
+  chooseYouthOpportunity,
+} from '../../src/career/youth-opportunity';
 import { createSeededRandomSource } from '../../src/randomness/seeded-random-source';
 import type { CareerSave, RegionProfile } from '@football/contracts';
 import { createCalendar } from '../../src/career/calendar';
@@ -27,28 +30,60 @@ function createMockSave(seed: number = 42): CareerSave {
     careerId: 'career-test',
     player: {
       identity: {
-        name: '张伟', hometown: '上海', dateOfBirth: '2008-06-15',
-        primaryPosition: 'CENTER_BACK', secondaryPosition: 'FULL_BACK',
-        preferredFoot: 'RIGHT', weakFootLevel: 30,
-        growthBackground: '城市青训', personalityTendency: 'balanced',
+        name: '张伟',
+        hometown: '上海',
+        homelandId: 'shanghai',
+        dateOfBirth: '2008-06-15',
+        primaryPosition: 'CENTER_BACK',
+        secondaryPosition: 'FULL_BACK',
+        preferredFoot: 'RIGHT',
+        weakFootLevel: 30,
+        growthBackground: '城市青训',
+        personalityTendency: 'balanced',
       },
       attributes: {
-        technical: { firstTouch: 60, dribbling: 65, passing: 70, shooting: 55, defending: 50, aerialAbility: 62 },
+        technical: {
+          firstTouch: 60,
+          dribbling: 65,
+          passing: 70,
+          shooting: 55,
+          defending: 50,
+          aerialAbility: 62,
+        },
         physical: { pace: 78, strength: 68, stamina: 72, agility: 74 },
-        mental: { offTheBall: 60, vision: 65, decision: 63, composure: 67, determination: 75, discipline: 70 },
+        mental: {
+          offTheBall: 60,
+          vision: 65,
+          decision: 63,
+          composure: 67,
+          determination: 75,
+          discipline: 70,
+        },
       },
       hiddenTraits: {
-        potential: 85, stability: 70, professionalism: 75,
-        pressureResistance: 65, adaptability: 60, injuryProneness: 40,
+        potential: 85,
+        stability: 70,
+        professionalism: 75,
+        pressureResistance: 65,
+        adaptability: 60,
+        injuryProneness: 40,
       },
-      age: 16, careerStage: 'YOUTH', reputation: 20,
+      age: 16,
+      careerStage: 'YOUTH',
+      reputation: 20,
     },
     world: { currentDate: calendar.currentDate, season: calendar.season },
     context: { academyId: null, pendingOpportunity: null },
     relationships: { people: [], edges: [] },
     story: { bootstrapOpportunityWeek: 3, resolvedOpportunityIds: [] },
     ledger: [
-      { type: 'career-started', date: '2024-09-01', playerName: '张伟', age: 16, position: 'CENTER_BACK' },
+      {
+        type: 'career-started',
+        date: '2024-09-01',
+        playerName: '张伟',
+        age: 16,
+        position: 'CENTER_BACK',
+      },
     ],
     randomState: { seed, sequencePosition: 0 },
   };
@@ -71,8 +106,8 @@ describe('generateYouthOpportunity', () => {
     const opp1 = generateYouthOpportunity(createMockSave(42), neutralRegion, rng1, 3);
     const opp2 = generateYouthOpportunity(createMockSave(42), neutralRegion, rng2, 3);
 
-    expect(opp1.offers.map(o => o.academyId)).toEqual(opp2.offers.map(o => o.academyId));
-    expect(opp1.offers.map(o => o.pathway)).toEqual(opp2.offers.map(o => o.pathway));
+    expect(opp1.offers.map((o) => o.academyId)).toEqual(opp2.offers.map((o) => o.academyId));
+    expect(opp1.offers.map((o) => o.pathway)).toEqual(opp2.offers.map((o) => o.pathway));
   });
 
   it('高青训设施地区有本地青训选项', () => {
@@ -85,7 +120,7 @@ describe('generateYouthOpportunity', () => {
     const rng = createSeededRandomSource(42);
     const opportunity = generateYouthOpportunity(createMockSave(42), highFacilityRegion, rng, 3);
 
-    const pathways = opportunity.offers.map(o => o.pathway);
+    const pathways = opportunity.offers.map((o) => o.pathway);
     expect(pathways).toContain('local-academy');
   });
 
@@ -99,7 +134,7 @@ describe('generateYouthOpportunity', () => {
     const rng = createSeededRandomSource(42);
     const opportunity = generateYouthOpportunity(createMockSave(42), lowFacilityRegion, rng, 3);
 
-    const pathways = opportunity.offers.map(o => o.pathway);
+    const pathways = opportunity.offers.map((o) => o.pathway);
     expect(pathways).toContain('relocation-academy');
   });
 
@@ -107,7 +142,7 @@ describe('generateYouthOpportunity', () => {
     const rng = createSeededRandomSource(42);
     const opportunity = generateYouthOpportunity(createMockSave(42), neutralRegion, rng, 3);
 
-    const ids = opportunity.offers.map(o => o.id);
+    const ids = opportunity.offers.map((o) => o.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
@@ -119,9 +154,33 @@ describe('generateYouthOpportunity', () => {
     const opp2 = generateYouthOpportunity(createMockSave(99), neutralRegion, rng2, 3);
 
     // 至少有一个选项不同
-    const ids1 = opp1.offers.map(o => o.academyId).join(',');
-    const ids2 = opp2.offers.map(o => o.academyId).join(',');
+    const ids1 = opp1.offers.map((o) => o.academyId).join(',');
+    const ids2 = opp2.offers.map((o) => o.academyId).join(',');
     expect(ids1).not.toBe(ids2);
+  });
+
+  it('只生成原创的虚构青训机构名称', () => {
+    const blockedBrands = /根宝|申花|鲁能|苏宁|恒大|富力|国安|冠城|亚泰/;
+    const regions = [
+      { ...neutralRegion, id: 'shanghai', youthFacilityLevel: 85 },
+      { ...neutralRegion, id: 'shandong', youthFacilityLevel: 80 },
+      { ...neutralRegion, id: 'guangdong', youthFacilityLevel: 78 },
+      { ...neutralRegion, id: 'beijing-tianjin', youthFacilityLevel: 70 },
+    ];
+
+    for (const region of regions) {
+      for (let seed = 1; seed <= 20; seed += 1) {
+        const opportunity = generateYouthOpportunity(
+          createMockSave(seed),
+          region,
+          createSeededRandomSource(seed),
+          3,
+        );
+        for (const offer of opportunity.offers) {
+          expect(offer.academyName).not.toMatch(blockedBrands);
+        }
+      }
+    }
   });
 });
 

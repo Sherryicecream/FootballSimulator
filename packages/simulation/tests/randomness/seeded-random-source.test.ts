@@ -52,7 +52,8 @@ describe('SeededRandomSource', () => {
 
     const rng2 = createSeededRandomSource(42);
     // Fast-forward to position 3
-    rng2.next(); rng2.next();
+    rng2.next();
+    rng2.next();
 
     expect(rng2.next()).toBe(valueAt3);
   });
@@ -80,7 +81,7 @@ describe('SeededRandomSource', () => {
     const weights = [1, 1, 1];
 
     const results = Array.from({ length: 100 }, () => rng.pickWeighted(items, weights));
-    expect(results.every(r => items.includes(r))).toBe(true);
+    expect(results.every((r) => items.includes(r))).toBe(true);
   });
 
   it('shuffles array deterministically', () => {

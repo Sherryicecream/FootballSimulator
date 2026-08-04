@@ -16,7 +16,7 @@ export interface SeededRandomSource {
 }
 
 export const createSeededRandomSource = (seed: number): SeededRandomSource => {
-  let state = seed | 0;  // Ensure 32-bit integer
+  let state = seed | 0; // Ensure 32-bit integer
   let position = 0;
 
   const next = (): number => {
@@ -39,7 +39,8 @@ export const createSeededRandomSource = (seed: number): SeededRandomSource => {
 
   const pickWeighted = <T>(items: readonly T[], weights: readonly number[]): T => {
     if (items.length === 0) throw new Error('Cannot pick from an empty array');
-    if (items.length !== weights.length) throw new Error('Items and weights must have the same length');
+    if (items.length !== weights.length)
+      throw new Error('Items and weights must have the same length');
 
     const totalWeight = weights.reduce((sum, w) => sum + w, 0);
     if (totalWeight <= 0) throw new Error('Total weight must be greater than 0');

@@ -3,8 +3,13 @@ import { type LeagueStanding } from '@football/contracts';
 export function createLeagueStandings(clubIds: string[]): LeagueStanding[] {
   return clubIds.map((clubId) => ({
     clubId,
-    played: 0, won: 0, drawn: 0, lost: 0,
-    goalsFor: 0, goalsAgainst: 0, points: 0,
+    played: 0,
+    won: 0,
+    drawn: 0,
+    lost: 0,
+    goalsFor: 0,
+    goalsAgainst: 0,
+    points: 0,
   }));
 }
 

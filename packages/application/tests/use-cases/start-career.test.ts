@@ -23,6 +23,7 @@ describe('createCareerSave', () => {
     expect(save.contentVersion).toBe('bootstrap-1');
     expect(save.careerId).toBe('career-0000a65d2c16');
     expect(save.player.identity.name).toBe('张伟');
+    expect(save.player.identity.homelandId).toBe('shanghai');
     expect(save.player.age).toBe(16);
     expect(save.player.careerStage).toBe('YOUTH');
     expect(save.world.currentDate).toBe('2024-09-01');
@@ -66,5 +67,11 @@ describe('createCareerSave', () => {
     const save2 = createCareerSave({ ...defaultParams, seed: 99 });
 
     expect(save1.careerId).not.toBe(save2.careerId);
+  });
+
+  it('拒绝无效的随机种子', () => {
+    expect(() => createCareerSave({ ...defaultParams, seed: Number.NaN })).toThrow(
+      '随机种子必须是 0 到 2147483647 之间的整数',
+    );
   });
 });

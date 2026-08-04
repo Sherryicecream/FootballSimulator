@@ -31,6 +31,10 @@ function generateCareerId(seed: number): string {
  * 生成 16 岁球员并初始化世界状态、空上下文和首条账本
  */
 export function createCareerSave(params: StartCareerParams): CareerSave {
+  if (!Number.isInteger(params.seed) || params.seed < 0 || params.seed > 2147483647) {
+    throw new Error('随机种子必须是 0 到 2147483647 之间的整数');
+  }
+
   const rng = createSeededRandomSource(params.seed);
 
   const player = createPlayer(
@@ -38,7 +42,9 @@ export function createCareerSave(params: StartCareerParams): CareerSave {
       name: params.playerName,
       hometown: params.hometown,
       primaryPosition: params.primaryPosition,
-      ...(params.secondaryPosition !== undefined ? { secondaryPosition: params.secondaryPosition } : {}),
+      ...(params.secondaryPosition !== undefined
+        ? { secondaryPosition: params.secondaryPosition }
+        : {}),
       preferredFoot: params.preferredFoot,
       weakFootLevel: params.weakFootLevel,
       growthBackground: params.growthBackground,

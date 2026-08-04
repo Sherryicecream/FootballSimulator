@@ -71,18 +71,22 @@ describe('createPlayer', () => {
     expect(player.attributes.technical.firstTouch).toBeGreaterThanOrEqual(40);
   });
 
-  it('上海球员比新疆球员有更高的初始属性（区域加成效果）', () => {
+  it('地域对单项初始属性的影响不超过三点且不改变潜力', () => {
     const rng1 = createSeededRandomSource(42);
     const rng2 = createSeededRandomSource(42);
 
     const shanghaiPlayer = createPlayer({ ...defaultParams, regionId: 'shanghai' }, rng1);
     const xinjiangPlayer = createPlayer({ ...defaultParams, regionId: 'xinjiang' }, rng2);
 
-    // 上海青训设施加成 0.15，新疆加成为 0.0
-    // 上海的各项属性应该 >= 新疆的对应属性
-    const shanghaiAvg = (Object.values(shanghaiPlayer.attributes.technical) as number[]).reduce((a, b) => a + b, 0) / 6;
-    const xinjiangAvg = (Object.values(xinjiangPlayer.attributes.technical) as number[]).reduce((a, b) => a + b, 0) / 6;
-
-    expect(shanghaiAvg).toBeGreaterThan(xinjiangAvg);
+    const shanghaiValues = Object.values(shanghaiPlayer.attributes).flatMap((group) =>
+      Object.values(group),
+    );
+    const xinjiangValues = Object.values(xinjiangPlayer.attributes).flatMap((group) =>
+      Object.values(group),
+    );
+    shanghaiValues.forEach((value, index) => {
+      expect(Math.abs(value - xinjiangValues[index]!)).toBeLessThanOrEqual(3);
+    });
+    expect(shanghaiPlayer.hiddenTraits.potential).toBe(xinjiangPlayer.hiddenTraits.potential);
   });
 });

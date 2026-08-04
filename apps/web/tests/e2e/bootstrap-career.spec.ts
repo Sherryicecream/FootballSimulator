@@ -16,9 +16,8 @@ test.describe('Bootstrap Career Flow', () => {
     await expect(page.getByText('STEP 2 OF 3')).toBeVisible();
     await expect(page.getByText('你的青训机会')).toBeVisible();
     // Select first offer
-    const offers = page.locator('[role="button"][aria-pressed]');
+    const offers = page.locator('button[aria-pressed]');
     await offers.first().click();
-    await page.click('text=确认选择');
 
     // Step 3: Career summary
     await expect(page.getByText('STEP 3 OF 3')).toBeVisible();
@@ -37,7 +36,7 @@ test.describe('Bootstrap Career Flow', () => {
     await page.click('text=开始生涯');
 
     // Get first offer name
-    const firstOffer = await page.locator('[role="button"][aria-pressed]').first().textContent();
+    const firstOffer = await page.locator('button[aria-pressed]').first().textContent();
 
     await page.goto('/');
     await page.fill('input[aria-label="球员姓名"]', '测试球员');
@@ -47,7 +46,7 @@ test.describe('Bootstrap Career Flow', () => {
     await page.fill('input[aria-label="随机种子"]', '42');
     await page.click('text=开始生涯');
 
-    const secondOffer = await page.locator('[role="button"][aria-pressed]').first().textContent();
+    const secondOffer = await page.locator('button[aria-pressed]').first().textContent();
     expect(firstOffer).toBe(secondOffer);
   });
 

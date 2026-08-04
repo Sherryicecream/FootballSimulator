@@ -24,29 +24,68 @@ export function simulateMatch(
   const effectiveAway = awayStrength.overall;
   const totalStrength = effectiveHome + effectiveAway;
 
-  const homePossession = Math.round(50 + (homeStrength.midfield - awayStrength.midfield) * POSSESSION_MIDFIELD_WEIGHT + rng.nextInt(-5, 5));
+  const homePossession = Math.round(
+    50 +
+      (homeStrength.midfield - awayStrength.midfield) * POSSESSION_MIDFIELD_WEIGHT +
+      rng.nextInt(-5, 5),
+  );
   const clampedHomePossession = Math.min(75, Math.max(25, homePossession));
 
-  const homeShots = Math.max(0, Math.round((effectiveHome / totalStrength) * BASE_SHOTS_HOME + rng.nextInt(-3, 5)));
-  const awayShots = Math.max(0, Math.round((effectiveAway / totalStrength) * BASE_SHOTS_AWAY + rng.nextInt(-3, 4)));
+  const homeShots = Math.max(
+    0,
+    Math.round((effectiveHome / totalStrength) * BASE_SHOTS_HOME + rng.nextInt(-3, 5)),
+  );
+  const awayShots = Math.max(
+    0,
+    Math.round((effectiveAway / totalStrength) * BASE_SHOTS_AWAY + rng.nextInt(-3, 4)),
+  );
 
-  const homeShotAccuracy = Math.min(1, Math.max(0, SHOT_ACCURACY_BASELINE + (homeStrength.attack - awayStrength.defence) / 200));
-  const awayShotAccuracy = Math.min(1, Math.max(0, SHOT_ACCURACY_BASELINE + (awayStrength.attack - homeStrength.defence) / 200));
+  const homeShotAccuracy = Math.min(
+    1,
+    Math.max(0, SHOT_ACCURACY_BASELINE + (homeStrength.attack - awayStrength.defence) / 200),
+  );
+  const awayShotAccuracy = Math.min(
+    1,
+    Math.max(0, SHOT_ACCURACY_BASELINE + (awayStrength.attack - homeStrength.defence) / 200),
+  );
 
-  const homeShotsOnTarget = Math.min(homeShots, Math.max(0, Math.round(homeShots * homeShotAccuracy * (0.8 + rng.next() * 0.4))));
-  const awayShotsOnTarget = Math.min(awayShots, Math.max(0, Math.round(awayShots * awayShotAccuracy * (0.8 + rng.next() * 0.4))));
+  const homeShotsOnTarget = Math.min(
+    homeShots,
+    Math.max(0, Math.round(homeShots * homeShotAccuracy * (0.8 + rng.next() * 0.4))),
+  );
+  const awayShotsOnTarget = Math.min(
+    awayShots,
+    Math.max(0, Math.round(awayShots * awayShotAccuracy * (0.8 + rng.next() * 0.4))),
+  );
 
-  const homeScore = calculateGoals(homeShotsOnTarget, homeStrength.attack, awayStrength.defence, rng);
-  const awayScore = calculateGoals(awayShotsOnTarget, awayStrength.attack, homeStrength.defence, rng);
+  const homeScore = calculateGoals(
+    homeShotsOnTarget,
+    homeStrength.attack,
+    awayStrength.defence,
+    rng,
+  );
+  const awayScore = calculateGoals(
+    awayShotsOnTarget,
+    awayStrength.attack,
+    homeStrength.defence,
+    rng,
+  );
 
   return {
-    homeTeam, awayTeam, homeScore, awayScore,
-    homeStrength, awayStrength,
+    homeTeam,
+    awayTeam,
+    homeScore,
+    awayScore,
+    homeStrength,
+    awayStrength,
     homePossession: clampedHomePossession,
     awayPossession: 100 - clampedHomePossession,
-    homeShots, awayShots,
-    homeShotsOnTarget, awayShotsOnTarget,
-    weekNumber, season,
+    homeShots,
+    awayShots,
+    homeShotsOnTarget,
+    awayShotsOnTarget,
+    weekNumber,
+    season,
   };
 }
 
@@ -57,7 +96,11 @@ function calculateGoals(
   rng: SeededRandomSource,
 ): number {
   if (shotsOnTarget === 0) return 0;
-  const conversionRate = CONVERSION_RATE_BASELINE + (attack - defence) / 300 + rng.next() * CONVERSION_RATE_RANGE;
+  const conversionRate =
+    CONVERSION_RATE_BASELINE + (attack - defence) / 300 + rng.next() * CONVERSION_RATE_RANGE;
   const rawGoals = shotsOnTarget * Math.max(0.05, Math.min(0.5, conversionRate));
-  return Math.min(MAX_GOALS, Math.max(0, Math.round(rawGoals + (rng.next() < 0.2 ? rng.nextInt(-1, 1) : 0))));
+  return Math.min(
+    MAX_GOALS,
+    Math.max(0, Math.round(rawGoals + (rng.next() < 0.2 ? rng.nextInt(-1, 1) : 0))),
+  );
 }

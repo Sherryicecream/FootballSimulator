@@ -18,10 +18,17 @@ describe('ClubDefinition', () => {
   });
 
   it('rejects reputation out of range', () => {
-    expect(() => ClubDefinitionSchema.parse({
-      id: 'test', name: 'Test FC', shortName: 'TFC',
-      country: 'China', city: '北京', tier: 1,
-      reputation: 150, tacticalStyle: 'balanced',
-    })).toThrow();
+    expect(() =>
+      ClubDefinitionSchema.parse({
+        id: 'test',
+        name: 'Test FC',
+        shortName: 'TFC',
+        country: 'China',
+        city: '北京',
+        tier: 1,
+        reputation: 150,
+        tacticalStyle: 'balanced',
+      }),
+    ).toThrow();
   });
 });

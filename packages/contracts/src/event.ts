@@ -3,7 +3,12 @@ import { z } from 'zod';
 export const RaritySchema = z.enum(['common', 'uncommon', 'rare', 'legendary']);
 
 export const EventCategorySchema = z.enum([
-  'china-youth', 'dressing-room', 'off-pitch', 'asia-career', 'europe-career', 'national-team',
+  'china-youth',
+  'dressing-room',
+  'off-pitch',
+  'asia-career',
+  'europe-career',
+  'national-team',
 ]);
 
 export const EventChoiceSchema = z.object({

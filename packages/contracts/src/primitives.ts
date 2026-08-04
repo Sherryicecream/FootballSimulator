@@ -11,9 +11,7 @@ export const Position = {
 
 export type Position = (typeof Position)[keyof typeof Position];
 
-export const PositionSchema = z.enum(
-  Object.values(Position) as [string, ...string[]]
-);
+export const PositionSchema = z.enum(Object.values(Position) as [string, ...string[]]);
 
 export const Foot = {
   Left: 'LEFT',
@@ -23,9 +21,7 @@ export const Foot = {
 
 export type Foot = (typeof Foot)[keyof typeof Foot];
 
-export const FootSchema = z.enum(
-  Object.values(Foot) as [string, ...string[]]
-);
+export const FootSchema = z.enum(Object.values(Foot) as [string, ...string[]]);
 
 export const CareerStage = {
   Youth: 'YOUTH',
@@ -37,6 +33,4 @@ export const CareerStage = {
 
 export type CareerStage = (typeof CareerStage)[keyof typeof CareerStage];
 
-export const CareerStageSchema = z.enum(
-  Object.values(CareerStage) as [string, ...string[]]
-);
+export const CareerStageSchema = z.enum(Object.values(CareerStage) as [string, ...string[]]);

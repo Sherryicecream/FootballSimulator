@@ -40,12 +40,14 @@ const input: StartCareerParams = {
 describe('advanceToDecision', () => {
   it('拒绝未知的家乡', () => {
     const advance = createAdvanceToDecision(content);
-    expect(() => advance({ ...input, regionId: 'missing' })).toThrow('Unknown homeland');
+    expect(() => advance(createCareerSave({ ...input, regionId: 'missing' }))).toThrow(
+      'Unknown homeland',
+    );
   });
 
   it('推进直到出现待处理机会', () => {
     const advance = createAdvanceToDecision(content);
-    const pending = advance(input);
+    const pending = advance(createCareerSave(input));
 
     expect(pending.context.pendingOpportunity).not.toBeNull();
     expect(pending.story.bootstrapOpportunityWeek).toBeGreaterThanOrEqual(2);
@@ -54,32 +56,45 @@ describe('advanceToDecision', () => {
 
   it('推进后的存档通过 Zod 校验', () => {
     const advance = createAdvanceToDecision(content);
-    const pending = advance(input);
+    const pending = advance(createCareerSave(input));
 
     const result = CareerSaveSchema.safeParse(pending);
     expect(result.success).toBe(true);
   });
 
+  it('周推进账本从第一周开始连续递增', () => {
+    const initial = createCareerSave(input);
+    const pending = createAdvanceToDecision(content)(initial);
+    const weeks = pending.ledger
+      .filter((entry) => entry.type === 'week-advanced')
+      .map((entry) => entry.week);
+
+    expect(weeks).toEqual(
+      Array.from({ length: pending.story.bootstrapOpportunityWeek }, (_, index) => index + 1),
+    );
+  });
+
   it('同一种子推进到相同机会', () => {
     const advance = createAdvanceToDecision(content);
-    const pending1 = advance(input);
-    const pending2 = advance(input);
+    const pending1 = advance(createCareerSave(input));
+    const pending2 = advance(createCareerSave(input));
 
-    expect(pending1.context.pendingOpportunity!.offers.map(o => o.academyId))
-      .toEqual(pending2.context.pendingOpportunity!.offers.map(o => o.academyId));
+    expect(pending1.context.pendingOpportunity!.offers.map((o) => o.academyId)).toEqual(
+      pending2.context.pendingOpportunity!.offers.map((o) => o.academyId),
+    );
   });
 
   it('可以在推进过程中正常推进，不抛出错误', () => {
     const advance = createAdvanceToDecision(content);
-    expect(() => advance(input)).not.toThrow();
+    expect(() => advance(createCareerSave(input))).not.toThrow();
   });
 });
 
 describe('submitYouthChoice', () => {
   it('提交有效选项后更新存档', () => {
     const advance = createAdvanceToDecision(content);
-    const submit = createSubmitYouthChoice(content);
-    const pending = advance(input);
+    const submit = createSubmitYouthChoice();
+    const pending = advance(createCareerSave(input));
 
     const offerId = pending.context.pendingOpportunity!.offers[0]!.id;
     const result = submit(pending, offerId);
@@ -91,8 +106,8 @@ describe('submitYouthChoice', () => {
 
   it('提交后的存档通过 Zod 校验', () => {
     const advance = createAdvanceToDecision(content);
-    const submit = createSubmitYouthChoice(content);
-    const pending = advance(input);
+    const submit = createSubmitYouthChoice();
+    const pending = advance(createCareerSave(input));
 
     const offerId = pending.context.pendingOpportunity!.offers[0]!.id;
     const result = submit(pending, offerId);
@@ -103,8 +118,8 @@ describe('submitYouthChoice', () => {
 
   it('提交后再次提交同一存档抛出错误', () => {
     const advance = createAdvanceToDecision(content);
-    const submit = createSubmitYouthChoice(content);
-    const pending = advance(input);
+    const submit = createSubmitYouthChoice();
+    const pending = advance(createCareerSave(input));
 
     const offerId = pending.context.pendingOpportunity!.offers[0]!.id;
     // 第一次提交成功
@@ -117,8 +132,8 @@ describe('submitYouthChoice', () => {
 
   it('使用无效选项 ID 抛出错误', () => {
     const advance = createAdvanceToDecision(content);
-    const submit = createSubmitYouthChoice(content);
-    const pending = advance(input);
+    const submit = createSubmitYouthChoice();
+    const pending = advance(createCareerSave(input));
 
     expect(() => submit(pending, 'invalid-id')).toThrow('无效的选项 ID');
   });

@@ -36,12 +36,19 @@ describe('EventDefinition', () => {
   });
 
   it('拒绝缺少选项的事件', () => {
-    expect(() => EventDefinitionSchema.parse({
-      id: 'bad_event', version: 1, category: 'dressing-room', rarity: 'common',
-      title: '坏事件', description: '没有选项',
-      condition: {}, choices: [],
-      cooldownWeeks: 4,
-    })).toThrow();
+    expect(() =>
+      EventDefinitionSchema.parse({
+        id: 'bad_event',
+        version: 1,
+        category: 'dressing-room',
+        rarity: 'common',
+        title: '坏事件',
+        description: '没有选项',
+        condition: {},
+        choices: [],
+        cooldownWeeks: 4,
+      }),
+    ).toThrow();
   });
 });
 
@@ -50,7 +57,7 @@ describe('StoryState', () => {
     const valid = StoryStateSchema.parse({
       activeStorylines: [],
       completedStoryIds: ['coach_challenge_01'],
-      cooldowns: { 'coach_challenge_01': 8 },
+      cooldowns: { coach_challenge_01: 8 },
       pendingDelayedEffects: [],
     });
     expect(valid.completedStoryIds).toContain('coach_challenge_01');

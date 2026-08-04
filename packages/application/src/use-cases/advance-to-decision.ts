@@ -1,6 +1,10 @@
 import { type CareerSave } from '@football/contracts';
-import { advanceOneWeek, generateYouthOpportunity, createCalendar, createSeededRandomSource } from '@football/simulation';
-import { createCareerSave, type StartCareerParams } from './start-career';
+import {
+  advanceOneWeek,
+  generateYouthOpportunity,
+  createCalendar,
+  createSeededRandomSource,
+} from '@football/simulation';
 import { type BootstrapContentPort } from '../ports/bootstrap-content';
 
 /**
@@ -8,19 +12,20 @@ import { type BootstrapContentPort } from '../ports/bootstrap-content';
  * 反复推进周，直到出现一个待处理的青年机会
  */
 export function createAdvanceToDecision(content: BootstrapContentPort) {
-  return (input: StartCareerParams): CareerSave => {
-    const region = content.getRegionProfile(input.regionId);
+  return (initialSave: CareerSave): CareerSave => {
+    const regionId = initialSave.player.identity.homelandId;
+    const region = content.getRegionProfile(regionId);
     if (!region) {
-      throw new Error(`Unknown homeland: ${input.regionId}`);
+      throw new Error(`Unknown homeland: ${regionId}`);
     }
 
-    let save = createCareerSave(input);
+    let save = initialSave;
     const maxWeeks = 12;
 
     for (let week = 1; week <= maxWeeks; week++) {
       // 检查是否到了机会出现周
       if (week === save.story.bootstrapOpportunityWeek) {
-        const rng = createSeededRandomSource(input.seed + week);
+        const rng = createSeededRandomSource(save.randomState.seed + week);
         const opportunity = generateYouthOpportunity(save, region, rng, week);
 
         // 更新日历
@@ -28,7 +33,7 @@ export function createAdvanceToDecision(content: BootstrapContentPort) {
         const advanced = advanceOneWeek({
           currentDate: calendar.currentDate,
           season: calendar.season,
-          weekNumber: calendar.weekNumber,
+          weekNumber: week - 1,
           month: calendar.month,
         });
 
@@ -45,7 +50,11 @@ export function createAdvanceToDecision(content: BootstrapContentPort) {
           },
           ledger: [
             ...save.ledger,
-            { type: 'week-advanced' as const, date: advanced.currentDate, week: advanced.weekNumber },
+            {
+              type: 'week-advanced' as const,
+              date: advanced.currentDate,
+              week: advanced.weekNumber,
+            },
           ],
         };
 
@@ -57,7 +66,7 @@ export function createAdvanceToDecision(content: BootstrapContentPort) {
       const advanced = advanceOneWeek({
         currentDate: calendar.currentDate,
         season: calendar.season,
-        weekNumber: calendar.weekNumber,
+        weekNumber: week - 1,
         month: calendar.month,
       });
 

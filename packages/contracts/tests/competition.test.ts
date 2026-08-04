@@ -15,8 +15,14 @@ describe('CompetitionDefinition', () => {
   });
 
   it('rejects invalid tier', () => {
-    expect(() => CompetitionDefinitionSchema.parse({
-      id: 'invalid', name: 'Test', country: 'China', tier: 0, type: 'LEAGUE',
-    })).toThrow();
+    expect(() =>
+      CompetitionDefinitionSchema.parse({
+        id: 'invalid',
+        name: 'Test',
+        country: 'China',
+        tier: 0,
+        type: 'LEAGUE',
+      }),
+    ).toThrow();
   });
 });

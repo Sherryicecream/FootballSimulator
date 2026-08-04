@@ -1,9 +1,9 @@
 /** 日历状态：跟踪游戏内时间 */
 export interface CalendarState {
-  currentDate: string;  // ISO 格式 YYYY-MM-DD
-  season: number;       // 赛季年份
-  weekNumber: number;   // 当前年第几周 (1-52)
-  month: number;        // 当前月份 (1-12)
+  currentDate: string; // ISO 格式 YYYY-MM-DD
+  season: number; // 赛季年份
+  weekNumber: number; // 当前年第几周 (1-52)
+  month: number; // 当前月份 (1-12)
 }
 
 function parseDate(dateStr: string): Date {
@@ -63,6 +63,6 @@ export function advanceToNextMonth(cal: CalendarState): CalendarState {
 }
 
 /** 获取赛季的周范围 */
-export function getSeasonWeekRange(season: number): { startWeek: number; endWeek: number } {
+export function getSeasonWeekRange(): { startWeek: number; endWeek: number } {
   return { startWeek: 1, endWeek: 52 };
 }

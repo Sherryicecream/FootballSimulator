@@ -1,9 +1,7 @@
 import { z } from 'zod';
 
 /** 中国大区分类 */
-export const RegionGroupSchema = z.enum([
-  '华东', '华南', '华北', '华中', '西南', '西北', '东北',
-]);
+export const RegionGroupSchema = z.enum(['华东', '华南', '华北', '华中', '西南', '西北', '东北']);
 
 export type RegionGroup = z.infer<typeof RegionGroupSchema>;
 

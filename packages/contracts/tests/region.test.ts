@@ -56,12 +56,21 @@ describe('RegionProfile', () => {
   });
 
   it('拒绝无效的青训设施等级', () => {
-    expect(() => RegionProfileSchema.parse({
-      id: 'test', name: '测试', group: '华东', isKeyRegion: false,
-      description: '测试',
-      youthFacilityLevel: 150, scoutingCoverage: 50, competitionIntensity: 50,
-      trainingStyle: '技术型', costOfLiving: '中', climate: '温和',
-      footballCulture: '一般',
-    })).toThrow();
+    expect(() =>
+      RegionProfileSchema.parse({
+        id: 'test',
+        name: '测试',
+        group: '华东',
+        isKeyRegion: false,
+        description: '测试',
+        youthFacilityLevel: 150,
+        scoutingCoverage: 50,
+        competitionIntensity: 50,
+        trainingStyle: '技术型',
+        costOfLiving: '中',
+        climate: '温和',
+        footballCulture: '一般',
+      }),
+    ).toThrow();
   });
 });

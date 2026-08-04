@@ -4,8 +4,11 @@ import { getAllRegions } from '@football/content';
 import type { BootstrapContentPort } from '@football/application';
 import type { CareerSave } from '@football/contracts';
 import {
-  POSITION_OPTIONS, FOOT_OPTIONS, WEAK_FOOT_OPTIONS,
-  BACKGROUND_OPTIONS, PERSONALITY_OPTIONS,
+  POSITION_OPTIONS,
+  FOOT_OPTIONS,
+  WEAK_FOOT_OPTIONS,
+  BACKGROUND_OPTIONS,
+  PERSONALITY_OPTIONS,
 } from './creation-options';
 
 interface CareerCreationFormProps {
@@ -43,17 +46,31 @@ export function CareerCreationForm({ onComplete, content }: CareerCreationFormPr
       setError('请选择主位置');
       return;
     }
+    const region = content.getRegionProfile(homelandId);
+    if (!region) {
+      setError('所选家乡资料不可用');
+      return;
+    }
+    const trimmedSeed = seed.trim();
+    const parsedSeed = trimmedSeed === '' ? null : Number(trimmedSeed);
+    if (
+      parsedSeed !== null &&
+      (!Number.isInteger(parsedSeed) || parsedSeed < 0 || parsedSeed > 2147483647)
+    ) {
+      setError('随机种子必须是 0 到 2147483647 之间的整数');
+      return;
+    }
 
     const params: StartCareerParams = {
       playerName: trimmedName,
-      hometown: regions.find(r => r.id === homelandId)?.name ?? homelandId,
+      hometown: region.name,
       primaryPosition: primaryPosition as StartCareerParams['primaryPosition'],
       preferredFoot: preferredFoot as StartCareerParams['preferredFoot'],
       weakFootLevel: parseInt(weakFoot, 10),
       growthBackground: background,
       personalityTendency: personality,
       regionId: homelandId,
-      seed: seed ? parseInt(seed, 10) : Math.floor(Math.random() * 2147483647),
+      seed: parsedSeed ?? Math.floor(Math.random() * 2147483647),
     };
 
     const save = createCareerSave(params);
@@ -62,39 +79,48 @@ export function CareerCreationForm({ onComplete, content }: CareerCreationFormPr
 
   return (
     <form onSubmit={handleSubmit} style={{ fontFamily: 'var(--font-serif)' }}>
-      <div style={{
-        borderBottom: '2px solid var(--color-accent)',
-        paddingBottom: 'var(--space-sm)',
-        marginBottom: 'var(--space-xl)',
-      }}>
-        <div style={{
-          fontSize: 'var(--text-xs)',
-          color: 'var(--color-accent)',
-          textTransform: 'uppercase',
-          letterSpacing: '2px',
-        }}>
+      <div
+        style={{
+          borderBottom: '2px solid var(--color-accent)',
+          paddingBottom: 'var(--space-sm)',
+          marginBottom: 'var(--space-xl)',
+        }}
+      >
+        <div
+          style={{
+            fontSize: 'var(--text-xs)',
+            color: 'var(--color-accent)',
+            textTransform: 'uppercase',
+            letterSpacing: '2px',
+          }}
+        >
           STEP 1 OF 3
         </div>
-        <div style={{
-          fontSize: 'var(--text-2xl)',
-          fontWeight: 'bold',
-          color: 'var(--color-ink)',
-          marginTop: 'var(--space-xs)',
-        }}>
+        <div
+          style={{
+            fontSize: 'var(--text-2xl)',
+            fontWeight: 'bold',
+            color: 'var(--color-ink)',
+            marginTop: 'var(--space-xs)',
+          }}
+        >
           基本信息
         </div>
       </div>
 
       {error && (
-        <div role="alert" style={{
-          background: '#fef2f2',
-          border: '1px solid var(--color-accent)',
-          borderRadius: 'var(--radius-md)',
-          padding: 'var(--space-md)',
-          marginBottom: 'var(--space-lg)',
-          fontSize: 'var(--text-base)',
-          color: 'var(--color-accent)',
-        }}>
+        <div
+          role="alert"
+          style={{
+            background: '#fef2f2',
+            border: '1px solid var(--color-accent)',
+            borderRadius: 'var(--radius-md)',
+            padding: 'var(--space-md)',
+            marginBottom: 'var(--space-lg)',
+            fontSize: 'var(--text-base)',
+            color: 'var(--color-accent)',
+          }}
+        >
           {error}
         </div>
       )}
@@ -105,7 +131,7 @@ export function CareerCreationForm({ onComplete, content }: CareerCreationFormPr
           <input
             type="text"
             value={name}
-            onChange={e => setName(e.target.value)}
+            onChange={(e) => setName(e.target.value)}
             style={inputStyle}
             aria-label="球员姓名"
             placeholder="输入姓名..."
@@ -114,19 +140,28 @@ export function CareerCreationForm({ onComplete, content }: CareerCreationFormPr
         </label>
       </div>
 
-      <div style={{ display: 'flex', gap: 'var(--space-md)', marginBottom: 'var(--space-lg)', flexWrap: 'wrap' }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: 'var(--space-md)',
+          marginBottom: 'var(--space-lg)',
+          flexWrap: 'wrap',
+        }}
+      >
         <div style={{ flex: 1, minWidth: 200 }}>
           <label style={labelStyle}>
             家乡
             <select
               value={homelandId}
-              onChange={e => setHomelandId(e.target.value)}
+              onChange={(e) => setHomelandId(e.target.value)}
               style={selectStyle}
               aria-label="家乡"
             >
               <option value="">请选择...</option>
-              {regions.map(r => (
-                <option key={r.id} value={r.id}>{r.name}</option>
+              {regions.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
               ))}
             </select>
           </label>
@@ -136,13 +171,15 @@ export function CareerCreationForm({ onComplete, content }: CareerCreationFormPr
             主位置
             <select
               value={primaryPosition}
-              onChange={e => setPrimaryPosition(e.target.value)}
+              onChange={(e) => setPrimaryPosition(e.target.value)}
               style={selectStyle}
               aria-label="主位置"
             >
               <option value="">请选择...</option>
-              {POSITION_OPTIONS.map(p => (
-                <option key={p.value} value={p.value}>{p.label}</option>
+              {POSITION_OPTIONS.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label}
+                </option>
               ))}
             </select>
           </label>
@@ -153,7 +190,7 @@ export function CareerCreationForm({ onComplete, content }: CareerCreationFormPr
         <label style={labelStyle}>
           惯用脚
           <div style={{ display: 'flex', gap: 'var(--space-sm)', marginTop: 'var(--space-xs)' }}>
-            {FOOT_OPTIONS.map(f => (
+            {FOOT_OPTIONS.map((f) => (
               <label
                 key={f.value}
                 style={{
@@ -174,7 +211,7 @@ export function CareerCreationForm({ onComplete, content }: CareerCreationFormPr
                   name="preferredFoot"
                   value={f.value}
                   checked={preferredFoot === f.value}
-                  onChange={e => setPreferredFoot(e.target.value)}
+                  onChange={(e) => setPreferredFoot(e.target.value)}
                   style={{ display: 'none' }}
                   aria-label={f.label}
                 />
@@ -185,13 +222,27 @@ export function CareerCreationForm({ onComplete, content }: CareerCreationFormPr
         </label>
       </div>
 
-      <div style={{ display: 'flex', gap: 'var(--space-md)', marginBottom: 'var(--space-lg)', flexWrap: 'wrap' }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: 'var(--space-md)',
+          marginBottom: 'var(--space-lg)',
+          flexWrap: 'wrap',
+        }}
+      >
         <div style={{ flex: 1, minWidth: 150 }}>
           <label style={labelStyle}>
             逆足
-            <select value={weakFoot} onChange={e => setWeakFoot(e.target.value)} style={selectStyle} aria-label="逆足">
-              {WEAK_FOOT_OPTIONS.map(w => (
-                <option key={w.value} value={w.value}>{w.label}</option>
+            <select
+              value={weakFoot}
+              onChange={(e) => setWeakFoot(e.target.value)}
+              style={selectStyle}
+              aria-label="逆足"
+            >
+              {WEAK_FOOT_OPTIONS.map((w) => (
+                <option key={w.value} value={w.value}>
+                  {w.label}
+                </option>
               ))}
             </select>
           </label>
@@ -199,9 +250,16 @@ export function CareerCreationForm({ onComplete, content }: CareerCreationFormPr
         <div style={{ flex: 1, minWidth: 150 }}>
           <label style={labelStyle}>
             成长背景
-            <select value={background} onChange={e => setBackground(e.target.value)} style={selectStyle} aria-label="成长背景">
-              {BACKGROUND_OPTIONS.map(b => (
-                <option key={b.value} value={b.value}>{b.label}</option>
+            <select
+              value={background}
+              onChange={(e) => setBackground(e.target.value)}
+              style={selectStyle}
+              aria-label="成长背景"
+            >
+              {BACKGROUND_OPTIONS.map((b) => (
+                <option key={b.value} value={b.value}>
+                  {b.label}
+                </option>
               ))}
             </select>
           </label>
@@ -209,9 +267,16 @@ export function CareerCreationForm({ onComplete, content }: CareerCreationFormPr
         <div style={{ flex: 1, minWidth: 150 }}>
           <label style={labelStyle}>
             性格倾向
-            <select value={personality} onChange={e => setPersonality(e.target.value)} style={selectStyle} aria-label="性格倾向">
-              {PERSONALITY_OPTIONS.map(p => (
-                <option key={p.value} value={p.value}>{p.label}</option>
+            <select
+              value={personality}
+              onChange={(e) => setPersonality(e.target.value)}
+              style={selectStyle}
+              aria-label="性格倾向"
+            >
+              {PERSONALITY_OPTIONS.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label}
+                </option>
               ))}
             </select>
           </label>
@@ -224,18 +289,30 @@ export function CareerCreationForm({ onComplete, content }: CareerCreationFormPr
           <input
             type="text"
             value={seed}
-            onChange={e => setSeed(e.target.value)}
+            onChange={(e) => setSeed(e.target.value)}
             style={inputStyle}
             placeholder="留空自动生成..."
             aria-label="随机种子"
           />
         </label>
-        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-xs)' }}>
+        <div
+          style={{
+            fontSize: 'var(--text-xs)',
+            color: 'var(--color-text-muted)',
+            marginTop: 'var(--space-xs)',
+          }}
+        >
           相同种子 + 相同选择 = 完全相同的结果
         </div>
       </div>
 
-      <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-lg)', textAlign: 'center' }}>
+      <div
+        style={{
+          borderTop: '1px solid var(--color-border)',
+          paddingTop: 'var(--space-lg)',
+          textAlign: 'center',
+        }}
+      >
         <button
           type="submit"
           style={{

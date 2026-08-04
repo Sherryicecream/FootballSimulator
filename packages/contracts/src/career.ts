@@ -78,8 +78,6 @@ const StoryStateSchema = z.object({
   resolvedOpportunityIds: z.array(z.string()),
 });
 
-type StoryState = z.infer<typeof StoryStateSchema>;
-
 /**
  * 关系图（内部使用，§23）- 简化的初始版本
  */
@@ -87,8 +85,6 @@ const RelationshipGraphSchema = z.object({
   people: z.array(z.unknown()),
   edges: z.array(z.unknown()),
 });
-
-type RelationshipGraph = z.infer<typeof RelationshipGraphSchema>;
 
 // PlayerCareer: 身份、属性、隐藏特质、年龄、生涯阶段、声望 (§23)
 export const PlayerCareerSchema = z.object({

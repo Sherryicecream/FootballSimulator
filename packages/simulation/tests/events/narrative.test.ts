@@ -39,12 +39,7 @@ describe('narrative', () => {
   });
 
   it('叙事文本包含 Markdown 格式', () => {
-    const narrative = generateEventNarrative(
-      '标题',
-      '描述内容',
-      '选择内容',
-      {},
-    );
+    const narrative = generateEventNarrative('标题', '描述内容', '选择内容', {});
     expect(narrative).toContain('## ');
     expect(narrative).toContain('\n\n');
   });

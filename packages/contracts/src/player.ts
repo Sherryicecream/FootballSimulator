@@ -60,6 +60,7 @@ export type HiddenTraits = z.infer<typeof HiddenTraitsSchema>;
 export const PlayerIdentitySchema = z.object({
   name: z.string().min(1).max(50),
   hometown: z.string().min(1).max(30),
+  homelandId: z.string().min(1).max(40),
   dateOfBirth: z.string(), // ISO date string: "2008-06-15"
   primaryPosition: PositionSchema,
   secondaryPosition: PositionSchema.optional(),

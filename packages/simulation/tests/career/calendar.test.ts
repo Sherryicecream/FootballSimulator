@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { createCalendar, advanceOneWeek, advanceToNextMonth, getSeasonWeekRange } from '../../src/career/calendar';
+import {
+  createCalendar,
+  advanceOneWeek,
+  advanceToNextMonth,
+  getSeasonWeekRange,
+} from '../../src/career/calendar';
 
 describe('Calendar', () => {
   it('从指定日期创建日历', () => {
@@ -37,7 +42,7 @@ describe('Calendar', () => {
   });
 
   it('获取赛季周范围', () => {
-    const range = getSeasonWeekRange(2024);
+    const range = getSeasonWeekRange();
     expect(range.startWeek).toBe(1);
     expect(range.endWeek).toBe(52);
   });

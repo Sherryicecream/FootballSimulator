@@ -8,7 +8,15 @@ describe('simulateMatch', () => {
 
   it('生成比赛结果，包含主客队比分', () => {
     const rng = createSeededRandomSource(42);
-    const result = simulateMatch('shanghai-wings', 'beijing-dragons', homeStrength, awayStrength, 5, 2024, rng);
+    const result = simulateMatch(
+      'shanghai-wings',
+      'beijing-dragons',
+      homeStrength,
+      awayStrength,
+      5,
+      2024,
+      rng,
+    );
 
     expect(result.homeTeam).toBe('shanghai-wings');
     expect(result.awayTeam).toBe('beijing-dragons');

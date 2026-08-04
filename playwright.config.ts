@@ -1,4 +1,4 @@
-import { defineConfig } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './apps/web/tests/e2e',
@@ -9,6 +9,7 @@ export default defineConfig({
   reporter: 'list',
   use: {
     baseURL: 'http://127.0.0.1:5173',
+    trace: 'on-first-retry',
   },
   projects: [
     {
@@ -17,7 +18,7 @@ export default defineConfig({
     },
     {
       name: 'mobile',
-      use: { viewport: { width: 412, height: 915 } },
+      use: { ...devices['Pixel 7'] },
     },
   ],
   webServer: {

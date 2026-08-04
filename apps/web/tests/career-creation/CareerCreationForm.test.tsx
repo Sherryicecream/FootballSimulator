@@ -40,4 +40,21 @@ describe('CareerCreationForm', () => {
     expect(save.player.identity.name).toBe('张伟');
     expect(save.player.identity.primaryPosition).toBe('CENTER_BACK');
   });
+
+  it('rejects a non-numeric seed instead of silently coercing it', async () => {
+    const user = userEvent.setup();
+    const onComplete = vi.fn();
+    render(<CareerCreationForm onComplete={onComplete} content={createBootstrapContent()} />);
+
+    await user.type(screen.getByLabelText('球员姓名'), '林岳');
+    await user.selectOptions(screen.getByLabelText('家乡'), 'shanghai');
+    await user.selectOptions(screen.getByLabelText('主位置'), 'CENTER_BACK');
+    await user.type(screen.getByLabelText('随机种子'), 'abc');
+    await user.click(screen.getByRole('button', { name: /开始生涯/ }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      '随机种子必须是 0 到 2147483647 之间的整数',
+    );
+    expect(onComplete).not.toHaveBeenCalled();
+  });
 });
