@@ -34,7 +34,7 @@ export const createSeededRandomSource = (seed: number): SeededRandomSource => {
 
   const pick = <T>(items: readonly T[]): T => {
     if (items.length === 0) throw new Error('Cannot pick from an empty array');
-    return items[nextInt(0, items.length - 1)];
+    return items[nextInt(0, items.length - 1)]!;
   };
 
   const pickWeighted = <T>(items: readonly T[], weights: readonly number[]): T => {
