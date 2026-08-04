@@ -1,0 +1,168 @@
+import type { CareerSave, YouthOpportunity, YouthOffer, RegionProfile } from '@football/contracts';
+import type { SeededRandomSource } from '../randomness/seeded-random-source';
+
+/**
+ * 青训学院数据
+ */
+interface AcademyDefinition {
+  id: string;
+  name: string;
+  pathway: 'local-academy' | 'school-elite' | 'relocation-academy';
+  regionId: string;
+  minFacilityLevel: number;
+}
+
+/**
+ * 中国青训学院池（按地区分类）
+ */
+const ACADEMIES: AcademyDefinition[] = [
+  // 华东地区
+  { id: 'shanghai-根宝', name: '根宝青训基地', pathway: 'local-academy', regionId: 'shanghai', minFacilityLevel: 70 },
+  { id: 'shanghai-申花', name: '申花青年队', pathway: 'local-academy', regionId: 'shanghai', minFacilityLevel: 70 },
+  { id: 'shandong-鲁能', name: '鲁能足校', pathway: 'local-academy', regionId: 'shandong', minFacilityLevel: 65 },
+  { id: 'jiangsu-苏宁', name: '江苏青年训练营', pathway: 'local-academy', regionId: 'jiangsu-zhejiang', minFacilityLevel: 50 },
+  // 华南地区
+  { id: 'guangdong-恒大', name: '恒大足校', pathway: 'local-academy', regionId: 'guangdong', minFacilityLevel: 65 },
+  { id: 'guangdong-富力', name: '富力青训营', pathway: 'local-academy', regionId: 'guangdong', minFacilityLevel: 60 },
+  // 华北地区
+  { id: 'beijing-国安', name: '国安青年训练营', pathway: 'local-academy', regionId: 'beijing-tianjin', minFacilityLevel: 55 },
+  // 西南地区
+  { id: 'sichuan-冠城', name: '四川青年队', pathway: 'local-academy', regionId: 'sichuan-chongqing', minFacilityLevel: 50 },
+  // 东北地区
+  { id: 'dongbei-亚泰', name: '亚泰青训基地', pathway: 'local-academy', regionId: 'dongbei', minFacilityLevel: 55 },
+  // 全国性校园精英计划
+  { id: '校园-上海', name: '上海校园精英计划', pathway: 'school-elite', regionId: 'shanghai', minFacilityLevel: 0 },
+  { id: '校园-北京', name: '北京校园足球计划', pathway: 'school-elite', regionId: 'beijing-tianjin', minFacilityLevel: 0 },
+  { id: '校园-全国', name: '全国校园足球选拔营', pathway: 'school-elite', regionId: '*', minFacilityLevel: 0 },
+  // 外地青训（relocation）
+  { id: '外地-鲁能', name: '山东鲁能足校（外地）', pathway: 'relocation-academy', regionId: '*', minFacilityLevel: 0 },
+  { id: '外地-恒大', name: '广州恒大足校（外地）', pathway: 'relocation-academy', regionId: '*', minFacilityLevel: 0 },
+  { id: '外地-根宝', name: '上海根宝基地（外地）', pathway: 'relocation-academy', regionId: '*', minFacilityLevel: 0 },
+];
+
+/**
+ * 根据地区和设施水平生成青年机会选项
+ */
+export function generateYouthOpportunity(
+  _save: CareerSave,
+  region: RegionProfile,
+  rng: SeededRandomSource,
+  week: number,
+): YouthOpportunity {
+  // 根据地区设施水平筛选可用的本地学院
+  const localAcademies = ACADEMIES.filter(
+    (a) => a.pathway === 'local-academy' &&
+      (a.regionId === region.id || a.regionId === '*') &&
+      region.youthFacilityLevel >= a.minFacilityLevel,
+  );
+
+  // 校园精英计划（总是可用）
+  const schoolAcademies = ACADEMIES.filter(
+    (a) => a.pathway === 'school-elite' &&
+      (a.regionId === region.id || a.regionId === '*'),
+  );
+
+  // 外地青训（relocation cost 影响权重）
+  const relocationAcademies = ACADEMIES.filter(
+    (a) => a.pathway === 'relocation-academy',
+  );
+
+  const offers: YouthOffer[] = [];
+
+  // 添加本地青训选项（如果有）
+  if (localAcademies.length > 0) {
+    const selected = rng.pick(localAcademies);
+    const riskLabel = region.youthFacilityLevel >= 70 ? 'low' : region.youthFacilityLevel >= 50 ? 'medium' : 'high';
+    offers.push({
+      id: `offer-${selected.id}`,
+      academyId: selected.id,
+      academyName: selected.name,
+      pathway: 'local-academy',
+      riskLabel,
+      description: `加入${selected.name}，留在熟悉的训练环境中发展。`,
+    });
+  }
+
+  // 添加校园精英选项
+  if (schoolAcademies.length > 0) {
+    const selected = rng.pick(schoolAcademies);
+    offers.push({
+      id: `offer-${selected.id}`,
+      academyId: selected.id,
+      academyName: selected.name,
+      pathway: 'school-elite',
+      riskLabel: 'medium',
+      description: `通过${selected.name}进入职业足球体系，兼顾学业与足球。`,
+    });
+  }
+
+  // 添加外地青训选项（低设施水平地区更可能包含）
+  const relocationChance = region.youthFacilityLevel < 50 ? 0.9 : 0.5;
+  if (relocationAcademies.length > 0 && rng.next() < relocationChance) {
+    const selected = rng.pick(relocationAcademies);
+    offers.push({
+      id: `offer-${selected.id}`,
+      academyId: selected.id,
+      academyName: selected.name,
+      pathway: 'relocation-academy',
+      riskLabel: 'high',
+      description: `前往${selected.name}，离开家乡接受更高水平的训练。`,
+    });
+  }
+
+  // 确保至少有 2 个选项
+  while (offers.length < 2) {
+    const fallback = relocationAcademies[rng.nextInt(0, relocationAcademies.length - 1)]!;
+    offers.push({
+      id: `offer-${fallback.id}-alt`,
+      academyId: fallback.id,
+      academyName: fallback.name,
+      pathway: 'relocation-academy',
+      riskLabel: 'high',
+      description: `前往${fallback.name}，接受全新的训练环境挑战。`,
+    });
+  }
+
+  return { week, offers };
+}
+
+/**
+ * 选择青年机会选项
+ * 验证选项存在后更新存档状态
+ */
+export function chooseYouthOpportunity(
+  save: CareerSave,
+  offerId: string,
+): CareerSave {
+  if (!save.context.pendingOpportunity) {
+    throw new Error('当前没有待处理的青年机会');
+  }
+
+  const offer = save.context.pendingOpportunity.offers.find((o) => o.id === offerId);
+  if (!offer) {
+    throw new Error(`无效的选项 ID: ${offerId}`);
+  }
+
+  return {
+    ...save,
+    context: {
+      academyId: offer.academyId,
+      pendingOpportunity: null,
+    },
+    story: {
+      ...save.story,
+      resolvedOpportunityIds: [...save.story.resolvedOpportunityIds, offerId],
+    },
+    ledger: [
+      ...save.ledger,
+      {
+        type: 'youth-opportunity-chosen',
+        date: save.world.currentDate,
+        week: save.context.pendingOpportunity.week,
+        offerId: offer.id,
+        academyId: offer.academyId,
+        academyName: offer.academyName,
+      },
+    ],
+  };
+}
