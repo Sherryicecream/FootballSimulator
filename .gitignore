@@ -1,2 +1,13 @@
 .worktrees/
 .superpowers/
+node_modules/
+dist/
+coverage/
+.vite/
+playwright-report/
+test-results/
+reports/balance/
+.env
+.env.*
+!.env.example
+*.log

@@ -1,0 +1,20 @@
+{
+  "name": "football-career-simulator",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=24.16.0"
+  },
+  "scripts": {
+    "test:architecture": "node --test tools/architecture/tests/repository-config.test.mjs tools/architecture/tests/workspace-structure.test.mjs",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "typecheck": "pnpm -r --if-present typecheck"
+  },
+  "devDependencies": {
+    "eslint": "10.8.0",
+    "prettier": "3.9.6",
+    "typescript": "7.0.2"
+  }
+}
