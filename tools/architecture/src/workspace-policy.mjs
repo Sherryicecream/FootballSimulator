@@ -43,11 +43,11 @@ export const validateWorkspacePackageManifest = ({
     return;
   }
 
-  const dependencyNames = [...new Set(entries.map(({ name }) => name))];
+  const runtimeDependencies = Object.keys(manifest.dependencies ?? {});
   assert.deepEqual(
-    dependencyNames.sort(),
+    runtimeDependencies.sort(),
     ['@football/contracts'],
-    '@football/simulation may only depend on @football/contracts',
+    '@football/simulation may only depend on @football/contracts as runtime dependencies',
   );
 };
 

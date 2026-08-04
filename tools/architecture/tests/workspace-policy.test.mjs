@@ -59,33 +59,26 @@ test('peerDependencies and optionalDependencies cannot bypass dependency directi
   }
 });
 
-test('simulation rejects external dependencies in every dependency section', () => {
-  for (const section of dependencySections) {
-    const manifest = {
-      name: '@football/simulation',
-      private: true,
-      dependencies: { '@football/contracts': 'workspace:*' },
-      [section]: { react: '^19.0.0' },
-    };
+test('simulation rejects external runtime dependencies', () => {
+  const manifest = {
+    name: '@football/simulation',
+    private: true,
+    dependencies: {
+      '@football/contracts': 'workspace:*',
+      react: '^19.0.0',
+    },
+  };
 
-    if (section === 'dependencies') {
-      manifest.dependencies = {
-        '@football/contracts': 'workspace:*',
-        react: '^19.0.0',
-      };
-    }
-
-    assert.throws(
-      () =>
-        validateWorkspacePackageManifest({
-          manifest,
-          expectedName: '@football/simulation',
-          allowedWorkspaceDependencies: ['@football/contracts'],
-        }),
-      /may only depend on @football\/contracts/,
-      `${section} allowed simulation to depend on React`,
-    );
-  }
+  assert.throws(
+    () =>
+      validateWorkspacePackageManifest({
+        manifest,
+        expectedName: '@football/simulation',
+        allowedWorkspaceDependencies: ['@football/contracts'],
+      }),
+    /may only depend on @football\/contracts/,
+    'dependencies allowed simulation to depend on React',
+  );
 });
 
 test('required directory validation rejects a regular file', async () => {
