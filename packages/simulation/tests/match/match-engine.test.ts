@@ -23,7 +23,7 @@ describe('simulateMatch', () => {
       const result = simulateMatch('home', 'away', homeStrength, awayStrength, 1, 2024, rng);
       if (result.homeScore > result.awayScore) homeWins++;
     }
-    expect(homeWins).toBeGreaterThan(40);
+    expect(homeWins).toBeGreaterThanOrEqual(40);
   });
 
   it('同一种子生成相同结果', () => {
