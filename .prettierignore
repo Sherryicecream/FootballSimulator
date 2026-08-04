@@ -1,0 +1,13 @@
+.worktrees/
+.superpowers/
+node_modules/
+dist/
+coverage/
+.vite/
+playwright-report/
+test-results/
+reports/balance/
+pnpm-lock.yaml
+spec.md
+docs/IDEA.md
+docs/superpowers/plans/

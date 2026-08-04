@@ -12,8 +12,9 @@ test('root package exposes architecture verification commands', async () => {
   assert.equal(rootPackage.engines.node, '>=24.16.0');
   assert.equal(
     rootPackage.scripts['test:architecture'],
-    'node --test tools/architecture/tests/repository-config.test.mjs tools/architecture/tests/workspace-structure.test.mjs',
+    'node --test tools/architecture/tests/repository-config.test.mjs tools/architecture/tests/workspace-policy.test.mjs tools/architecture/tests/workspace-structure.test.mjs',
   );
+  assert.equal(rootPackage.scripts.lint, 'eslint . --max-warnings=0');
 });
 
 test('workspace includes apps, packages, and tools', async () => {

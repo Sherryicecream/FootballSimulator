@@ -7,14 +7,16 @@
     "node": ">=24.16.0"
   },
   "scripts": {
-    "test:architecture": "node --test tools/architecture/tests/repository-config.test.mjs tools/architecture/tests/workspace-structure.test.mjs",
+    "test:architecture": "node --test tools/architecture/tests/repository-config.test.mjs tools/architecture/tests/workspace-policy.test.mjs tools/architecture/tests/workspace-structure.test.mjs",
     "format:check": "prettier --check .",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings=0",
     "typecheck": "pnpm -r --if-present typecheck"
   },
   "devDependencies": {
+    "@typescript/native": "npm:typescript@7.0.2",
     "eslint": "10.8.0",
     "prettier": "3.9.6",
-    "typescript": "7.0.2"
+    "typescript": "npm:@typescript/typescript6@6.0.2",
+    "typescript-eslint": "8.65.0"
   }
 }

@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
-import { access, readFile, readdir } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import test from 'node:test';
+
+import {
+  assertRequiredDirectories,
+  validateWorkspacePackageManifest,
+} from '../src/workspace-policy.mjs';
+
+const repositoryRoot = new URL('../../../', import.meta.url);
 
 const packages = {
   '@football/web': 'apps/web/package.json',
@@ -30,22 +37,11 @@ const readPackage = async (path) =>
 test('workspace package names and dependency directions are valid', async () => {
   for (const [expectedName, path] of Object.entries(packages)) {
     const manifest = await readPackage(path);
-    assert.equal(manifest.name, expectedName);
-    assert.equal(manifest.private, true);
-
-    const dependencies = {
-      ...manifest.dependencies,
-      ...manifest.devDependencies,
-    };
-    const workspaceDependencies = Object.keys(dependencies).filter((name) =>
-      name.startsWith('@football/'),
-    );
-
-    assert.deepEqual(
-      workspaceDependencies.sort(),
-      allowedWorkspaceDependencies[expectedName].toSorted(),
-      `${expectedName} has an invalid workspace dependency`,
-    );
+    validateWorkspacePackageManifest({
+      manifest,
+      expectedName,
+      allowedWorkspaceDependencies: allowedWorkspaceDependencies[expectedName],
+    });
   }
 });
 
@@ -91,21 +87,16 @@ const requiredDirectories = [
 ];
 
 test('required domain directories exist', async () => {
-  await Promise.all(
-    requiredDirectories.map((directory) =>
-      access(new URL(`../../../${directory}`, import.meta.url)),
-    ),
-  );
+  await assertRequiredDirectories(repositoryRoot, requiredDirectories);
 });
 
 const architectureRoots = ['apps', 'packages', 'tools'];
 const forbiddenDirectoryNames = new Set(['utils', 'helpers', 'common', 'shared']);
 
 const findForbiddenDirectories = async (directory) => {
-  const entries = await readdir(
-    new URL(`../../../${directory}`, import.meta.url),
-    { withFileTypes: true },
-  );
+  const entries = await readdir(new URL(`../../../${directory}`, import.meta.url), {
+    withFileTypes: true,
+  });
   const nestedDirectories = await Promise.all(
     entries
       .filter((entry) => entry.isDirectory())
