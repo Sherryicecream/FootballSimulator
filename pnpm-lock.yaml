@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@playwright/test':
+        specifier: 1.62.1
+        version: 1.62.1
       '@typescript/native':
         specifier: npm:typescript@7.0.2
         version: typescript@7.0.2
@@ -23,6 +26,9 @@ importers:
       typescript-eslint:
         specifier: 8.65.0
         version: 8.65.0(@typescript/typescript6@6.0.2)(eslint@10.8.0)
+      vitest:
+        specifier: 4.1.10
+        version: 4.1.10(jsdom@30.0.1)(vite@8.2.0)
 
   apps/local-ai:
     dependencies:
