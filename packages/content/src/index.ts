@@ -1,1 +1,1 @@
-export {};
+export { getRegionProfile, getKeyRegions, getAllRegions } from './regions';

@@ -1,0 +1,227 @@
+import type { RegionProfile } from '@football/contracts';
+
+/** 重点地区数据 */
+const keyRegions: RegionProfile[] = [
+  {
+    id: 'shanghai',
+    name: '上海',
+    group: '华东',
+    isKeyRegion: true,
+    description: '中国经济中心，足球职业化程度高，拥有完善的青训体系和先进的训练设施。',
+    youthFacilityLevel: 85,
+    scoutingCoverage: 80,
+    competitionIntensity: 75,
+    trainingStyle: '技术型',
+    costOfLiving: '高',
+    climate: '亚热带季风气候',
+    footballCulture: '职业化程度高，青训体系完善，崇明根宝基地等知名青训品牌。',
+  },
+  {
+    id: 'shandong',
+    name: '山东',
+    group: '华东',
+    isKeyRegion: true,
+    description: '中国足球传统强省，鲁能青训体系全国领先，培养了大批优秀球员。',
+    youthFacilityLevel: 80,
+    scoutingCoverage: 75,
+    competitionIntensity: 78,
+    trainingStyle: '纪律型',
+    costOfLiving: '中',
+    climate: '温带季风气候',
+    footballCulture: '足球传统深厚，鲁能足校全国闻名，注重身体素质和团队纪律。',
+  },
+  {
+    id: 'xinjiang',
+    name: '新疆',
+    group: '西北',
+    isKeyRegion: true,
+    description: '中国足球人才宝库，街头足球氛围浓厚，球员天赋出众但设施相对不足。',
+    youthFacilityLevel: 55,
+    scoutingCoverage: 40,
+    competitionIntensity: 60,
+    trainingStyle: '天赋型',
+    costOfLiving: '低',
+    climate: '大陆性气候',
+    footballCulture: '街头足球文化浓厚，球员天赋出众但青训设施和教练资源相对不足。',
+  },
+  {
+    id: 'guangdong',
+    name: '广东',
+    group: '华南',
+    isKeyRegion: true,
+    description: '南派足球代表，职业化程度高，民间足球基础雄厚，青训项目规模大。',
+    youthFacilityLevel: 78,
+    scoutingCoverage: 76,
+    competitionIntensity: 72,
+    trainingStyle: '技术型',
+    costOfLiving: '高',
+    climate: '亚热带季风气候',
+    footballCulture: '南派技术流风格，恒大足校等大型青训项目，民间足球活跃。',
+  },
+  {
+    id: 'sichuan-chongqing',
+    name: '四川/重庆',
+    group: '西南',
+    isKeyRegion: true,
+    description: '西南足球重镇，球迷文化浓厚，球市火爆，青训体系正在快速崛起。',
+    youthFacilityLevel: 65,
+    scoutingCoverage: 58,
+    competitionIntensity: 65,
+    trainingStyle: '灵活型',
+    costOfLiving: '中',
+    climate: '亚热带湿润气候',
+    footballCulture: '球迷文化浓厚，球市火爆，青训体系正在快速发展中。',
+  },
+  {
+    id: 'dongbei',
+    name: '东北',
+    group: '东北',
+    isKeyRegion: true,
+    description: '中国足球人才摇篮，大连、沈阳等足球城历史悠久，身体对抗优势明显。',
+    youthFacilityLevel: 72,
+    scoutingCoverage: 65,
+    competitionIntensity: 70,
+    trainingStyle: '硬朗型',
+    costOfLiving: '低',
+    climate: '温带大陆性气候',
+    footballCulture: '足球人才辈出，大连、沈阳等足球城底蕴深厚，注重身体对抗。',
+  },
+];
+
+/** 非重点地区数据 */
+const nonKeyRegions: RegionProfile[] = [
+  {
+    id: 'jiangsu-zhejiang',
+    name: '江浙地区',
+    group: '华东',
+    isKeyRegion: false,
+    description: '经济发达地区，足球基础设施完善，校园足球普及度高，民间联赛活跃。',
+    youthFacilityLevel: 60,
+    scoutingCoverage: 55,
+    competitionIntensity: 58,
+    trainingStyle: '技术型',
+    costOfLiving: '高',
+    climate: '亚热带季风气候',
+    footballCulture: '经济发达带动足球发展，校园足球和业余联赛活跃。',
+  },
+  {
+    id: 'fujian',
+    name: '福建',
+    group: '华南',
+    isKeyRegion: false,
+    description: '沿海地区，足球文化正在发展中，校园足球和业余联赛逐步兴起。',
+    youthFacilityLevel: 50,
+    scoutingCoverage: 45,
+    competitionIntensity: 48,
+    trainingStyle: '灵活型',
+    costOfLiving: '中',
+    climate: '亚热带季风气候',
+    footballCulture: '足球文化正在发展，青训体系有待完善，民间足球氛围渐浓。',
+  },
+  {
+    id: 'hubei-hunan',
+    name: '两湖地区',
+    group: '华中',
+    isKeyRegion: false,
+    description: '中部地区，高校足球氛围浓厚，基层青训体系正在逐步完善。',
+    youthFacilityLevel: 50,
+    scoutingCoverage: 48,
+    competitionIntensity: 52,
+    trainingStyle: '灵活型',
+    costOfLiving: '中',
+    climate: '亚热带湿润气候',
+    footballCulture: '高校足球氛围浓厚，基层青训体系正在逐步完善中。',
+  },
+  {
+    id: 'henan',
+    name: '河南',
+    group: '华中',
+    isKeyRegion: false,
+    description: '人口大省，足球基础薄弱但潜力巨大，校园足球推广力度加大。',
+    youthFacilityLevel: 52,
+    scoutingCoverage: 45,
+    competitionIntensity: 50,
+    trainingStyle: '纪律型',
+    costOfLiving: '低',
+    climate: '温带季风气候',
+    footballCulture: '人口基数大，足球潜力巨大，校园足球推广力度持续加大。',
+  },
+  {
+    id: 'beijing-tianjin',
+    name: '京津地区',
+    group: '华北',
+    isKeyRegion: false,
+    description: '首都及周边地区，职业足球资源丰富，青训体系较为完善。',
+    youthFacilityLevel: 70,
+    scoutingCoverage: 65,
+    competitionIntensity: 68,
+    trainingStyle: '硬朗型',
+    costOfLiving: '高',
+    climate: '温带大陆性气候',
+    footballCulture: '职业足球资源丰富，青训体系较为完善，校园足球普及度高。',
+  },
+  {
+    id: 'shaanxi-gansu',
+    name: '陕甘地区',
+    group: '西北',
+    isKeyRegion: false,
+    description: '西北地区，足球发展相对滞后，青训资源和教练人才匮乏。',
+    youthFacilityLevel: 40,
+    scoutingCoverage: 35,
+    competitionIntensity: 42,
+    trainingStyle: '纪律型',
+    costOfLiving: '低',
+    climate: '大陆性气候',
+    footballCulture: '足球发展相对滞后，青训资源和专业教练人才较为匮乏。',
+  },
+  {
+    id: 'yunnan-guizhou',
+    name: '云贵地区',
+    group: '西南',
+    isKeyRegion: false,
+    description: '西南高原地区，独特的地理环境适合体能训练，足球基础薄弱。',
+    youthFacilityLevel: 38,
+    scoutingCoverage: 35,
+    competitionIntensity: 40,
+    trainingStyle: '天赋型',
+    costOfLiving: '低',
+    climate: '亚热带高原气候',
+    footballCulture: '高原地理环境独特，适合体能训练，但足球基础较为薄弱。',
+  },
+  {
+    id: 'guangxi',
+    name: '广西',
+    group: '华南',
+    isKeyRegion: false,
+    description: '华南沿海地区，民间足球活跃，但青训体系尚未成型。',
+    youthFacilityLevel: 42,
+    scoutingCoverage: 38,
+    competitionIntensity: 44,
+    trainingStyle: '灵活型',
+    costOfLiving: '低',
+    climate: '亚热带季风气候',
+    footballCulture: '民间足球活跃，但青训体系尚未成型，发展空间较大。',
+  },
+];
+
+const allRegions: RegionProfile[] = [...keyRegions, ...nonKeyRegions];
+
+const regionMap = new Map<string, RegionProfile>();
+for (const region of allRegions) {
+  regionMap.set(region.id, region);
+}
+
+/** 通过 ID 获取地域档案 */
+export function getRegionProfile(id: string): RegionProfile | undefined {
+  return regionMap.get(id);
+}
+
+/** 获取所有重点地区 */
+export function getKeyRegions(): RegionProfile[] {
+  return [...keyRegions];
+}
+
+/** 获取所有地区 */
+export function getAllRegions(): RegionProfile[] {
+  return [...allRegions];
+}
