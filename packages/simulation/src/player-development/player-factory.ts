@@ -93,7 +93,12 @@ export function createPlayer(params: CreatePlayerParams, rng: SeededRandomSource
   const identity: PlayerIdentity = {
     name: params.name,
     hometown: params.hometown,
-    dateOfBirth: '2008-06-15',
+    dateOfBirth: (() => {
+      const birthYear = 2008;
+      const birthMonth = rng.nextInt(1, 12);
+      const birthDay = rng.nextInt(1, 28);
+      return `${birthYear}-${String(birthMonth).padStart(2, '0')}-${String(birthDay).padStart(2, '0')}`;
+    })(),
     primaryPosition: params.primaryPosition,
     secondaryPosition: params.secondaryPosition,
     preferredFoot: params.preferredFoot,

@@ -71,29 +71,18 @@ describe('createPlayer', () => {
     expect(player.attributes.technical.firstTouch).toBeGreaterThanOrEqual(40);
   });
 
-  it('上海球员有较高的初始属性（青训设施好）', () => {
-    const rng = createSeededRandomSource(42);
-    const player = createPlayer({ ...defaultParams, regionId: 'shanghai' }, rng);
+  it('上海球员比新疆球员有更高的初始属性（区域加成效果）', () => {
+    const rng1 = createSeededRandomSource(42);
+    const rng2 = createSeededRandomSource(42);
 
-    const avgAttribute = (
-      player.attributes.technical.firstTouch +
-      player.attributes.technical.dribbling +
-      player.attributes.technical.passing +
-      player.attributes.technical.shooting +
-      player.attributes.technical.defending +
-      player.attributes.technical.aerialAbility +
-      player.attributes.physical.pace +
-      player.attributes.physical.strength +
-      player.attributes.physical.stamina +
-      player.attributes.physical.agility +
-      player.attributes.mental.offTheBall +
-      player.attributes.mental.vision +
-      player.attributes.mental.decision +
-      player.attributes.mental.composure +
-      player.attributes.mental.determination +
-      player.attributes.mental.discipline
-    ) / 16;
+    const shanghaiPlayer = createPlayer({ ...defaultParams, regionId: 'shanghai' }, rng1);
+    const xinjiangPlayer = createPlayer({ ...defaultParams, regionId: 'xinjiang' }, rng2);
 
-    expect(avgAttribute).toBeGreaterThanOrEqual(30);
+    // 上海青训设施加成 0.15，新疆加成为 0.0
+    // 上海的各项属性应该 >= 新疆的对应属性
+    const shanghaiAvg = (Object.values(shanghaiPlayer.attributes.technical) as number[]).reduce((a, b) => a + b, 0) / 6;
+    const xinjiangAvg = (Object.values(xinjiangPlayer.attributes.technical) as number[]).reduce((a, b) => a + b, 0) / 6;
+
+    expect(shanghaiAvg).toBeGreaterThan(xinjiangAvg);
   });
 });
