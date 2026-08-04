@@ -5,6 +5,8 @@ import { CareerSaveSchema, type CareerSave } from '@football/contracts';
 function createMockSave(): CareerSave {
   return {
     schemaVersion: 1,
+    contentVersion: 'bootstrap-1',
+    careerId: 'career-test-001',
     player: {
       identity: {
         name: '张伟', hometown: '上海', dateOfBirth: '2008-06-15',
@@ -24,6 +26,12 @@ function createMockSave(): CareerSave {
       age: 16, careerStage: 'YOUTH', reputation: 20,
     },
     world: { currentDate: '2024-09-01', season: 2024 },
+    context: { academyId: null, pendingOpportunity: null },
+    relationships: { people: [], edges: [] },
+    story: { bootstrapOpportunityWeek: 3, resolvedOpportunityIds: [] },
+    ledger: [
+      { type: 'career-started', date: '2024-09-01', playerName: '张伟', age: 16, position: 'CENTER_BACK' },
+    ],
     randomState: { seed: 12345, sequencePosition: 0 },
   };
 }

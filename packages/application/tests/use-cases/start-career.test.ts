@@ -20,11 +20,21 @@ describe('createCareerSave', () => {
     const save = createCareerSave(defaultParams);
 
     expect(save.schemaVersion).toBe(1);
+    expect(save.contentVersion).toBe('bootstrap-1');
+    expect(save.careerId).toBe('career-0000a65d2c16');
     expect(save.player.identity.name).toBe('张伟');
     expect(save.player.age).toBe(16);
     expect(save.player.careerStage).toBe('YOUTH');
     expect(save.world.currentDate).toBe('2024-09-01');
     expect(save.world.season).toBe(2024);
+    expect(save.context.academyId).toBeNull();
+    expect(save.context.pendingOpportunity).toBeNull();
+    expect(save.relationships.people).toHaveLength(0);
+    expect(save.story.resolvedOpportunityIds).toHaveLength(0);
+    expect(save.story.bootstrapOpportunityWeek).toBeGreaterThanOrEqual(2);
+    expect(save.story.bootstrapOpportunityWeek).toBeLessThanOrEqual(4);
+    expect(save.ledger).toHaveLength(1);
+    expect(save.ledger[0]!.type).toBe('career-started');
     expect(save.randomState.seed).toBe(12345);
   });
 
@@ -40,6 +50,8 @@ describe('createCareerSave', () => {
 
     expect(save1.player.attributes).toEqual(save2.player.attributes);
     expect(save1.player.hiddenTraits).toEqual(save2.player.hiddenTraits);
+    expect(save1.careerId).toBe(save2.careerId);
+    expect(save1.story.bootstrapOpportunityWeek).toBe(save2.story.bootstrapOpportunityWeek);
   });
 
   it('不同种子生成不同属性', () => {
@@ -47,5 +59,12 @@ describe('createCareerSave', () => {
     const save2 = createCareerSave({ ...defaultParams, seed: 99 });
 
     expect(save1.player.attributes).not.toEqual(save2.player.attributes);
+  });
+
+  it('不同种子生成不同 careerId', () => {
+    const save1 = createCareerSave({ ...defaultParams, seed: 42 });
+    const save2 = createCareerSave({ ...defaultParams, seed: 99 });
+
+    expect(save1.careerId).not.toBe(save2.careerId);
   });
 });

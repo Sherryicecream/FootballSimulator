@@ -1,6 +1,7 @@
 import { type CareerSave, type Position } from '@football/contracts';
 import { createSeededRandomSource } from '@football/simulation';
 import { createPlayer } from '@football/simulation';
+import { createCalendar } from '@football/simulation';
 
 export interface StartCareerParams {
   playerName: string;
@@ -16,8 +17,18 @@ export interface StartCareerParams {
 }
 
 /**
+ * 根据种子生成确定性生涯 ID
+ */
+function generateCareerId(seed: number): string {
+  // 使用种子和固定前缀生成可复现的 ID
+  const hash = ((seed * 2654435761) ^ (seed * 2246822519)) >>> 0;
+  const hex = hash.toString(16).padStart(12, '0');
+  return `career-${hex}`;
+}
+
+/**
  * 创建新的生涯存档
- * 生成 16 岁球员并初始化世界状态
+ * 生成 16 岁球员并初始化世界状态、空上下文和首条账本
  */
 export function createCareerSave(params: StartCareerParams): CareerSave {
   const rng = createSeededRandomSource(params.seed);
@@ -37,13 +48,42 @@ export function createCareerSave(params: StartCareerParams): CareerSave {
     rng,
   );
 
+  const calendar = createCalendar('2024-09-01', 2024);
+
+  // 确定性的机会出现周（第二周到第四周之间）
+  const opportunityRng = createSeededRandomSource(params.seed + 999);
+  const bootstrapOpportunityWeek = opportunityRng.nextInt(2, 4);
+
   const save: CareerSave = {
     schemaVersion: 1,
+    contentVersion: 'bootstrap-1',
+    careerId: generateCareerId(params.seed),
     player,
     world: {
-      currentDate: '2024-09-01',
-      season: 2024,
+      currentDate: calendar.currentDate,
+      season: calendar.season,
     },
+    context: {
+      academyId: null,
+      pendingOpportunity: null,
+    },
+    relationships: {
+      people: [],
+      edges: [],
+    },
+    story: {
+      bootstrapOpportunityWeek,
+      resolvedOpportunityIds: [],
+    },
+    ledger: [
+      {
+        type: 'career-started',
+        date: calendar.currentDate,
+        playerName: params.playerName,
+        age: 16,
+        position: params.primaryPosition,
+      },
+    ],
     randomState: {
       seed: params.seed,
       sequencePosition: rng.getPosition(),
