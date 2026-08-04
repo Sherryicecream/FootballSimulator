@@ -9,3 +9,4 @@ export { createLeagueStandings, updateStandings, getStandings } from './world/le
 export { filterEligibleEvents, selectEvent } from './events/event-selector';
 export type { PlayerContext } from './events/event-selector';
 export { createPerson, updateRelationship, addMemory, getRelationshipLabel } from './relationships/relationship-manager';
+export { renderTemplate, generateEventNarrative } from './events/narrative';
