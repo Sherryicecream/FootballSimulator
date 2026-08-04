@@ -16,7 +16,7 @@
 - Core packages and apps use TypeScript.
 - Do not create generic `utils`, `helpers`, `common`, or `shared` directories.
 - The existing `docs/IDEA.md` and `spec.md` remain unchanged.
-- `.superpowers/`, dependencies, build output, local environment files, AI keys, and generated balance reports must not be committed.
+- `.worktrees/`, `.superpowers/`, dependencies, build output, local environment files, AI keys, and generated balance reports must not be committed.
 
 ---
 
@@ -24,7 +24,7 @@
 
 **Files:**
 
-- Create: `.gitignore`
+- Modify: `.gitignore`
 - Create: `.gitattributes`
 - Create: `package.json`
 - Create: `pnpm-workspace.yaml`
@@ -74,6 +74,7 @@ test('local and generated artifacts are ignored', async () => {
   const gitignore = await read('.gitignore');
 
   for (const ignored of [
+    '.worktrees/',
     '.superpowers/',
     'node_modules/',
     'dist/',
@@ -103,6 +104,7 @@ Expected: FAIL with `ENOENT` for `package.json` or another root configuration fi
 Create `.gitignore`:
 
 ```gitignore
+.worktrees/
 .superpowers/
 node_modules/
 dist/
