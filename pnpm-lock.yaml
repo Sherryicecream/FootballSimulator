@@ -35,6 +35,9 @@ importers:
       '@football/application':
         specifier: workspace:*
         version: link:../../packages/application
+      '@football/content':
+        specifier: workspace:*
+        version: link:../../packages/content
       '@football/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -69,6 +72,9 @@ importers:
       vite:
         specifier: 8.2.0
         version: 8.2.0
+      vitest:
+        specifier: ^4.1.10
+        version: 4.1.10(jsdom@30.0.1)(vite@8.2.0)
 
   packages/application:
     dependencies:
