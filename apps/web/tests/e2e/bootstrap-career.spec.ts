@@ -15,14 +15,13 @@ test.describe('Bootstrap Career Flow', () => {
     // Step 2: Youth opportunity
     await expect(page.getByText('STEP 2 OF 3')).toBeVisible();
     await expect(page.getByText('你的青训机会')).toBeVisible();
-    // Select first offer
     const offers = page.locator('button[aria-pressed]');
     await offers.first().click();
 
-    // Step 3: Career summary
-    await expect(page.getByText('STEP 3 OF 3')).toBeVisible();
+    // Step 3: Career dashboard
+    await expect(page.getByText('青训生涯')).toBeVisible();
     await expect(page.getByText('林岳')).toBeVisible();
-    await expect(page.getByText('生涯已启动')).toBeVisible();
+    await expect(page.getByText('推进一周')).toBeVisible();
   });
 
   test('same seed produces same result', async ({ page }) => {

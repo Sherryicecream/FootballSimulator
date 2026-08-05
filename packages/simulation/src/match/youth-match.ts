@@ -3,10 +3,18 @@ import type { SeededRandomSource } from '../randomness/seeded-random-source';
 import { simulateMatch } from './match-engine';
 
 const YOUTH_OPPONENTS = [
-  '华东青年联队', '华北青年联队', '华南青年联队',
-  '西南青年队', '西北青年队', '东北青年队',
-  '城市足球学院', '绿茵青年训练营', '阳光青少年队',
-  '未来之星联队', '麒麟青训营', '飞鹰青年队',
+  '华东青年联队',
+  '华北青年联队',
+  '华南青年联队',
+  '西南青年队',
+  '西北青年队',
+  '东北青年队',
+  '城市足球学院',
+  '绿茵青年训练营',
+  '阳光青少年队',
+  '未来之星联队',
+  '麒麟青训营',
+  '飞鹰青年队',
 ];
 
 /**
@@ -63,7 +71,12 @@ export function simulateYouthMatch(
   const isMidfielder = player.identity.primaryPosition === 'MIDFIELDER';
 
   const goals = played && (isForward || isWinger) ? (rng.next() < 0.3 ? rng.nextInt(1, 2) : 0) : 0;
-  const assists = played && (isForward || isWinger || isMidfielder) ? (rng.next() < 0.2 ? rng.nextInt(1, 2) : 0) : 0;
+  const assists =
+    played && (isForward || isWinger || isMidfielder)
+      ? rng.next() < 0.2
+        ? rng.nextInt(1, 2)
+        : 0
+      : 0;
 
   const performanceSummary = played
     ? rating >= 8

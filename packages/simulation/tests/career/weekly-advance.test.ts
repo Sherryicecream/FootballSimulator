@@ -9,10 +9,47 @@ function createMockSave(seed: number = 42): CareerSave {
     contentVersion: 'bootstrap-1',
     careerId: 'test-career',
     player: {
-      identity: { name: '测试', hometown: '上海', homelandId: 'shanghai', dateOfBirth: '2008-01-01', primaryPosition: 'MIDFIELDER', preferredFoot: 'RIGHT', weakFootLevel: 30, growthBackground: 'academy', personalityTendency: 'composed' },
-      attributes: { technical: { firstTouch: 50, dribbling: 50, passing: 50, shooting: 40, defending: 30, aerialAbility: 30 }, physical: { pace: 50, strength: 50, stamina: 50, agility: 50 }, mental: { offTheBall: 50, vision: 50, decision: 50, composure: 50, determination: 50, discipline: 50 } },
-      hiddenTraits: { potential: 80, stability: 60, professionalism: 70, pressureResistance: 60, adaptability: 50, injuryProneness: 30 },
-      age: 16, careerStage: 'YOUTH', reputation: 20,
+      identity: {
+        name: '测试',
+        hometown: '上海',
+        homelandId: 'shanghai',
+        dateOfBirth: '2008-01-01',
+        primaryPosition: 'MIDFIELDER',
+        preferredFoot: 'RIGHT',
+        weakFootLevel: 30,
+        growthBackground: 'academy',
+        personalityTendency: 'composed',
+      },
+      attributes: {
+        technical: {
+          firstTouch: 50,
+          dribbling: 50,
+          passing: 50,
+          shooting: 40,
+          defending: 30,
+          aerialAbility: 30,
+        },
+        physical: { pace: 50, strength: 50, stamina: 50, agility: 50 },
+        mental: {
+          offTheBall: 50,
+          vision: 50,
+          decision: 50,
+          composure: 50,
+          determination: 50,
+          discipline: 50,
+        },
+      },
+      hiddenTraits: {
+        potential: 80,
+        stability: 60,
+        professionalism: 70,
+        pressureResistance: 60,
+        adaptability: 50,
+        injuryProneness: 30,
+      },
+      age: 16,
+      careerStage: 'YOUTH',
+      reputation: 20,
     },
     world: { currentDate: '2024-09-08', season: 2024, weekNumber: 2 },
     context: {
@@ -23,7 +60,15 @@ function createMockSave(seed: number = 42): CareerSave {
     },
     relationships: { persons: [], activeRelations: [] },
     story: { bootstrapOpportunityWeek: 3, resolvedOpportunityIds: [] },
-    ledger: [{ type: 'career-started', date: '2024-09-01', playerName: '测试', age: 16, position: 'MIDFIELDER' }],
+    ledger: [
+      {
+        type: 'career-started',
+        date: '2024-09-01',
+        playerName: '测试',
+        age: 16,
+        position: 'MIDFIELDER',
+      },
+    ],
     randomState: { seed, sequencePosition: 0 },
   };
 }
@@ -70,7 +115,9 @@ describe('advanceCareerWeek', () => {
     const result1 = advanceCareerWeek(save1, rng1);
     const result2 = advanceCareerWeek(save2, rng2);
     // Very unlikely to be exactly the same
-    const same = result1.activity === result2.activity && result1.matchResult?.opponent === result2.matchResult?.opponent;
+    const same =
+      result1.activity === result2.activity &&
+      result1.matchResult?.opponent === result2.matchResult?.opponent;
     expect(same === false || same === true).toBe(true);
   });
 });

@@ -115,7 +115,11 @@ export function EventChoicePanel({ event, onSubmit }: EventChoicePanelProps) {
                       fontWeight: 'bold',
                     }}
                   >
-                    {choice.riskLabel === 'low' ? '低风险' : choice.riskLabel === 'medium' ? '中风险' : '高风险'}
+                    {choice.riskLabel === 'low'
+                      ? '低风险'
+                      : choice.riskLabel === 'medium'
+                        ? '中风险'
+                        : '高风险'}
                   </span>
                 </div>
                 {isChosen && (

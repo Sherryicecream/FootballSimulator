@@ -1,4 +1,9 @@
-import type { CareerSave, WeeklyAdvanceResult, PlayerState, StateChange } from '@football/contracts';
+import type {
+  CareerSave,
+  WeeklyAdvanceResult,
+  PlayerState,
+  StateChange,
+} from '@football/contracts';
 import type { SeededRandomSource } from '../randomness/seeded-random-source';
 import { advanceOneWeek } from './calendar';
 import { generateWeekActivity } from './week-activities';
@@ -9,10 +14,7 @@ import { simulateYouthMatch } from '../match/youth-match';
  * 推进一周
  * 整合：日历推进 → 活动生成 → 训练/比赛模拟 → 状态更新
  */
-export function advanceCareerWeek(
-  save: CareerSave,
-  rng: SeededRandomSource,
-): WeeklyAdvanceResult {
+export function advanceCareerWeek(save: CareerSave, rng: SeededRandomSource): WeeklyAdvanceResult {
   const advanced = advanceOneWeek({
     currentDate: save.world.currentDate,
     season: save.world.season,
@@ -44,7 +46,12 @@ export function advanceCareerWeek(
   if (trainingSummary) {
     playerState = applyDelta(playerState, stateChanges, 'fitness', trainingSummary.fitnessChange);
     playerState = applyDelta(playerState, stateChanges, 'morale', trainingSummary.moraleChange);
-    playerState = applyDelta(playerState, stateChanges, 'coachTrust', trainingSummary.coachTrustChange);
+    playerState = applyDelta(
+      playerState,
+      stateChanges,
+      'coachTrust',
+      trainingSummary.coachTrustChange,
+    );
   }
 
   if (matchResult) {

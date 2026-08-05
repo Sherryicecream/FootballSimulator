@@ -5,10 +5,12 @@ import { CareerCreationForm } from '../career-creation/CareerCreationForm';
 import { YouthOpportunityPanel } from '../event-choice/YouthOpportunityPanel';
 import { EventChoicePanel } from '../event-choice/EventChoicePanel';
 import { CareerDashboard } from '../career-dashboard/CareerDashboard';
-import { WeeklyReport } from '../career-dashboard/WeeklyReport';
-import { createAdvanceToDecision, createSubmitYouthChoice, createSubmitEventChoice } from '@football/application';
+import {
+  createAdvanceToDecision,
+  createSubmitYouthChoice,
+  createSubmitEventChoice,
+} from '@football/application';
 import { createLocalStorageSavePort } from '../persistence/local-storage-save';
-import type { WeeklyAdvanceResult } from '@football/contracts';
 import './app.css';
 
 type FlowStep = 'creation' | 'opportunity' | 'dashboard' | 'event-choice' | 'weekly-report';
@@ -24,7 +26,6 @@ export function App() {
   const [save, setSave] = useState<CareerSave | null>(null);
   const [loading, setLoading] = useState(false);
   const [pendingEvent, setPendingEvent] = useState<EventInstance | null>(null);
-  const [weeklyResult, setWeeklyResult] = useState<WeeklyAdvanceResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
 
@@ -34,7 +35,8 @@ export function App() {
       try {
         const slots = await savePort.list();
         if (slots.length > 0) {
-          const saved = await savePort.load(slots[0]);
+          const slotId = slots[0]!;
+          const saved = await savePort.load(slotId);
           if (saved) {
             setSave(saved);
             setStep('dashboard');
@@ -107,7 +109,6 @@ export function App() {
     }
     setSave(null);
     setPendingEvent(null);
-    setWeeklyResult(null);
     setError(null);
     setStep('creation');
   };

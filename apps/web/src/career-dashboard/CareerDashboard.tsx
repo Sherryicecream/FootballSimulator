@@ -1,6 +1,5 @@
-import type { CareerSave, WeeklyAdvanceResult } from '@football/contracts';
+import type { CareerSave } from '@football/contracts';
 import { createAdvanceCareerWeek } from '@football/application';
-import { WeeklyReport } from './WeeklyReport';
 
 interface CareerDashboardProps {
   save: CareerSave;
@@ -48,7 +47,8 @@ export function CareerDashboard({ save, onSaveUpdate, onNewCareer }: CareerDashb
   };
 
   const { player, world, context } = save;
-  const positionLabel = POSITION_LABELS[player.identity.primaryPosition] ?? player.identity.primaryPosition;
+  const positionLabel =
+    POSITION_LABELS[player.identity.primaryPosition] ?? player.identity.primaryPosition;
   const allAttrs: Record<string, number> = {
     ...player.attributes.technical,
     ...player.attributes.physical,
@@ -56,7 +56,8 @@ export function CareerDashboard({ save, onSaveUpdate, onNewCareer }: CareerDashb
   };
   const { playerState } = context;
 
-  const academyName = save.ledger.find((e) => e.type === 'youth-opportunity-chosen')?.academyName ?? '待定';
+  const academyName =
+    save.ledger.find((e) => e.type === 'youth-opportunity-chosen')?.academyName ?? '待定';
 
   return (
     <div style={{ fontFamily: 'var(--font-serif)' }}>

@@ -1,4 +1,9 @@
-import type { PlayerCareer, PlayerState, TrainingSummary, AttributeChange } from '@football/contracts';
+import type {
+  PlayerCareer,
+  PlayerState,
+  TrainingSummary,
+  AttributeChange,
+} from '@football/contracts';
 import type { SeededRandomSource } from '../randomness/seeded-random-source';
 
 const TRAINING_FOCUS: Record<string, string[]> = {
@@ -11,20 +16,20 @@ const TRAINING_FOCUS: Record<string, string[]> = {
 };
 
 const ATTR_MAP: Record<string, string[]> = {
-  '防守': ['defending', 'discipline'],
-  '空中': ['aerialAbility', 'strength'],
-  '力量': ['strength', 'aerialAbility'],
-  '速度': ['pace', 'agility'],
-  '耐力': ['stamina', 'determination'],
-  '传球': ['passing', 'vision'],
-  '视野': ['vision', 'decision'],
-  '技术': ['firstTouch', 'dribbling'],
-  '盘带': ['dribbling', 'agility'],
-  '射门': ['shooting', 'composure'],
-  '跑位': ['offTheBall', 'decision'],
-  '战术': ['decision', 'discipline'],
-  '体能': ['stamina', 'pace'],
-  '灵活': ['agility', 'pace'],
+  防守: ['defending', 'discipline'],
+  空中: ['aerialAbility', 'strength'],
+  力量: ['strength', 'aerialAbility'],
+  速度: ['pace', 'agility'],
+  耐力: ['stamina', 'determination'],
+  传球: ['passing', 'vision'],
+  视野: ['vision', 'decision'],
+  技术: ['firstTouch', 'dribbling'],
+  盘带: ['dribbling', 'agility'],
+  射门: ['shooting', 'composure'],
+  跑位: ['offTheBall', 'decision'],
+  战术: ['decision', 'discipline'],
+  体能: ['stamina', 'pace'],
+  灵活: ['agility', 'pace'],
 };
 
 /**

@@ -1,8 +1,7 @@
-import type { CareerSave, WeeklyAdvanceResult } from '@football/contracts';
+import type { WeeklyAdvanceResult } from '@football/contracts';
 
 interface WeeklyReportProps {
   result: WeeklyAdvanceResult;
-  save: CareerSave;
   onContinue: () => void;
 }
 
@@ -13,7 +12,7 @@ const ACTIVITY_LABELS: Record<string, { icon: string; label: string }> = {
   quiet: { icon: '☕', label: '平淡周' },
 };
 
-export function WeeklyReport({ result, save, onContinue }: WeeklyReportProps) {
+export function WeeklyReport({ result, onContinue }: WeeklyReportProps) {
   const activity = ACTIVITY_LABELS[result.activity] ?? { icon: '📅', label: '普通周' };
 
   return (
@@ -203,9 +202,7 @@ export function WeeklyReport({ result, save, onContinue }: WeeklyReportProps) {
           >
             📊 状态变化
           </div>
-          <div
-            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-sm)' }}
-          >
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-sm)' }}>
             {result.stateChanges.map((c, i) => (
               <div
                 key={i}
@@ -215,9 +212,7 @@ export function WeeklyReport({ result, save, onContinue }: WeeklyReportProps) {
                 <strong
                   style={{
                     color:
-                      c.newValue > c.oldValue
-                        ? 'var(--color-risk-low)'
-                        : 'var(--color-risk-high)',
+                      c.newValue > c.oldValue ? 'var(--color-risk-low)' : 'var(--color-risk-high)',
                   }}
                 >
                   {c.newValue}

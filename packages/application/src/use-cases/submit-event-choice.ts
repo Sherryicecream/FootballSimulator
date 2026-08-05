@@ -23,9 +23,9 @@ export function createSubmitEventChoice() {
     let playerState = { ...save.context.playerState };
     const effects = choice.effects || {};
     for (const [key, value] of Object.entries(effects)) {
-      if (key in playerState) {
-        const oldVal = (playerState as Record<string, number>)[key];
-        (playerState as Record<string, number>)[key] = Math.min(100, Math.max(0, oldVal + value));
+      if (key === 'fitness' || key === 'morale' || key === 'coachTrust' || key === 'fatigue') {
+        const oldVal = playerState[key];
+        playerState = { ...playerState, [key]: Math.min(100, Math.max(0, oldVal + value)) };
       }
     }
 

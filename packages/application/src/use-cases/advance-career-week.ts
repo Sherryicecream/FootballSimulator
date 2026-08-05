@@ -1,4 +1,4 @@
-import { type CareerSave, type CareerLedgerEntry } from '@football/contracts';
+import { type CareerSave, type CareerLedgerEntry, type PlayerCareer } from '@football/contracts';
 import { advanceCareerWeek, createSeededRandomSource } from '@football/simulation';
 
 /**
@@ -79,11 +79,7 @@ export function createAdvanceCareerWeek() {
         playerState: {
           fitness: clamp(findState('fitness') ?? save.context.playerState.fitness, 0, 100),
           morale: clamp(findState('morale') ?? save.context.playerState.morale, 0, 100),
-          coachTrust: clamp(
-            findState('coachTrust') ?? save.context.playerState.coachTrust,
-            0,
-            100,
-          ),
+          coachTrust: clamp(findState('coachTrust') ?? save.context.playerState.coachTrust, 0, 100),
           fatigue: clamp(findState('fatigue') ?? save.context.playerState.fatigue, 0, 100),
           teamStatus: save.context.playerState.teamStatus,
         },
@@ -99,9 +95,9 @@ export function createAdvanceCareerWeek() {
 }
 
 function applyAttributeChange(
-  player: any,
+  player: PlayerCareer,
   change: { attribute: string; newValue: number },
-): any {
+): PlayerCareer {
   const { technical, physical, mental } = player.attributes;
   if (change.attribute in technical) {
     return {
