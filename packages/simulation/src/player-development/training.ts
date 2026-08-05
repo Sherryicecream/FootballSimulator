@@ -72,7 +72,7 @@ export function simulateTraining(
 
   const fitnessChange = -rng.nextInt(1, 4);
   const moraleChange = rng.nextInt(-2, 3);
-  const coachTrustChange = rng.nextInt(0, 2);
+  const coachTrustChange = rng.nextInt(0, 1);
 
   return { focus, attributeChanges, fitnessChange, moraleChange, coachTrustChange };
 }
