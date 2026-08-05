@@ -8,6 +8,7 @@
     "@football/application": "workspace:*",
     "@football/content": "workspace:*",
     "@football/contracts": "workspace:*",
+    "@football/simulation": "workspace:*",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },

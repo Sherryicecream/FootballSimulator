@@ -47,6 +47,9 @@ importers:
       '@football/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@football/simulation':
+        specifier: workspace:*
+        version: link:../../packages/simulation
       react:
         specifier: 19.2.8
         version: 19.2.8

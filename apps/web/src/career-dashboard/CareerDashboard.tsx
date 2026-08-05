@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { CareerSave, EventDefinition } from '@football/contracts';
 import { createAdvanceCareerWeek, createBatchAdvanceWeeks } from '@football/application';
 import type { BatchAdvanceResult } from '@football/application';
+import { getRelationshipLabel } from '@football/simulation';
 
 interface CareerDashboardProps {
   save: CareerSave;
@@ -285,6 +286,105 @@ export function CareerDashboard({ save, onSaveUpdate, onNewCareer, events }: Car
           </div>
         </div>
       </div>
+
+      {/* Relationships */}
+      {save.relationships.persons.length > 0 && (
+        <div
+          style={{
+            background: 'var(--color-card)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-lg)',
+            padding: 'var(--space-lg)',
+            marginBottom: 'var(--space-lg)',
+          }}
+        >
+          <div
+            style={{
+              fontSize: 'var(--text-lg)',
+              fontWeight: 'bold',
+              color: 'var(--color-ink)',
+              marginBottom: 'var(--space-md)',
+            }}
+          >
+            人际关系
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+            {save.relationships.persons.map((person) => {
+              const avgRel =
+                (person.relationship.trust +
+                  person.relationship.respect +
+                  person.relationship.closeness) /
+                3;
+              const relLabel = getRelationshipLabel(avgRel);
+              const roleLabel = person.role === 'coach' ? '教练' : '队友';
+              const avatarChar = person.name.charAt(0);
+              const recentMemories = person.memories.slice(-3);
+
+              return (
+                <div
+                  key={person.id}
+                  style={{
+                    border: '1px solid var(--color-border-light)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: 'var(--space-md)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-sm)' }}>
+                    {/* Avatar placeholder */}
+                    <div
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        background: person.role === 'coach' ? '#8e44ad' : '#2980b9',
+                        color: '#fff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 'var(--text-lg)',
+                        fontWeight: 'bold',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {avatarChar}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 'var(--text-base)', fontWeight: 'bold', color: 'var(--color-ink)' }}>
+                        {person.name}
+                      </div>
+                      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
+                        {roleLabel} · {relLabel}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Relationship bars */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: 'var(--space-sm)' }}>
+                    <StateBar label="信任" value={person.relationship.trust} color="#27ae60" />
+                    <StateBar label="尊重" value={person.relationship.respect} color="#2980b9" />
+                    <StateBar label="亲近" value={person.relationship.closeness} color="#e67e22" />
+                  </div>
+
+                  {/* Recent memories */}
+                  {recentMemories.length > 0 && (
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
+                      <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>最近记忆</div>
+                      {recentMemories.map((mem, i) => (
+                        <div key={i} style={{ padding: '1px 0', display: 'flex', gap: 'var(--space-xs)' }}>
+                          <span>
+                            {mem.emotionalImpact === 'positive' ? '😊' : mem.emotionalImpact === 'negative' ? '😞' : '😐'}
+                          </span>
+                          <span>{mem.summary}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Attributes */}
       <div

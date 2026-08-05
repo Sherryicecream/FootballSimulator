@@ -1,5 +1,5 @@
 import { type CareerSave, type CareerLedgerEntry } from '@football/contracts';
-import { addMemory, renderTemplate, generateEventNarrative } from '@football/simulation';
+import { addMemory, generateEventNarrative } from '@football/simulation';
 
 /**
  * Creates a submit event choice use case factory.
