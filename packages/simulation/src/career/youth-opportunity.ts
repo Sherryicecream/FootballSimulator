@@ -234,6 +234,8 @@ export function chooseYouthOpportunity(save: CareerSave, offerId: string): Caree
     context: {
       academyId: offer.academyId,
       pendingOpportunity: null,
+      playerState: save.context.playerState,
+      pendingEvent: null,
     },
     story: {
       ...save.story,

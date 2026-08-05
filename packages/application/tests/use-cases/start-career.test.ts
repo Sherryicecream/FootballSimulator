@@ -30,7 +30,7 @@ describe('createCareerSave', () => {
     expect(save.world.season).toBe(2024);
     expect(save.context.academyId).toBeNull();
     expect(save.context.pendingOpportunity).toBeNull();
-    expect(save.relationships.people).toHaveLength(0);
+    expect(save.relationships.persons).toHaveLength(0);
     expect(save.story.resolvedOpportunityIds).toHaveLength(0);
     expect(save.story.bootstrapOpportunityWeek).toBeGreaterThanOrEqual(2);
     expect(save.story.bootstrapOpportunityWeek).toBeLessThanOrEqual(4);

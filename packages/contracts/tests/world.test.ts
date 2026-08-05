@@ -6,9 +6,11 @@ describe('WorldState', () => {
     const valid = WorldStateSchema.parse({
       currentDate: '2024-09-01',
       season: 2024,
+      weekNumber: 1,
     });
     expect(valid.currentDate).toBe('2024-09-01');
     expect(valid.season).toBe(2024);
+    expect(valid.weekNumber).toBe(1);
   });
 
   it('rejects missing season', () => {

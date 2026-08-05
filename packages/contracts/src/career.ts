@@ -3,6 +3,7 @@ import { PlayerIdentitySchema, PlayerAttributesSchema, HiddenTraitsSchema } from
 import { CareerStageSchema } from './primitives';
 import { WorldStateSchema } from './world';
 import { RandomStateSchema } from './random';
+import { EventChoiceSchema } from './event';
 
 /**
  * 青年机会：球员在青训阶段面临的首个职业选择
@@ -25,6 +26,111 @@ export const YouthOpportunitySchema = z.object({
 });
 
 export type YouthOpportunity = z.infer<typeof YouthOpportunitySchema>;
+
+/**
+ * 球员运行时状态
+ */
+export const PlayerStateSchema = z.object({
+  fitness: z.number().int().min(0).max(100),
+  morale: z.number().int().min(0).max(100),
+  coachTrust: z.number().int().min(0).max(100),
+  fatigue: z.number().int().min(0).max(100),
+  teamStatus: z.enum(['fringe', 'rotation', 'regular', 'key']),
+});
+
+export type PlayerState = z.infer<typeof PlayerStateSchema>;
+
+/**
+ * 属性变化记录
+ */
+export const AttributeChangeSchema = z.object({
+  attribute: z.string(),
+  oldValue: z.number().int().min(0).max(100),
+  newValue: z.number().int().min(0).max(100),
+});
+
+export type AttributeChange = z.infer<typeof AttributeChangeSchema>;
+
+/**
+ * 状态变化记录
+ */
+export const StateChangeSchema = z.object({
+  key: z.string(),
+  oldValue: z.number().int().min(0).max(100),
+  newValue: z.number().int().min(0).max(100),
+});
+
+export type StateChange = z.infer<typeof StateChangeSchema>;
+
+/**
+ * 事件实例：运行时的事件快照
+ */
+export const EventInstanceSchema = z.object({
+  eventId: z.string().min(1).max(40),
+  title: z.string().min(1).max(100),
+  description: z.string().min(1).max(500),
+  choices: z.array(EventChoiceSchema).min(1).max(4),
+  resolvedChoiceId: z.string().nullable(),
+});
+
+export type EventInstance = z.infer<typeof EventInstanceSchema>;
+
+/**
+ * 训练摘要
+ */
+export const TrainingSummarySchema = z.object({
+  focus: z.string().min(1).max(30),
+  attributeChanges: z.array(AttributeChangeSchema),
+  fitnessChange: z.number().int(),
+  moraleChange: z.number().int(),
+  coachTrustChange: z.number().int(),
+});
+
+export type TrainingSummary = z.infer<typeof TrainingSummarySchema>;
+
+/**
+ * 青训比赛结果
+ */
+export const YouthMatchResultSchema = z.object({
+  opponent: z.string().min(1).max(50),
+  isHome: z.boolean(),
+  homeScore: z.number().int().min(0).max(50),
+  awayScore: z.number().int().min(0).max(50),
+  played: z.boolean(),
+  minutesPlayed: z.number().int().min(0).max(90),
+  rating: z.number().int().min(1).max(10),
+  performanceSummary: z.string().min(1).max(200),
+  goals: z.number().int().min(0),
+  assists: z.number().int().min(0),
+  fitnessChange: z.number().int(),
+  moraleChange: z.number().int(),
+  coachTrustChange: z.number().int(),
+});
+
+export type YouthMatchResult = z.infer<typeof YouthMatchResultSchema>;
+
+/**
+ * 周活动类型
+ */
+export const WeekActivitySchema = z.enum(['training', 'match', 'event', 'quiet']);
+export type WeekActivity = z.infer<typeof WeekActivitySchema>;
+
+/**
+ * 每周推进结果
+ */
+export const WeeklyAdvanceResultSchema = z.object({
+  date: z.string(),
+  week: z.number().int().min(1).max(52),
+  season: z.number().int(),
+  activity: WeekActivitySchema,
+  trainingSummary: TrainingSummarySchema.nullable(),
+  matchResult: YouthMatchResultSchema.nullable(),
+  event: EventInstanceSchema.nullable(),
+  stateChanges: z.array(StateChangeSchema),
+  hasPendingChoice: z.boolean(),
+});
+
+export type WeeklyAdvanceResult = z.infer<typeof WeeklyAdvanceResultSchema>;
 
 /**
  * 生涯账本条目的联合类型
@@ -52,10 +158,61 @@ export const YouthOpportunityChosenEntrySchema = z.object({
   academyName: z.string(),
 });
 
+export const TrainingWeekEntrySchema = z.object({
+  type: z.literal('training-week'),
+  date: z.string(),
+  week: z.number().int(),
+  focus: z.string().min(1).max(30),
+  attributeChanges: z.array(AttributeChangeSchema),
+});
+
+export const MatchWeekEntrySchema = z.object({
+  type: z.literal('match-week'),
+  date: z.string(),
+  week: z.number().int(),
+  opponent: z.string().min(1).max(50),
+  isHome: z.boolean(),
+  homeScore: z.number().int().min(0).max(50),
+  awayScore: z.number().int().min(0).max(50),
+  played: z.boolean(),
+  minutesPlayed: z.number().int().min(0).max(90),
+  rating: z.number().int().min(1).max(10),
+  goals: z.number().int().min(0),
+  assists: z.number().int().min(0),
+});
+
+export const EventWeekEntrySchema = z.object({
+  type: z.literal('event-week'),
+  date: z.string(),
+  week: z.number().int(),
+  eventId: z.string(),
+  title: z.string(),
+  choiceId: z.string().nullable(),
+});
+
+export const AttributeChangeEntrySchema = z.object({
+  type: z.literal('attribute-change'),
+  date: z.string(),
+  week: z.number().int(),
+  changes: z.array(AttributeChangeSchema),
+});
+
+export const StateChangeEntrySchema = z.object({
+  type: z.literal('state-change'),
+  date: z.string(),
+  week: z.number().int(),
+  changes: z.array(StateChangeSchema),
+});
+
 export const CareerLedgerEntrySchema = z.discriminatedUnion('type', [
   CareerStartedEntrySchema,
   WeekAdvancedEntrySchema,
   YouthOpportunityChosenEntrySchema,
+  TrainingWeekEntrySchema,
+  MatchWeekEntrySchema,
+  EventWeekEntrySchema,
+  AttributeChangeEntrySchema,
+  StateChangeEntrySchema,
 ]);
 
 export type CareerLedgerEntry = z.infer<typeof CareerLedgerEntrySchema>;
@@ -66,6 +223,8 @@ export type CareerLedgerEntry = z.infer<typeof CareerLedgerEntrySchema>;
 export const CareerContextSchema = z.object({
   academyId: z.string().nullable(),
   pendingOpportunity: YouthOpportunitySchema.nullable(),
+  playerState: PlayerStateSchema,
+  pendingEvent: EventInstanceSchema.nullable(),
 });
 
 export type CareerContext = z.infer<typeof CareerContextSchema>;
@@ -79,11 +238,11 @@ const StoryStateSchema = z.object({
 });
 
 /**
- * 关系图（内部使用，§23）- 简化的初始版本
+ * 关系图（内部使用，§23）
  */
 const RelationshipGraphSchema = z.object({
-  people: z.array(z.unknown()),
-  edges: z.array(z.unknown()),
+  persons: z.array(z.unknown()),
+  activeRelations: z.array(z.unknown()),
 });
 
 // PlayerCareer: 身份、属性、隐藏特质、年龄、生涯阶段、声望 (§23)

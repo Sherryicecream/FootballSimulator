@@ -43,6 +43,7 @@ export function createAdvanceToDecision(content: BootstrapContentPort) {
           world: {
             currentDate: advanced.currentDate,
             season: advanced.season,
+            weekNumber: advanced.weekNumber,
           },
           context: {
             ...save.context,
@@ -75,6 +76,7 @@ export function createAdvanceToDecision(content: BootstrapContentPort) {
         world: {
           currentDate: advanced.currentDate,
           season: advanced.season,
+          weekNumber: advanced.weekNumber,
         },
         ledger: [
           ...save.ledger,

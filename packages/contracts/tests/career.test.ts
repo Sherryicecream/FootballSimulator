@@ -150,9 +150,14 @@ describe('CareerSave', () => {
       careerStage: 'YOUTH',
       reputation: 20,
     },
-    world: { currentDate: '2024-09-01', season: 2024 },
-    context: { academyId: null, pendingOpportunity: null },
-    relationships: { people: [], edges: [] },
+    world: { currentDate: '2024-09-01', season: 2024, weekNumber: 1 },
+    context: {
+      academyId: null,
+      pendingOpportunity: null,
+      playerState: { fitness: 70, morale: 60, coachTrust: 35, fatigue: 5, teamStatus: 'fringe' },
+      pendingEvent: null,
+    },
+    relationships: { persons: [], activeRelations: [] },
     story: { bootstrapOpportunityWeek: 3, resolvedOpportunityIds: [] },
     ledger: [
       {
@@ -173,7 +178,7 @@ describe('CareerSave', () => {
     expect(valid.careerId).toBe('career-abc123def456');
     expect(valid.player.identity.name).toBe('张伟');
     expect(valid.context.academyId).toBeNull();
-    expect(valid.relationships.people).toHaveLength(0);
+    expect(valid.relationships.persons).toHaveLength(0);
     expect(valid.ledger).toHaveLength(1);
   });
 
@@ -217,6 +222,8 @@ describe('CareerSave', () => {
             },
           ],
         },
+        playerState: { fitness: 70, morale: 60, coachTrust: 35, fatigue: 5, teamStatus: 'fringe' },
+        pendingEvent: null,
       },
     };
     const valid = CareerSaveSchema.parse(withOpportunity);

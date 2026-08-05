@@ -51,9 +51,14 @@ function createMockSave(): CareerSave {
       careerStage: 'YOUTH',
       reputation: 20,
     },
-    world: { currentDate: '2024-09-01', season: 2024 },
-    context: { academyId: null, pendingOpportunity: null },
-    relationships: { people: [], edges: [] },
+    world: { currentDate: '2024-09-01', season: 2024, weekNumber: 1 },
+    context: {
+      academyId: null,
+      pendingOpportunity: null,
+      playerState: { fitness: 70, morale: 60, coachTrust: 35, fatigue: 5, teamStatus: 'fringe' },
+      pendingEvent: null,
+    },
+    relationships: { persons: [], activeRelations: [] },
     story: { bootstrapOpportunityWeek: 3, resolvedOpportunityIds: [] },
     ledger: [
       {

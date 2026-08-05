@@ -1,4 +1,4 @@
-import { type CareerSave, type Position } from '@football/contracts';
+import { type CareerSave, type Position, type PlayerState } from '@football/contracts';
 import { createSeededRandomSource } from '@football/simulation';
 import { createPlayer } from '@football/simulation';
 import { createCalendar } from '@football/simulation';
@@ -60,6 +60,14 @@ export function createCareerSave(params: StartCareerParams): CareerSave {
   const opportunityRng = createSeededRandomSource(params.seed + 999);
   const bootstrapOpportunityWeek = opportunityRng.nextInt(2, 4);
 
+  const initialPlayerState: PlayerState = {
+    fitness: 70,
+    morale: 60,
+    coachTrust: 35,
+    fatigue: 5,
+    teamStatus: 'fringe',
+  };
+
   const save: CareerSave = {
     schemaVersion: 1,
     contentVersion: 'bootstrap-1',
@@ -68,14 +76,17 @@ export function createCareerSave(params: StartCareerParams): CareerSave {
     world: {
       currentDate: calendar.currentDate,
       season: calendar.season,
+      weekNumber: 1,
     },
     context: {
       academyId: null,
       pendingOpportunity: null,
+      playerState: initialPlayerState,
+      pendingEvent: null,
     },
     relationships: {
-      people: [],
-      edges: [],
+      persons: [],
+      activeRelations: [],
     },
     story: {
       bootstrapOpportunityWeek,
