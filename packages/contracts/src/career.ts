@@ -48,6 +48,36 @@ export const TrainingIntensitySchema = z.enum(['light', 'normal', 'intense']);
 export type TrainingIntensity = z.infer<typeof TrainingIntensitySchema>;
 
 /**
+ * 合同要约
+ */
+export const SquadRoleSchema = z.enum(['youth_team', 'rotation', 'first_team', 'key_player']);
+export type SquadRole = z.infer<typeof SquadRoleSchema>;
+
+export const ContractOfferSchema = z.object({
+  clubId: z.string().min(1).max(40),
+  clubName: z.string().min(1).max(50),
+  clubTier: z.number().int().min(1).max(10),
+  salary: z.number().int().min(0),
+  contractYears: z.number().int().min(1).max(5),
+  releaseClause: z.number().int().nullable(),
+  signingBonus: z.number().int().min(0),
+  squadRole: SquadRoleSchema,
+});
+export type ContractOffer = z.infer<typeof ContractOfferSchema>;
+
+export const SignedContractSchema = ContractOfferSchema.extend({
+  signedDate: z.string(),
+  signedWeek: z.number().int(),
+});
+export type SignedContract = z.infer<typeof SignedContractSchema>;
+
+export const GraduationOfferSchema = z.object({
+  week: z.number().int().min(1).max(52),
+  offers: z.array(ContractOfferSchema).min(2).max(4),
+});
+export type GraduationOffer = z.infer<typeof GraduationOfferSchema>;
+
+/**
  * 属性变化记录
  */
 export const AttributeChangeSchema = z.object({
@@ -222,6 +252,25 @@ export const StateChangeEntrySchema = z.object({
   changes: z.array(StateChangeSchema),
 });
 
+export const ContractSignedEntrySchema = z.object({
+  type: z.literal('contract-signed'),
+  date: z.string(),
+  week: z.number().int(),
+  clubId: z.string(),
+  clubName: z.string(),
+  salary: z.number().int(),
+  contractYears: z.number().int(),
+  squadRole: z.string(),
+});
+
+export const SeasonEndEntrySchema = z.object({
+  type: z.literal('season-end'),
+  date: z.string(),
+  week: z.number().int(),
+  season: z.number().int(),
+  age: z.number().int(),
+});
+
 export const CareerLedgerEntrySchema = z.discriminatedUnion('type', [
   CareerStartedEntrySchema,
   WeekAdvancedEntrySchema,
@@ -232,6 +281,8 @@ export const CareerLedgerEntrySchema = z.discriminatedUnion('type', [
   AttributeChangeEntrySchema,
   StateChangeEntrySchema,
   MemoryNoteEntrySchema,
+  ContractSignedEntrySchema,
+  SeasonEndEntrySchema,
 ]);
 
 export type CareerLedgerEntry = z.infer<typeof CareerLedgerEntrySchema>;
@@ -244,8 +295,11 @@ export const CareerContextSchema = z.object({
   pendingOpportunity: YouthOpportunitySchema.nullable(),
   playerState: PlayerStateSchema,
   pendingEvent: EventInstanceSchema.nullable(),
-  trainingFocus: z.string().min(1).max(30).nullable().default(null),
+  trainingFocus: z.string().nullable().default(null),
   trainingIntensity: TrainingIntensitySchema.default('normal'),
+  pendingGraduation: GraduationOfferSchema.nullable(),
+  contract: SignedContractSchema.nullable(),
+  currentClubId: z.string().nullable(),
 });
 
 export type CareerContext = z.infer<typeof CareerContextSchema>;
