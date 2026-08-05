@@ -17,11 +17,12 @@ import { simulateYouthMatch } from '../match/youth-match';
  * 状态平衡原则：
  * - 体能每周自然恢复 3-5 点；训练消耗 1-4，比赛消耗 5-12
  * - 长期趋势：体能稳定在 50-80 区间
- * - 疲劳值由训练（+2~5）和比赛（+5~10）累积，每周自然衰减 3-5
- * - 长期趋势：疲劳在 5-30 区间波动
- * - 教练信任增长缓慢（训练 +0~1），表现差时下降
- * - 长期趋势：稳定在 30-70 区间
- * - 士气向 50 回归，避免无限膨胀或归零
+ * - 疲劳值由训练（+2~4）和比赛（+4~8）累积，每周衰减 20% 当前值
+ * - 长期趋势：疲劳在 5-25 区间波动
+ * - 教练信任增长缓慢（训练 +0~1），向 40 回归 3%/周
+ * - 长期趋势：稳定在 30-55 区间
+ * - 士气向 50 回归 5%/周，避免无限膨胀或归零
+ * - 长期趋势：稳定在 40-60 区间
  */
 export function advanceCareerWeek(save: CareerSave, rng: SeededRandomSource): WeeklyAdvanceResult {
   const advanced = advanceOneWeek({
@@ -62,8 +63,8 @@ export function advanceCareerWeek(save: CareerSave, rng: SeededRandomSource): We
       'coachTrust',
       trainingSummary.coachTrustChange,
     );
-    // 疲劳累积：训练
-    playerState = applyDelta(playerState, stateChanges, 'fatigue', rng.nextInt(2, 5));
+    // Fatigue accumulation: training
+    playerState = applyDelta(playerState, stateChanges, 'fatigue', rng.nextInt(2, 4));
   }
 
   // 2. Match effects
@@ -71,13 +72,13 @@ export function advanceCareerWeek(save: CareerSave, rng: SeededRandomSource): We
     playerState = applyDelta(playerState, stateChanges, 'fitness', matchResult.fitnessChange);
     playerState = applyDelta(playerState, stateChanges, 'morale', matchResult.moraleChange);
     playerState = applyDelta(playerState, stateChanges, 'coachTrust', matchResult.coachTrustChange);
-    // 疲劳累积：比赛
-    const fatigueFromMatch = matchResult.played ? rng.nextInt(5, 10) : rng.nextInt(1, 3);
+    // Fatigue accumulation: match
+    const fatigueFromMatch = matchResult.played ? rng.nextInt(4, 8) : rng.nextInt(1, 2);
     playerState = applyDelta(playerState, stateChanges, 'fatigue', fatigueFromMatch);
   }
 
-  // 3. 基础恢复（每周固定）
-  // 体能自然恢复：平淡周恢复更多，比赛周恢复更少
+  // 3. Base recovery (every week)
+  // Fitness recovery: quiet weeks recover more, match weeks recover less
   const baseRecovery =
     weekActivity.activity === 'quiet'
       ? rng.nextInt(6, 10)
@@ -86,17 +87,17 @@ export function advanceCareerWeek(save: CareerSave, rng: SeededRandomSource): We
         : rng.nextInt(3, 5);
   playerState = applyDelta(playerState, stateChanges, 'fitness', baseRecovery);
 
-  // 疲劳自然衰减
-  const fatigueDecay = -Math.min(playerState.fatigue, rng.nextInt(3, 5));
+  // Fatigue proportional decay: 20% of current value per week
+  const fatigueDecay = -Math.max(1, Math.round(playerState.fatigue * 0.2));
   playerState = applyDelta(playerState, stateChanges, 'fatigue', fatigueDecay);
 
-  // 4. 回归趋势：防止士气/教练信任无限膨胀
-  // 士气向 50 回归（每周回归 10%）
-  const moraleRegression = Math.round((50 - playerState.morale) * 0.1);
+  // 4. Gentle regression toward neutral values
+  // Morale toward 50 (5% per week)
+  const moraleRegression = Math.round((50 - playerState.morale) * 0.05);
   playerState = applyDelta(playerState, stateChanges, 'morale', moraleRegression);
 
-  // 教练信任向 45 回归（每周回归 5%）
-  const trustRegression = Math.round((45 - playerState.coachTrust) * 0.05);
+  // Coach trust toward 40 (3% per week)
+  const trustRegression = Math.round((40 - playerState.coachTrust) * 0.03);
   playerState = applyDelta(playerState, stateChanges, 'coachTrust', trustRegression);
 
   // 5. Clamp all values
@@ -130,7 +131,7 @@ function applyDelta(
   if (delta === 0) return state;
   const oldValue = (state as Record<string, string | number>)[key] as number;
   const newValue = Math.round(oldValue + delta);
-  changes.push({ key, oldValue, newValue: Math.round(newValue) });
+  changes.push({ key, oldValue, newValue });
   return { ...state, [key]: newValue };
 }
 
