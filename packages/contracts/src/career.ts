@@ -42,6 +42,12 @@ export const PlayerStateSchema = z.object({
 export type PlayerState = z.infer<typeof PlayerStateSchema>;
 
 /**
+ * 训练强度
+ */
+export const TrainingIntensitySchema = z.enum(['light', 'normal', 'intense']);
+export type TrainingIntensity = z.infer<typeof TrainingIntensitySchema>;
+
+/**
  * 属性变化记录
  */
 export const AttributeChangeSchema = z.object({
@@ -85,6 +91,7 @@ export const TrainingSummarySchema = z.object({
   fitnessChange: z.number().int(),
   moraleChange: z.number().int(),
   coachTrustChange: z.number().int(),
+  injury: z.boolean().default(false),
 });
 
 export type TrainingSummary = z.infer<typeof TrainingSummarySchema>;
@@ -237,6 +244,8 @@ export const CareerContextSchema = z.object({
   pendingOpportunity: YouthOpportunitySchema.nullable(),
   playerState: PlayerStateSchema,
   pendingEvent: EventInstanceSchema.nullable(),
+  trainingFocus: z.string().min(1).max(30).nullable().default(null),
+  trainingIntensity: TrainingIntensitySchema.default('normal'),
 });
 
 export type CareerContext = z.infer<typeof CareerContextSchema>;
