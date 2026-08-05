@@ -59,7 +59,7 @@ function createMockSave(): CareerSave {
       pendingEvent: null,
     },
     relationships: { persons: [], activeRelations: [] },
-    story: { bootstrapOpportunityWeek: 3, resolvedOpportunityIds: [], cooldowns: {} },
+    story: { bootstrapOpportunityWeek: 3, resolvedOpportunityIds: [], completedStoryIds: [], activeStorylines: [], cooldowns: {} },
     ledger: [
       {
         type: 'career-started',

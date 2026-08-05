@@ -91,6 +91,8 @@ export function createCareerSave(params: StartCareerParams): CareerSave {
     story: {
       bootstrapOpportunityWeek,
       resolvedOpportunityIds: [],
+      completedStoryIds: [],
+      activeStorylines: [],
       cooldowns: {},
     },
     ledger: [

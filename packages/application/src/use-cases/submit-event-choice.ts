@@ -6,6 +6,7 @@ import { addMemory, renderTemplate, generateEventNarrative } from '@football/sim
  * Validates the event exists and is unresolved, then applies effects.
  * If the chosen option has a memoryKey, records memories to relevant persons.
  * Renders narrative text using the template engine and adds to ledger.
+ * Tracks storyline progress if the event belongs to a story chain.
  */
 export function createSubmitEventChoice() {
   return (save: CareerSave, choiceId: string): CareerSave => {
@@ -80,6 +81,32 @@ export function createSubmitEventChoice() {
       narrativeContext,
     );
 
+    // Track storyline
+    let story = { ...save.story };
+    const eventStoryId = (evt as Record<string, unknown>).storyId;
+    const nextEvents = (evt as Record<string, unknown>).nextEvents;
+    if (eventStoryId) {
+      // Add the storyId to completedStoryIds if not already present
+      if (!story.completedStoryIds.includes(eventStoryId as string)) {
+        story = {
+          ...story,
+          completedStoryIds: [...story.completedStoryIds, eventStoryId as string],
+        };
+      }
+    }
+    if (nextEvents && Array.isArray(nextEvents)) {
+      // Add nextEvents to activeStorylines
+      const newStorylines = (nextEvents as string[]).filter(
+        (eid) => !story.activeStorylines.includes(eid),
+      );
+      if (newStorylines.length > 0) {
+        story = {
+          ...story,
+          activeStorylines: [...story.activeStorylines, ...newStorylines],
+        };
+      }
+    }
+
     // Build ledger entries
     const newEntries: CareerLedgerEntry[] = [
       {
@@ -118,6 +145,7 @@ export function createSubmitEventChoice() {
         ...save.relationships,
         persons,
       },
+      story,
       ledger: [...save.ledger, ...newEntries],
     };
   };

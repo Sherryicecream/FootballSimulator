@@ -222,4 +222,23 @@ describe('createSubmitEventChoice', () => {
       expect(memoryNote.personId).toBe('coach-wang');
     }
   });
+
+  it('adds completedStoryIds when event has storyId', () => {
+    const submit = createSubmitEventChoice();
+    const save = createMockSaveWithEvent();
+    // Cast pendingEvent to include storyId (not on EventInstance type)
+    (save.context.pendingEvent as Record<string, unknown>).storyId = 'coach-praise-story';
+    const result = submit(save, 'c1');
+    expect(result.story.completedStoryIds).toContain('coach-praise-story');
+  });
+
+  it('adds activeStorylines when event has nextEvents', () => {
+    const submit = createSubmitEventChoice();
+    const save = createMockSaveWithEvent();
+    // Cast pendingEvent to include nextEvents (not on EventInstance type)
+    (save.context.pendingEvent as Record<string, unknown>).nextEvents = ['coach-praise-followup-1', 'coach-praise-followup-2'];
+    const result = submit(save, 'c1');
+    expect(result.story.activeStorylines).toContain('coach-praise-followup-1');
+    expect(result.story.activeStorylines).toContain('coach-praise-followup-2');
+  });
 });

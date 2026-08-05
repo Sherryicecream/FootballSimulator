@@ -247,6 +247,8 @@ export type CareerContext = z.infer<typeof CareerContextSchema>;
 const StoryStateSchema = z.object({
   bootstrapOpportunityWeek: z.number().int().min(2).max(4),
   resolvedOpportunityIds: z.array(z.string()),
+  completedStoryIds: z.array(z.string()).default([]),
+  activeStorylines: z.array(z.string()).default([]),
   cooldowns: z.record(z.string(), z.number().int()).default({}),
 });
 
