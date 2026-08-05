@@ -3,12 +3,14 @@ import type {
   WeeklyAdvanceResult,
   PlayerState,
   StateChange,
+  EventDefinition,
 } from '@football/contracts';
 import type { SeededRandomSource } from '../randomness/seeded-random-source';
 import { advanceOneWeek } from './calendar';
 import { generateWeekActivity } from './week-activities';
 import { simulateTraining } from '../player-development/training';
 import { simulateYouthMatch } from '../match/youth-match';
+import { pickEventForWeek } from './event-integration';
 
 /**
  * 推进一周
@@ -24,7 +26,11 @@ import { simulateYouthMatch } from '../match/youth-match';
  * - 士气向 50 回归 5%/周，避免无限膨胀或归零
  * - 长期趋势：稳定在 40-60 区间
  */
-export function advanceCareerWeek(save: CareerSave, rng: SeededRandomSource): WeeklyAdvanceResult {
+export function advanceCareerWeek(
+  save: CareerSave,
+  rng: SeededRandomSource,
+  events?: EventDefinition[],
+): WeeklyAdvanceResult {
   const advanced = advanceOneWeek({
     currentDate: save.world.currentDate,
     season: save.world.season,
@@ -77,7 +83,12 @@ export function advanceCareerWeek(save: CareerSave, rng: SeededRandomSource): We
     playerState = applyDelta(playerState, stateChanges, 'fatigue', fatigueFromMatch);
   }
 
-  // 3. Base recovery (every week)
+  // 3. Event selection (if applicable)
+  const event = weekActivity.activity === 'event' && events
+    ? pickEventForWeek(events, save, weekNumber, rng)
+    : null;
+
+  // 4. Base recovery (every week)
   // Fitness recovery: quiet weeks recover more, match weeks recover less
   const baseRecovery =
     weekActivity.activity === 'quiet'
@@ -116,9 +127,9 @@ export function advanceCareerWeek(save: CareerSave, rng: SeededRandomSource): We
     activity: weekActivity.activity,
     trainingSummary,
     matchResult,
-    event: null,
+    event,
     stateChanges,
-    hasPendingChoice: false,
+    hasPendingChoice: event !== null && event.choices.length > 0,
   };
 }
 

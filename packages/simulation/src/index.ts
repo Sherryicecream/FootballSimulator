@@ -15,6 +15,7 @@ export { generateWeekActivity } from './career/week-activities';
 export type { WeekActivityResult } from './career/week-activities';
 export { initializePlayerState } from './career/initial-state';
 export { advanceCareerWeek } from './career/weekly-advance';
+export { pickEventForWeek } from './career/event-integration';
 export { simulateMatch } from './match/match-engine';
 export { simulateYouthMatch } from './match/youth-match';
 export { createLeagueStandings, updateStandings, getStandings } from './world/league-season';

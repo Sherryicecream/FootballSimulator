@@ -1,10 +1,11 @@
-import type { CareerSave } from '@football/contracts';
+import type { CareerSave, EventDefinition } from '@football/contracts';
 import { createAdvanceCareerWeek } from '@football/application';
 
 interface CareerDashboardProps {
   save: CareerSave;
   onSaveUpdate: (save: CareerSave) => void;
   onNewCareer: () => void;
+  events?: EventDefinition[];
 }
 
 const POSITION_LABELS: Record<string, string> = {
@@ -34,8 +35,8 @@ const ATTRIBUTE_GROUPS = [
   },
 ];
 
-export function CareerDashboard({ save, onSaveUpdate, onNewCareer }: CareerDashboardProps) {
-  const advanceWeek = createAdvanceCareerWeek();
+export function CareerDashboard({ save, onSaveUpdate, onNewCareer, events }: CareerDashboardProps) {
+  const advanceWeek = createAdvanceCareerWeek(events);
 
   const handleAdvance = () => {
     try {

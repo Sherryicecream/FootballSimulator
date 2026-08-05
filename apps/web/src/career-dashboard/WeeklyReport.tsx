@@ -181,6 +181,51 @@ export function WeeklyReport({ result, onContinue }: WeeklyReportProps) {
         </div>
       )}
 
+      {/* Event */}
+      {result.event && (
+        <div
+          style={{
+            background: 'var(--color-card)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-lg)',
+            padding: 'var(--space-lg)',
+            marginBottom: 'var(--space-lg)',
+          }}
+        >
+          <div
+            style={{
+              fontSize: 'var(--text-lg)',
+              fontWeight: 'bold',
+              color: 'var(--color-ink)',
+              marginBottom: 'var(--space-md)',
+            }}
+          >
+            📰 事件：{result.event.title}
+          </div>
+          <div
+            style={{
+              fontSize: 'var(--text-base)',
+              color: 'var(--color-text-secondary)',
+              lineHeight: '1.6',
+              marginBottom: 'var(--space-md)',
+            }}
+          >
+            {result.event.description}
+          </div>
+          {result.event.choices.length > 0 && (
+            <div
+              style={{
+                fontSize: 'var(--text-sm)',
+                color: 'var(--color-risk-high)',
+                fontStyle: 'italic',
+              }}
+            >
+              ⚠️ 需要做出选择才能继续推进
+            </div>
+          )}
+        </div>
+      )}
+
       {/* State Changes */}
       {result.stateChanges.length > 0 && (
         <div

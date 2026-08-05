@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { CareerSave, EventInstance } from '@football/contracts';
-import { createBootstrapContent } from './bootstrap-dependencies';
+import { createBootstrapContent, createYouthEvents } from './bootstrap-dependencies';
 import { CareerCreationForm } from '../career-creation/CareerCreationForm';
 import { YouthOpportunityPanel } from '../event-choice/YouthOpportunityPanel';
 import { EventChoicePanel } from '../event-choice/EventChoicePanel';
@@ -16,6 +16,7 @@ import './app.css';
 type FlowStep = 'creation' | 'opportunity' | 'dashboard' | 'event-choice' | 'weekly-report';
 
 const content = createBootstrapContent();
+const events = createYouthEvents();
 const advanceToDecision = createAdvanceToDecision(content);
 const submitYouthChoice = createSubmitYouthChoice();
 const submitEventChoice = createSubmitEventChoice();
@@ -171,7 +172,7 @@ export function App() {
       )}
 
       {step === 'dashboard' && save && (
-        <CareerDashboard save={save} onSaveUpdate={handleAdvance} onNewCareer={handleNewCareer} />
+        <CareerDashboard save={save} onSaveUpdate={handleAdvance} onNewCareer={handleNewCareer} events={events} />
       )}
 
       {step === 'event-choice' && pendingEvent && (

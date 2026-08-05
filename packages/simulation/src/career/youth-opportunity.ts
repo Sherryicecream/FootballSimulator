@@ -1,5 +1,7 @@
 import type { CareerSave, YouthOpportunity, YouthOffer, RegionProfile } from '@football/contracts';
 import type { SeededRandomSource } from '../randomness/seeded-random-source';
+import { createSeededRandomSource } from '../randomness';
+import { generateCoach, generateTeammates } from '../relationships/initial-people';
 
 /**
  * 青训学院数据
@@ -229,6 +231,11 @@ export function chooseYouthOpportunity(save: CareerSave, offerId: string): Caree
     throw new Error(`无效的选项 ID: ${offerId}`);
   }
 
+  // Generate initial people (coach + teammates) from seeded RNG
+  const peopleRng = createSeededRandomSource(save.randomState.seed + 1000);
+  const coach = generateCoach(peopleRng);
+  const teammates = generateTeammates(save.player.identity.primaryPosition, peopleRng);
+
   return {
     ...save,
     context: {
@@ -240,6 +247,14 @@ export function chooseYouthOpportunity(save: CareerSave, offerId: string): Caree
     story: {
       ...save.story,
       resolvedOpportunityIds: [...save.story.resolvedOpportunityIds, offerId],
+    },
+    relationships: {
+      persons: [coach, ...teammates],
+      activeRelations: [
+        { personId: coach.id, relationType: 'coach', sinceSeason: save.world.season },
+        { personId: teammates[0]!.id, relationType: 'teammate', sinceSeason: save.world.season },
+        { personId: teammates[1]!.id, relationType: 'teammate', sinceSeason: save.world.season },
+      ],
     },
     ledger: [
       ...save.ledger,

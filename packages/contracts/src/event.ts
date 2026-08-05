@@ -16,7 +16,7 @@ export const EventChoiceSchema = z.object({
   text: z.string().min(1).max(200),
   riskLabel: z.string().min(1).max(10),
   effects: z.record(z.string(), z.number().int()).default({}),
-  delayEffects: z.record(z.string(), z.number().int()).optional().default({}),
+  delayEffects: z.record(z.string(), z.number().int()).optional(),
   memoryKey: z.string().optional(),
 });
 
@@ -44,7 +44,7 @@ export const EventDefinitionSchema = z.object({
   choices: z.array(EventChoiceSchema).min(1),
   cooldownWeeks: z.number().int().min(0).max(52).default(0),
   storyId: z.string().optional(),
-  nextEvents: z.array(z.string()).optional().default([]),
+  nextEvents: z.array(z.string()).optional(),
   narrativeTemplate: z.string().optional(),
 });
 
