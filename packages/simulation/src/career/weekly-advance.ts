@@ -47,7 +47,7 @@ export function advanceCareerWeek(
 
   // Execute training
   const trainingSummary = weekActivity.hasTraining
-    ? simulateTraining(save.player, save.context.playerState, rng)
+    ? simulateTraining(save.player, save.context.playerState, rng, save.context.trainingFocus ?? undefined, save.context.trainingIntensity)
     : null;
 
   // Execute match
@@ -71,6 +71,13 @@ export function advanceCareerWeek(
     );
     // Fatigue accumulation: training
     playerState = applyDelta(playerState, stateChanges, 'fatigue', rng.nextInt(2, 4));
+
+    // Injury effects from intense training
+    if (trainingSummary.injury) {
+      playerState = applyDelta(playerState, stateChanges, 'fatigue', rng.nextInt(10, 15));
+      playerState = applyDelta(playerState, stateChanges, 'fitness', -rng.nextInt(10, 15));
+      playerState = applyDelta(playerState, stateChanges, 'morale', rng.nextInt(-5, -3));
+    }
   }
 
   // 2. Match effects
