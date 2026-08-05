@@ -243,6 +243,8 @@ export function chooseYouthOpportunity(save: CareerSave, offerId: string): Caree
       pendingOpportunity: null,
       playerState: save.context.playerState,
       pendingEvent: null,
+      trainingFocus: null,
+      trainingIntensity: 'normal' as const,
     },
     story: {
       ...save.story,
