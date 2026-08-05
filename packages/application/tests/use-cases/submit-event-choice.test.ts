@@ -156,16 +156,19 @@ describe('createSubmitEventChoice', () => {
     const submit = createSubmitEventChoice();
     const save = createMockSaveWithEvent();
     const result = submit(save, 'c1');
-    const lastEntry = result.ledger[result.ledger.length - 1];
-    expect(lastEntry.type).toBe('event-week');
+    const eventEntry = result.ledger.find((e) => e.type === 'event-week');
+    expect(eventEntry).toBeDefined();
+    expect(eventEntry!.type).toBe('event-week');
   });
 
   it('does not mutate the original save', () => {
     const submit = createSubmitEventChoice();
     const save = createMockSaveWithEvent();
     const originalEvent = save.context.pendingEvent;
+    const originalLedgerLength = save.ledger.length;
     submit(save, 'c1');
     expect(save.context.pendingEvent).toEqual(originalEvent);
+    expect(save.ledger.length).toBe(originalLedgerLength);
   });
 
   it('adds memory to coach and teammates when choice has memoryKey', () => {
@@ -193,5 +196,30 @@ describe('createSubmitEventChoice', () => {
 
     const teammate = result.relationships.persons.find((p) => p.role === 'teammate');
     expect(teammate!.memories).toHaveLength(0);
+  });
+
+  it('adds narrative to event-week ledger entry', () => {
+    const submit = createSubmitEventChoice();
+    const save = createMockSaveWithEvent();
+    const result = submit(save, 'c1');
+    const eventEntry = result.ledger.find((e) => e.type === 'event-week');
+    expect(eventEntry).toBeDefined();
+    if (eventEntry?.type === 'event-week') {
+      expect(eventEntry.narrative).toBeDefined();
+      expect(eventEntry.narrative).toContain('教练表扬');
+      expect(eventEntry.narrative).toContain('感谢教练，继续努力');
+    }
+  });
+
+  it('adds memory-note entry when choice has memoryKey', () => {
+    const submit = createSubmitEventChoice();
+    const save = createMockSaveWithEvent();
+    const result = submit(save, 'c1');
+    const memoryNote = result.ledger.find((e) => e.type === 'memory-note');
+    expect(memoryNote).toBeDefined();
+    if (memoryNote?.type === 'memory-note') {
+      expect(memoryNote.summary).toContain('教练表扬');
+      expect(memoryNote.personId).toBe('coach-wang');
+    }
   });
 });

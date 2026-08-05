@@ -1,10 +1,11 @@
 import { type CareerSave, type CareerLedgerEntry } from '@football/contracts';
-import { addMemory } from '@football/simulation';
+import { addMemory, renderTemplate, generateEventNarrative } from '@football/simulation';
 
 /**
  * Creates a submit event choice use case factory.
  * Validates the event exists and is unresolved, then applies effects.
  * If the chosen option has a memoryKey, records memories to relevant persons.
+ * Renders narrative text using the template engine and adds to ledger.
  */
 export function createSubmitEventChoice() {
   return (save: CareerSave, choiceId: string): CareerSave => {
@@ -63,15 +64,48 @@ export function createSubmitEventChoice() {
       });
     }
 
-    // Add ledger entry
-    const newEntry: CareerLedgerEntry = {
-      type: 'event-week',
-      date: save.world.currentDate,
+    // Render narrative text
+    const evt = save.context.pendingEvent;
+    const narrativeContext = {
+      title: evt.title,
+      description: evt.description,
+      playerName: save.player.identity.name,
+      season: save.world.season,
       week: save.world.weekNumber,
-      eventId: save.context.pendingEvent.eventId,
-      title: save.context.pendingEvent.title,
-      choiceId: choiceId,
-    } as CareerLedgerEntry;
+    };
+    const narrative = generateEventNarrative(
+      evt.title,
+      evt.description,
+      choice.text,
+      narrativeContext,
+    );
+
+    // Build ledger entries
+    const newEntries: CareerLedgerEntry[] = [
+      {
+        type: 'event-week',
+        date: save.world.currentDate,
+        week: save.world.weekNumber,
+        eventId: evt.eventId,
+        title: evt.title,
+        choiceId: choiceId,
+        narrative,
+      } as CareerLedgerEntry,
+    ];
+
+    // Add memory-note entry if memoryKey exists and coach was found
+    if (memoryKey) {
+      const coach = persons.find((p) => p.role === 'coach');
+      if (coach) {
+        newEntries.push({
+          type: 'memory-note',
+          date: save.world.currentDate,
+          week: save.world.weekNumber,
+          summary: `[${evt.title}] ${choice.text}`,
+          personId: coach.id,
+        } as CareerLedgerEntry);
+      }
+    }
 
     return {
       ...save,
@@ -84,7 +118,7 @@ export function createSubmitEventChoice() {
         ...save.relationships,
         persons,
       },
-      ledger: [...save.ledger, newEntry],
+      ledger: [...save.ledger, ...newEntries],
     };
   };
 }

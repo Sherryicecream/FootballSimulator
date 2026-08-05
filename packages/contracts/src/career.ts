@@ -190,6 +190,15 @@ export const EventWeekEntrySchema = z.object({
   eventId: z.string(),
   title: z.string(),
   choiceId: z.string().nullable(),
+  narrative: z.string().optional(),
+});
+
+export const MemoryNoteEntrySchema = z.object({
+  type: z.literal('memory-note'),
+  date: z.string(),
+  week: z.number().int(),
+  summary: z.string().min(1).max(200),
+  personId: z.string().min(1).max(40),
 });
 
 export const AttributeChangeEntrySchema = z.object({
@@ -215,6 +224,7 @@ export const CareerLedgerEntrySchema = z.discriminatedUnion('type', [
   EventWeekEntrySchema,
   AttributeChangeEntrySchema,
   StateChangeEntrySchema,
+  MemoryNoteEntrySchema,
 ]);
 
 export type CareerLedgerEntry = z.infer<typeof CareerLedgerEntrySchema>;
