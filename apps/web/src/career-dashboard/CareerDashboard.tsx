@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import type { CareerSave, EventDefinition } from '@football/contracts';
-import { createAdvanceCareerWeek } from '@football/application';
+import { createAdvanceCareerWeek, createBatchAdvanceWeeks } from '@football/application';
+import type { BatchAdvanceResult } from '@football/application';
 
 interface CareerDashboardProps {
   save: CareerSave;
@@ -37,13 +39,41 @@ const ATTRIBUTE_GROUPS = [
 
 export function CareerDashboard({ save, onSaveUpdate, onNewCareer, events }: CareerDashboardProps) {
   const advanceWeek = createAdvanceCareerWeek(events);
+  const batchAdvance = createBatchAdvanceWeeks(events);
+  const [batchResult, setBatchResult] = useState<BatchAdvanceResult | null>(null);
+  const [advancing, setAdvancing] = useState(false);
 
   const handleAdvance = () => {
+    setAdvancing(true);
     try {
       const updated = advanceWeek(save);
+      // Clear batch result when advancing manually
+      setBatchResult(null);
       onSaveUpdate(updated);
     } catch (err) {
       console.error('推进失败:', err);
+    } finally {
+      setAdvancing(false);
+    }
+  };
+
+  const handleBatchAdvance = () => {
+    setAdvancing(true);
+    try {
+      const result = batchAdvance(save);
+      setBatchResult(result);
+    } catch (err) {
+      console.error('快进失败:', err);
+    } finally {
+      setAdvancing(false);
+    }
+  };
+
+  const handleBatchContinue = () => {
+    const result = batchResult;
+    setBatchResult(null);
+    if (result) {
+      onSaveUpdate(result.save);
     }
   };
 
@@ -91,6 +121,84 @@ export function CareerDashboard({ save, onSaveUpdate, onNewCareer, events }: Car
           青训生涯
         </div>
       </div>
+
+      {/* Batch Advance Summary */}
+      {batchResult && (
+        <div
+          style={{
+            background: '#eaf7ee',
+            border: '1px solid #27ae60',
+            borderRadius: 'var(--radius-lg)',
+            padding: 'var(--space-lg)',
+            marginBottom: 'var(--space-lg)',
+          }}
+        >
+          <div
+            style={{
+              fontSize: 'var(--text-sm)',
+              fontWeight: 'bold',
+              color: '#27ae60',
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              marginBottom: 'var(--space-sm)',
+            }}
+          >
+            ⏩ {batchResult.summary}
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              gap: 'var(--space-md)',
+              flexWrap: 'wrap',
+              fontSize: 'var(--text-sm)',
+              color: 'var(--color-text-secondary)',
+              marginBottom: 'var(--space-md)',
+            }}
+          >
+            <span>📅 {batchResult.save.world.currentDate} · 第{batchResult.save.world.weekNumber}周</span>
+            {batchResult.matchCount > 0 && <span>⚽ {batchResult.matchCount} 场比赛</span>}
+            {batchResult.eventCount > 0 && <span>📰 {batchResult.eventCount} 个事件</span>}
+          </div>
+          {batchResult.save.context.pendingEvent ? (
+            <div
+              style={{
+                fontSize: 'var(--text-sm)',
+                color: '#e67e22',
+                fontStyle: 'italic',
+              }}
+            >
+              ⚠️ 遇到事件需要处理，点击继续查看
+            </div>
+          ) : (
+            <div
+              style={{
+                fontSize: 'var(--text-sm)',
+                color: 'var(--color-text-muted)',
+                fontStyle: 'italic',
+              }}
+            >
+              这{ batchResult.totalWeeks }周风平浪静
+            </div>
+          )}
+          <div style={{ marginTop: 'var(--space-md)', textAlign: 'center' }}>
+            <button
+              onClick={handleBatchContinue}
+              style={{
+                background: '#27ae60',
+                color: '#fff',
+                border: 'none',
+                padding: 'var(--space-sm) 30px',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: 'var(--text-base)',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+              }}
+            >
+              继续 {'→'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Player Identity Card */}
       <div
@@ -301,23 +409,43 @@ export function CareerDashboard({ save, onSaveUpdate, onNewCareer, events }: Car
       >
         <button
           onClick={handleAdvance}
+          disabled={advancing || !!batchResult}
           style={{
             background: 'var(--color-accent)',
             color: '#fff',
             border: 'none',
-            padding: 'var(--space-md) 40px',
+            padding: 'var(--space-md) 30px',
             borderRadius: 'var(--radius-sm)',
-            fontSize: 'var(--text-lg)',
+            fontSize: 'var(--text-base)',
             fontWeight: 'bold',
             letterSpacing: '1px',
-            cursor: 'pointer',
+            cursor: advancing || batchResult ? 'default' : 'pointer',
+            opacity: advancing || batchResult ? 0.5 : 1,
             boxShadow: 'var(--shadow-md)',
           }}
         >
           推进一周 →
         </button>
         <button
+          onClick={handleBatchAdvance}
+          disabled={advancing || !!batchResult}
+          style={{
+            background: '#27ae60',
+            color: '#fff',
+            border: 'none',
+            padding: 'var(--space-md) 30px',
+            borderRadius: 'var(--radius-sm)',
+            fontSize: 'var(--text-base)',
+            fontWeight: 'bold',
+            cursor: advancing || batchResult ? 'default' : 'pointer',
+            opacity: advancing || batchResult ? 0.5 : 1,
+          }}
+        >
+          {advancing ? '推进中...' : '⏩ 快进到下一事件'}
+        </button>
+        <button
           onClick={onNewCareer}
+          disabled={!!batchResult}
           style={{
             background: 'transparent',
             color: 'var(--color-text-secondary)',
@@ -325,7 +453,8 @@ export function CareerDashboard({ save, onSaveUpdate, onNewCareer, events }: Car
             padding: 'var(--space-md) 20px',
             borderRadius: 'var(--radius-sm)',
             fontSize: 'var(--text-base)',
-            cursor: 'pointer',
+            cursor: batchResult ? 'default' : 'pointer',
+            opacity: batchResult ? 0.5 : 1,
           }}
         >
           新生涯

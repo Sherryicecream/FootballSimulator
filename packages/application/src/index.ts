@@ -4,6 +4,8 @@ export { createAdvanceToDecision } from './use-cases/advance-to-decision';
 export { createSubmitYouthChoice } from './use-cases/submit-youth-choice';
 export { createAdvanceCareerWeek } from './use-cases/advance-career-week';
 export { createSubmitEventChoice } from './use-cases/submit-event-choice';
+export { createBatchAdvanceWeeks } from './use-cases/batch-advance';
+export type { BatchAdvanceResult } from './use-cases/batch-advance';
 export { createInMemorySaveStore } from './ports/save-port';
 export type { SavePort, InMemorySaveStore } from './ports/save-port';
 export type { BootstrapContentPort } from './ports/bootstrap-content';
