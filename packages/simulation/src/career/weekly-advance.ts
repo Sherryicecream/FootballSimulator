@@ -84,9 +84,11 @@ export function advanceCareerWeek(
   }
 
   // 3. Event selection (if applicable)
-  const event = weekActivity.activity === 'event' && events
+  const eventResult = weekActivity.activity === 'event' && events
     ? pickEventForWeek(events, save, weekNumber, rng)
-    : null;
+    : { event: null, updatedCooldowns: {} as Record<string, number> };
+  const event = eventResult.event;
+  const eventCooldowns = eventResult.updatedCooldowns;
 
   // 4. Base recovery (every week)
   // Fitness recovery: quiet weeks recover more, match weeks recover less
@@ -130,6 +132,7 @@ export function advanceCareerWeek(
     event,
     stateChanges,
     hasPendingChoice: event !== null && event.choices.length > 0,
+    eventCooldowns,
   };
 }
 

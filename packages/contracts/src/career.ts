@@ -128,6 +128,7 @@ export const WeeklyAdvanceResultSchema = z.object({
   event: EventInstanceSchema.nullable(),
   stateChanges: z.array(StateChangeSchema),
   hasPendingChoice: z.boolean(),
+  eventCooldowns: z.record(z.string(), z.number().int()).default({}),
 });
 
 export type WeeklyAdvanceResult = z.infer<typeof WeeklyAdvanceResultSchema>;
@@ -235,6 +236,7 @@ export type CareerContext = z.infer<typeof CareerContextSchema>;
 const StoryStateSchema = z.object({
   bootstrapOpportunityWeek: z.number().int().min(2).max(4),
   resolvedOpportunityIds: z.array(z.string()),
+  cooldowns: z.record(z.string(), z.number().int()).default({}),
 });
 
 /**

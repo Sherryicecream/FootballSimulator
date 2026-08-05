@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import type { CareerSave, EventInstance } from '@football/contracts';
+import type { CareerSave, EventInstance, PlayerState } from '@football/contracts';
 import { createBootstrapContent, createYouthEvents } from './bootstrap-dependencies';
 import { CareerCreationForm } from '../career-creation/CareerCreationForm';
 import { YouthOpportunityPanel } from '../event-choice/YouthOpportunityPanel';
 import { EventChoicePanel } from '../event-choice/EventChoicePanel';
+import { EventResultPanel } from '../event-choice/EventResultPanel';
 import { CareerDashboard } from '../career-dashboard/CareerDashboard';
 import {
   createAdvanceToDecision,
@@ -13,7 +14,7 @@ import {
 import { createLocalStorageSavePort } from '../persistence/local-storage-save';
 import './app.css';
 
-type FlowStep = 'creation' | 'opportunity' | 'dashboard' | 'event-choice' | 'weekly-report';
+type FlowStep = 'creation' | 'opportunity' | 'dashboard' | 'event-choice' | 'event-result' | 'weekly-report';
 
 const content = createBootstrapContent();
 const events = createYouthEvents();
@@ -27,6 +28,8 @@ export function App() {
   const [save, setSave] = useState<CareerSave | null>(null);
   const [loading, setLoading] = useState(false);
   const [pendingEvent, setPendingEvent] = useState<EventInstance | null>(null);
+  const [chosenChoiceId, setChosenChoiceId] = useState<string | null>(null);
+  const [oldPlayerState, setOldPlayerState] = useState<PlayerState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
 
@@ -94,10 +97,12 @@ export function App() {
   const handleEventChoice = (choiceId: string) => {
     if (!save) return;
     try {
+      // Save old state for comparison before applying choice
+      setOldPlayerState(save.context.playerState);
+      setChosenChoiceId(choiceId);
       const updated = submitEventChoice(save, choiceId);
       setSave(updated);
-      setPendingEvent(null);
-      setStep('dashboard');
+      setStep('event-result');
       savePort.save(updated.careerId, updated).catch(console.error);
     } catch (err) {
       setError(err instanceof Error ? err.message : '提交失败');
@@ -110,6 +115,8 @@ export function App() {
     }
     setSave(null);
     setPendingEvent(null);
+    setChosenChoiceId(null);
+    setOldPlayerState(null);
     setError(null);
     setStep('creation');
   };
@@ -204,6 +211,16 @@ export function App() {
             </button>
           </div>
         </div>
+      )}
+
+      {step === 'event-result' && pendingEvent && chosenChoiceId && oldPlayerState && save && (
+        <EventResultPanel
+          event={pendingEvent}
+          chosenChoiceId={chosenChoiceId}
+          oldPlayerState={oldPlayerState}
+          newPlayerState={save.context.playerState}
+          onContinue={() => setStep('dashboard')}
+        />
       )}
     </div>
   );

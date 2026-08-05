@@ -58,7 +58,7 @@ const mockSave: CareerSave = {
     pendingEvent: null,
   },
   relationships: { persons: [], activeRelations: [] },
-  story: { bootstrapOpportunityWeek: 3, resolvedOpportunityIds: [] },
+  story: { bootstrapOpportunityWeek: 3, resolvedOpportunityIds: [], cooldowns: {} },
   ledger: [
     {
       type: 'career-started',

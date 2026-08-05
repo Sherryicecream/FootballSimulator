@@ -86,6 +86,10 @@ export function createAdvanceCareerWeek(events?: EventDefinition[]) {
         },
         pendingEvent: result.event,
       },
+      story: {
+        ...save.story,
+        cooldowns: result.eventCooldowns,
+      },
       ledger: [...save.ledger, ...newEntries],
       randomState: {
         ...save.randomState,
