@@ -55,6 +55,8 @@ const mockSave: CareerSave = {
     pendingOpportunity: null,
     playerState: { fitness: 70, morale: 60, coachTrust: 35, fatigue: 5, teamStatus: 'fringe' },
     pendingEvent: null,
+    trainingFocus: null,
+    trainingIntensity: 'normal',
   },
   relationships: { persons: [], activeRelations: [] },
   story: { bootstrapOpportunityWeek: 3, resolvedOpportunityIds: [], completedStoryIds: [], activeStorylines: [], cooldowns: {} },
