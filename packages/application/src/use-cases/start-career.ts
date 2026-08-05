@@ -83,6 +83,8 @@ export function createCareerSave(params: StartCareerParams): CareerSave {
       pendingOpportunity: null,
       playerState: initialPlayerState,
       pendingEvent: null,
+      trainingFocus: null,
+      trainingIntensity: 'normal',
     },
     relationships: {
       persons: [],

@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import type { CareerSave, EventDefinition } from '@football/contracts';
+import type { CareerSave, EventDefinition, TrainingIntensity } from '@football/contracts';
 import { createAdvanceCareerWeek, createBatchAdvanceWeeks } from '@football/application';
 import type { BatchAdvanceResult } from '@football/application';
 import { getRelationshipLabel } from '@football/simulation';
+import { TrainingSettings } from './TrainingSettings';
 
 interface CareerDashboardProps {
   save: CareerSave;
@@ -42,6 +43,8 @@ export function CareerDashboard({ save, onSaveUpdate, onNewCareer, events }: Car
   const advanceWeek = createAdvanceCareerWeek(events);
   const batchAdvance = createBatchAdvanceWeeks(events);
   const [batchResult, setBatchResult] = useState<BatchAdvanceResult | null>(null);
+  const [trainingFocus, setTrainingFocus] = useState<string | null>(save.context.trainingFocus ?? null);
+  const [trainingIntensity, setTrainingIntensity] = useState<TrainingIntensity>(save.context.trainingIntensity ?? 'normal');
   const [advancing, setAdvancing] = useState(false);
 
   const handleAdvance = () => {
@@ -286,6 +289,35 @@ export function CareerDashboard({ save, onSaveUpdate, onNewCareer, events }: Car
           </div>
         </div>
       </div>
+
+      {/* Training Settings */}
+      <TrainingSettings
+        trainingFocus={trainingFocus}
+        trainingIntensity={trainingIntensity}
+        onFocusChange={(focus) => {
+          setTrainingFocus(focus);
+          onSaveUpdate({
+            ...save,
+            context: {
+              ...save.context,
+              trainingFocus: focus,
+              trainingIntensity,
+            },
+          });
+        }}
+        onIntensityChange={(intensity) => {
+          setTrainingIntensity(intensity);
+          onSaveUpdate({
+            ...save,
+            context: {
+              ...save.context,
+              trainingFocus,
+              trainingIntensity: intensity,
+            },
+          });
+        }}
+        position={player.identity.primaryPosition}
+      />
 
       {/* Relationships */}
       {save.relationships.persons.length > 0 && (
