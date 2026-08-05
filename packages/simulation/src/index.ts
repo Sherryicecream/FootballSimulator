@@ -26,4 +26,5 @@ export {
   addMemory,
   getRelationshipLabel,
 } from './relationships/relationship-manager';
+export { generateCoach, generateTeammates } from './relationships/initial-people';
 export { renderTemplate, generateEventNarrative } from './events/narrative';
