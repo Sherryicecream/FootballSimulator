@@ -65,6 +65,7 @@ function createMockSaveWithEvent(): CareerSave {
             text: '感谢教练，继续努力',
             riskLabel: 'low',
             effects: { morale: 5, coachTrust: 3 },
+            memoryKey: 'coach-praise-humble',
           },
           {
             id: 'c2',
@@ -76,8 +77,32 @@ function createMockSaveWithEvent(): CareerSave {
         resolvedChoiceId: null,
       },
     },
-    relationships: { persons: [], activeRelations: [] },
-    story: { bootstrapOpportunityWeek: 3, resolvedOpportunityIds: [], cooldowns: {} },
+    relationships: {
+      persons: [
+        {
+          id: 'coach-wang',
+          name: '王教练',
+          role: 'coach',
+          age: 45,
+          personality: 'strict',
+          traits: { experience: 70 },
+          relationship: { trust: 50, respect: 50, closeness: 30 },
+          memories: [],
+        },
+        {
+          id: 'teammate-li',
+          name: '小李',
+          role: 'teammate',
+          age: 16,
+          personality: 'friendly',
+          traits: { skill: 60 },
+          relationship: { trust: 50, respect: 50, closeness: 30 },
+          memories: [],
+        },
+      ],
+      activeRelations: [],
+    },
+    story: { bootstrapOpportunityWeek: 3, resolvedOpportunityIds: [], completedStoryIds: [], activeStorylines: [], cooldowns: {} },
     ledger: [
       {
         type: 'career-started',
@@ -141,5 +166,32 @@ describe('createSubmitEventChoice', () => {
     const originalEvent = save.context.pendingEvent;
     submit(save, 'c1');
     expect(save.context.pendingEvent).toEqual(originalEvent);
+  });
+
+  it('adds memory to coach and teammates when choice has memoryKey', () => {
+    const submit = createSubmitEventChoice();
+    const save = createMockSaveWithEvent();
+    const result = submit(save, 'c1');
+
+    const coach = result.relationships.persons.find((p) => p.role === 'coach');
+    expect(coach!.memories).toHaveLength(1);
+    expect(coach!.memories[0].eventId).toBe('coach-praise');
+    expect(coach!.memories[0].emotionalImpact).toBe('positive');
+
+    const teammate = result.relationships.persons.find((p) => p.role === 'teammate');
+    expect(teammate!.memories).toHaveLength(1);
+    expect(teammate!.memories[0].eventId).toBe('coach-praise');
+  });
+
+  it('does not add memories when choice has no memoryKey', () => {
+    const submit = createSubmitEventChoice();
+    const save = createMockSaveWithEvent();
+    const result = submit(save, 'c2');
+
+    const coach = result.relationships.persons.find((p) => p.role === 'coach');
+    expect(coach!.memories).toHaveLength(0);
+
+    const teammate = result.relationships.persons.find((p) => p.role === 'teammate');
+    expect(teammate!.memories).toHaveLength(0);
   });
 });

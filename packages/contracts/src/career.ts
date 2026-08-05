@@ -4,6 +4,7 @@ import { CareerStageSchema } from './primitives';
 import { WorldStateSchema } from './world';
 import { RandomStateSchema } from './random';
 import { EventChoiceSchema } from './event';
+import { RelationshipGraphSchema } from './person';
 
 /**
  * 青年机会：球员在青训阶段面临的首个职业选择
@@ -242,10 +243,7 @@ const StoryStateSchema = z.object({
 /**
  * 关系图（内部使用，§23）
  */
-const RelationshipGraphSchema = z.object({
-  persons: z.array(z.unknown()),
-  activeRelations: z.array(z.unknown()),
-});
+// Uses RelationshipGraphSchema imported from './person'
 
 // PlayerCareer: 身份、属性、隐藏特质、年龄、生涯阶段、声望 (§23)
 export const PlayerCareerSchema = z.object({
