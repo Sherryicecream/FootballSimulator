@@ -101,9 +101,6 @@ const createSaveWithPendingEvent = (): CareerSave => {
     hometown: '上海',
     primaryPosition: 'CENTER_BACK',
     preferredFoot: 'RIGHT',
-    weakFootLevel: 30,
-    growthBackground: 'academy',
-    personalityTendency: 'composed',
     regionId: 'shanghai',
     seed: 42,
   });

@@ -6,25 +6,23 @@ import type { CareerSave } from '@football/contracts';
 import {
   POSITION_OPTIONS,
   FOOT_OPTIONS,
-  WEAK_FOOT_OPTIONS,
-  BACKGROUND_OPTIONS,
-  PERSONALITY_OPTIONS,
 } from './creation-options';
 
 interface CareerCreationFormProps {
   onComplete: (save: CareerSave) => void;
   content: BootstrapContentPort;
+  seedFactory?: () => number;
 }
 
-export function CareerCreationForm({ onComplete, content }: CareerCreationFormProps) {
+export function CareerCreationForm({
+  onComplete,
+  content,
+  seedFactory = () => Math.floor(Math.random() * 2147483647),
+}: CareerCreationFormProps) {
   const [name, setName] = useState('');
   const [homelandId, setHomelandId] = useState('');
   const [primaryPosition, setPrimaryPosition] = useState('');
   const [preferredFoot, setPreferredFoot] = useState('RIGHT');
-  const [weakFoot, setWeakFoot] = useState('3');
-  const [background, setBackground] = useState('academy');
-  const [personality, setPersonality] = useState('composed');
-  const [seed, setSeed] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const regions = getAllRegions();
@@ -51,26 +49,13 @@ export function CareerCreationForm({ onComplete, content }: CareerCreationFormPr
       setError('所选家乡资料不可用');
       return;
     }
-    const trimmedSeed = seed.trim();
-    const parsedSeed = trimmedSeed === '' ? null : Number(trimmedSeed);
-    if (
-      parsedSeed !== null &&
-      (!Number.isInteger(parsedSeed) || parsedSeed < 0 || parsedSeed > 2147483647)
-    ) {
-      setError('随机种子必须是 0 到 2147483647 之间的整数');
-      return;
-    }
-
     const params: StartCareerParams = {
       playerName: trimmedName,
       hometown: region.name,
       primaryPosition: primaryPosition as StartCareerParams['primaryPosition'],
       preferredFoot: preferredFoot as StartCareerParams['preferredFoot'],
-      weakFootLevel: parseInt(weakFoot, 10),
-      growthBackground: background,
-      personalityTendency: personality,
       regionId: homelandId,
-      seed: parsedSeed ?? Math.floor(Math.random() * 2147483647),
+      seed: seedFactory(),
     };
 
     const save = createCareerSave(params);
@@ -220,90 +205,6 @@ export function CareerCreationForm({ onComplete, content }: CareerCreationFormPr
             ))}
           </div>
         </label>
-      </div>
-
-      <div
-        style={{
-          display: 'flex',
-          gap: 'var(--space-md)',
-          marginBottom: 'var(--space-lg)',
-          flexWrap: 'wrap',
-        }}
-      >
-        <div style={{ flex: 1, minWidth: 150 }}>
-          <label style={labelStyle}>
-            逆足
-            <select
-              value={weakFoot}
-              onChange={(e) => setWeakFoot(e.target.value)}
-              style={selectStyle}
-              aria-label="逆足"
-            >
-              {WEAK_FOOT_OPTIONS.map((w) => (
-                <option key={w.value} value={w.value}>
-                  {w.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <div style={{ flex: 1, minWidth: 150 }}>
-          <label style={labelStyle}>
-            成长背景
-            <select
-              value={background}
-              onChange={(e) => setBackground(e.target.value)}
-              style={selectStyle}
-              aria-label="成长背景"
-            >
-              {BACKGROUND_OPTIONS.map((b) => (
-                <option key={b.value} value={b.value}>
-                  {b.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <div style={{ flex: 1, minWidth: 150 }}>
-          <label style={labelStyle}>
-            性格倾向
-            <select
-              value={personality}
-              onChange={(e) => setPersonality(e.target.value)}
-              style={selectStyle}
-              aria-label="性格倾向"
-            >
-              {PERSONALITY_OPTIONS.map((p) => (
-                <option key={p.value} value={p.value}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      </div>
-
-      <div style={{ marginBottom: 'var(--space-xl)' }}>
-        <label style={labelStyle}>
-          随机种子
-          <input
-            type="text"
-            value={seed}
-            onChange={(e) => setSeed(e.target.value)}
-            style={inputStyle}
-            placeholder="留空自动生成..."
-            aria-label="随机种子"
-          />
-        </label>
-        <div
-          style={{
-            fontSize: 'var(--text-xs)',
-            color: 'var(--color-text-muted)',
-            marginTop: 'var(--space-xs)',
-          }}
-        >
-          相同种子 + 相同选择 = 完全相同的结果
-        </div>
       </div>
 
       <div
