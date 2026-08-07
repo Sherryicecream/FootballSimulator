@@ -1,5 +1,7 @@
 # 足球生涯模拟器 — 球员成长与训练系统设计
 
+> **已被取代：** 本文仅保留为历史参考。当前成长、训练和伤病设计以 `2026-08-07-youth-season-vertical-slice-design.md` 为准，不得继续依据本文实施。
+
 ## 1. 概述
 
 本文档描述如何在现有训练模拟基础上，实现玩家可控的训练系统，包括训练重点选择、强度控制，以及加练带来的受伤风险。
@@ -39,7 +41,7 @@ export const CareerContextSchema = z.object({
   pendingOpportunity: YouthOpportunitySchema.nullable(),
   playerState: PlayerStateSchema,
   pendingEvent: EventInstanceSchema.nullable(),
-  trainingFocus: z.string().nullable().default(null),    // null = 自动
+  trainingFocus: z.string().nullable().default(null), // null = 自动
   trainingIntensity: TrainingIntensitySchema.default('normal'),
 });
 ```
@@ -53,26 +55,28 @@ export function simulateTraining(
   player: PlayerCareer,
   state: PlayerState,
   rng: SeededRandomSource,
-  focus?: string,         // 新增：指定训练重点
-  intensity?: TrainingIntensity,  // 新增：训练强度
-): TrainingSummary
+  focus?: string, // 新增：指定训练重点
+  intensity?: TrainingIntensity, // 新增：训练强度
+): TrainingSummary;
 ```
 
 **强度效果表：**
 
-| 强度 | 属性成长倍率 | 疲劳积累 | 体能消耗 | 受伤概率 |
-|------|:-----------:|:--------:|:--------:|:--------:|
-| light | ×0.5 | ×0.5 | ×0.5 | 0% |
-| normal | ×1.0 | ×1.0 | ×1.0 | 0% |
-| intense | ×1.5 | ×1.5 | ×1.5 | 5% |
+| 强度    | 属性成长倍率 | 疲劳积累 | 体能消耗 | 受伤概率 |
+| ------- | :----------: | :------: | :------: | :------: |
+| light   |     ×0.5     |   ×0.5   |   ×0.5   |    0%    |
+| normal  |     ×1.0     |   ×1.0   |   ×1.0   |    0%    |
+| intense |     ×1.5     |   ×1.5   |   ×1.5   |    5%    |
 
 **受伤逻辑（`intense` 时）：**
+
 - 5% 概率触发轻微受伤
-- 受伤效果：疲劳 +10~15，体能 -10~15，士气 -3~5
+- 受伤效果：疲劳 +10~~15，体能 -10~~15，士气 -3~5
 - 不引入持久伤病（后续阶段可扩展）
 - 受伤信息通过 `TrainingSummary` 的 `injury: boolean` 字段返回
 
 **`TrainingSummarySchema` 扩展：**
+
 ```typescript
 export const TrainingSummarySchema = z.object({
   focus: z.string().min(1).max(30),
@@ -80,11 +84,12 @@ export const TrainingSummarySchema = z.object({
   fitnessChange: z.number().int(),
   moraleChange: z.number().int(),
   coachTrustChange: z.number().int(),
-  injury: z.boolean().default(false).optional(),  // 新增
+  injury: z.boolean().default(false).optional(), // 新增
 });
 ```
 
 **`advanceCareerWeek()` 变更：**
+
 - 从 `save.context` 读取 `trainingFocus` 和 `trainingIntensity`
 - 传给 `simulateTraining()`
 - 受伤时更新 `playerState`（额外疲劳、体能、士气变化）
@@ -92,6 +97,7 @@ export const TrainingSummarySchema = z.object({
 ### 4.3 Application 层
 
 **`advance-career-week.ts` 和 `batch-advance.ts`：**
+
 - 调用 `advanceCareerWeek()` 时传入训练设置
 - 无需额外逻辑变更（训练设置已包含在 save.context 中）
 
@@ -115,16 +121,17 @@ export const TrainingSummarySchema = z.object({
 
 **训练重点选项（按位置）：**
 
-| 位置 | 可选重点 |
-|------|---------|
+| 位置   | 可选重点               |
+| ------ | ---------------------- |
 | 中后卫 | 防守、空中、力量、自动 |
 | 边后卫 | 速度、耐力、防守、自动 |
-| 后腰 | 防守、传球、耐力、自动 |
-| 中场 | 传球、视野、技术、自动 |
-| 边锋 | 盘带、速度、射门、自动 |
-| 前锋 | 射门、跑位、盘带、自动 |
+| 后腰   | 防守、传球、耐力、自动 |
+| 中场   | 传球、视野、技术、自动 |
+| 边锋   | 盘带、速度、射门、自动 |
+| 前锋   | 射门、跑位、盘带、自动 |
 
 **预期效果预览：**
+
 - 轻量：↓ 成长慢 · 恢复快 · 低疲劳
 - 普通：适中成长 · 适中消耗
 - 加练：↑ 成长快 · 疲劳高 · ⚠️ 受伤风险
@@ -155,6 +162,7 @@ simulateTraining(player, state, rng, 'passing', 'intense')
 ## 6. 测试计划
 
 ### Simulation 测试
+
 - `simulateTraining` 传入指定重点时返回对应 focus
 - 轻量模式成长倍率合理（单次增长 ≤2）
 - 加练模式成长倍率合理（单次增长 ≤4）
@@ -163,10 +171,12 @@ simulateTraining(player, state, rng, 'passing', 'intense')
 - 不传 focus 时行为与原来一致（随机选择）
 
 ### Application 测试
+
 - 带有训练设置的 save 可正常推进
 - 训练设置不影响非训练周
 
 ### Web 测试
+
 - 训练设置面板渲染正确
 - 选择训练重点后保存到 context
 - 强度切换后预览文字更新
