@@ -1,669 +1,210 @@
-import { useState } from 'react';
-import type { CareerSave, EventDefinition, TrainingIntensity } from '@football/contracts';
-import {
-  createAdvanceCareerWeek,
-  createBatchAdvanceWeeks,
-  getRelationshipLabel,
-} from '@football/application';
-import type { BatchAdvanceResult } from '@football/application';
-import { TrainingSettings } from './TrainingSettings';
+import type { CareerSaveV2, MonthlyReport, TrainingPlan } from '@football/contracts';
+import type { YouthSeasonOutcome } from '@football/application';
 
 interface CareerDashboardProps {
-  save: CareerSave;
-  onSaveUpdate: (save: CareerSave) => void;
+  save: CareerSaveV2;
+  academyName: string;
+  report: MonthlyReport | null;
+  outcome: YouthSeasonOutcome | null;
+  advancing: boolean;
+  onAdvance: () => void;
+  onTrainingPlanChange: (plan: TrainingPlan) => void;
   onNewCareer: () => void;
-  events?: EventDefinition[];
 }
 
-const POSITION_LABELS: Record<string, string> = {
-  CENTER_BACK: '中后卫',
-  FULL_BACK: '边后卫',
-  DEFENSIVE_MIDFIELDER: '后腰',
-  MIDFIELDER: '中场',
-  WINGER: '边锋',
-  FORWARD: '前锋',
+const focusLabels: Record<TrainingPlan['focus'], string> = {
+  technical: '技术',
+  position: '位置专项',
+  physical: '身体',
+  tactical: '战术',
+  recovery: '恢复',
+};
+const stageLabels: Record<CareerSaveV2['clubContext']['firstTeamStage'], string> = {
+  none: '尚未进入视野',
+  watchlist: '一线队观察名单',
+  'training-invite': '一线队跟训',
+  'bench-list': '比赛名单',
+  'substitute-appearance': '替补出场',
+  'starting-appearance': '首发出场',
 };
 
-const ATTRIBUTE_GROUPS = [
-  {
-    label: '技术',
-    keys: ['firstTouch', 'dribbling', 'passing', 'shooting', 'defending', 'aerialAbility'],
-    labels: ['停球', '盘带', '传球', '射门', '防守', '空中'],
-  },
-  {
-    label: '身体',
-    keys: ['pace', 'strength', 'stamina', 'agility'],
-    labels: ['速度', '力量', '耐力', '灵活'],
-  },
-  {
-    label: '精神',
-    keys: ['offTheBall', 'vision', 'decision', 'composure', 'determination', 'discipline'],
-    labels: ['跑位', '视野', '决策', '镇定', '意志', '纪律'],
-  },
-];
-
-export function CareerDashboard({ save, onSaveUpdate, onNewCareer, events }: CareerDashboardProps) {
-  const advanceWeek = createAdvanceCareerWeek(events);
-  const batchAdvance = createBatchAdvanceWeeks(events);
-  const [batchResult, setBatchResult] = useState<BatchAdvanceResult | null>(null);
-  const [trainingFocus, setTrainingFocus] = useState<string | null>(
-    save.context.trainingFocus ?? null,
+export function CareerDashboard({
+  save,
+  academyName,
+  report,
+  outcome,
+  advancing,
+  onAdvance,
+  onTrainingPlanChange,
+  onNewCareer,
+}: CareerDashboardProps) {
+  const attributes = Object.entries(save.player.attributes).flatMap(([group, values]) =>
+    Object.entries(values).map(([key, value]) => ({ group, key, value })),
   );
-  const [trainingIntensity, setTrainingIntensity] = useState<TrainingIntensity>(
-    save.context.trainingIntensity ?? 'normal',
-  );
-  const [advancing, setAdvancing] = useState(false);
-
-  const handleAdvance = () => {
-    setAdvancing(true);
-    try {
-      const updated = advanceWeek(save);
-      // Clear batch result when advancing manually
-      setBatchResult(null);
-      onSaveUpdate(updated);
-    } catch (err) {
-      console.error('推进失败:', err);
-    } finally {
-      setAdvancing(false);
-    }
-  };
-
-  const handleBatchAdvance = () => {
-    setAdvancing(true);
-    try {
-      const result = batchAdvance(save);
-      setBatchResult(result);
-    } catch (err) {
-      console.error('快进失败:', err);
-    } finally {
-      setAdvancing(false);
-    }
-  };
-
-  const handleBatchContinue = () => {
-    const result = batchResult;
-    setBatchResult(null);
-    if (result) {
-      onSaveUpdate(result.save);
-    }
-  };
-
-  const { player, world, context } = save;
-  const positionLabel =
-    POSITION_LABELS[player.identity.primaryPosition] ?? player.identity.primaryPosition;
-  const allAttrs: Record<string, number> = {
-    ...player.attributes.technical,
-    ...player.attributes.physical,
-    ...player.attributes.mental,
-  };
-  const { playerState } = context;
-
-  const academyName =
-    save.ledger.find((e) => e.type === 'youth-opportunity-chosen')?.academyName ?? '待定';
-
   return (
-    <div style={{ fontFamily: 'var(--font-serif)' }}>
-      {/* Header */}
-      <div
-        style={{
-          borderBottom: '2px solid var(--color-accent)',
-          paddingBottom: 'var(--space-sm)',
-          marginBottom: 'var(--space-xl)',
-        }}
-      >
-        <div
-          style={{
-            fontSize: 'var(--text-xs)',
-            color: 'var(--color-accent)',
-            textTransform: 'uppercase',
-            letterSpacing: '2px',
-          }}
-        >
-          生涯仪表盘
+    <section className="career-shell" aria-label="青训生涯仪表盘">
+      <header className="career-hero">
+        <div>
+          <span className="eyebrow">青训生涯</span>
+          <h2>{save.player.identity.name}</h2>
         </div>
-        <div
-          style={{
-            fontSize: 'var(--text-2xl)',
-            fontWeight: 'bold',
-            color: 'var(--color-ink)',
-            marginTop: 'var(--space-xs)',
-          }}
-        >
-          青训生涯
+        <div className="career-meta">
+          <span>{academyName}</span>
+          <span>{save.season.currentDate}</span>
+          <span>第 {save.season.currentWeek} 周</span>
         </div>
-      </div>
+      </header>
 
-      {/* Batch Advance Summary */}
-      {batchResult && (
-        <div
-          style={{
-            background: '#eaf7ee',
-            border: '1px solid #27ae60',
-            borderRadius: 'var(--radius-lg)',
-            padding: 'var(--space-lg)',
-            marginBottom: 'var(--space-lg)',
-          }}
-        >
-          <div
-            style={{
-              fontSize: 'var(--text-sm)',
-              fontWeight: 'bold',
-              color: '#27ae60',
-              textTransform: 'uppercase',
-              letterSpacing: '1px',
-              marginBottom: 'var(--space-sm)',
-            }}
-          >
-            ⏩ {batchResult.summary}
-          </div>
-          <div
-            style={{
-              display: 'flex',
-              gap: 'var(--space-md)',
-              flexWrap: 'wrap',
-              fontSize: 'var(--text-sm)',
-              color: 'var(--color-text-secondary)',
-              marginBottom: 'var(--space-md)',
-            }}
-          >
-            <span>
-              📅 {batchResult.save.world.currentDate} · 第{batchResult.save.world.weekNumber}周
-            </span>
-            {batchResult.matchCount > 0 && <span>⚽ {batchResult.matchCount} 场比赛</span>}
-            {batchResult.eventCount > 0 && <span>📰 {batchResult.eventCount} 个事件</span>}
-          </div>
-          {batchResult.save.context.pendingEvent ? (
-            <div
-              style={{
-                fontSize: 'var(--text-sm)',
-                color: '#e67e22',
-                fontStyle: 'italic',
-              }}
-            >
-              ⚠️ 遇到事件需要处理，点击继续查看
-            </div>
-          ) : (
-            <div
-              style={{
-                fontSize: 'var(--text-sm)',
-                color: 'var(--color-text-muted)',
-                fontStyle: 'italic',
-              }}
-            >
-              这{batchResult.totalWeeks}周风平浪静
-            </div>
+      {outcome && (
+        <section className="report-card">
+          <h3>赛季总结</h3>
+          <p>{outcome.summary}</p>
+          <p>后续方向：{outcome.nextPath}</p>
+        </section>
+      )}
+      {report && !outcome && (
+        <section className="report-card" aria-label="月报">
+          <h3>{report.monthKey} 月报</h3>
+          <p>
+            {report.matchIds.length} 场比赛 · {report.attributeChanges.length} 项属性提升 ·{' '}
+            {report.facts.length} 条生涯记录
+          </p>
+          {report.attributeChanges.length > 0 && (
+            <p>
+              {report.attributeChanges
+                .map(({ attribute, oldValue, newValue }) => `${attribute} ${oldValue}→${newValue}`)
+                .join('，')}
+            </p>
           )}
-          <div style={{ marginTop: 'var(--space-md)', textAlign: 'center' }}>
-            <button
-              onClick={handleBatchContinue}
-              style={{
-                background: '#27ae60',
-                color: '#fff',
-                border: 'none',
-                padding: 'var(--space-sm) 30px',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: 'var(--text-base)',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-              }}
-            >
-              继续 {'→'}
-            </button>
-          </div>
-        </div>
+        </section>
       )}
 
-      {/* Player Identity Card */}
-      <div
-        style={{
-          background: 'var(--color-card)',
-          border: '1px solid var(--color-border)',
-          borderRadius: 'var(--radius-lg)',
-          padding: 'var(--space-xl)',
-          marginBottom: 'var(--space-lg)',
-        }}
-      >
-        <div style={{ fontSize: 'var(--text-3xl)', fontWeight: 'bold', color: 'var(--color-ink)' }}>
-          {player.identity.name}
-        </div>
-        <div
-          style={{
-            fontSize: 'var(--text-lg)',
-            color: 'var(--color-text-secondary)',
-            marginTop: 'var(--space-xs)',
-          }}
-        >
-          {player.age}岁 · {positionLabel} · {player.identity.hometown}
-        </div>
-        <div
-          style={{
-            borderTop: '1px solid var(--color-border-light)',
-            marginTop: 'var(--space-md)',
-            paddingTop: 'var(--space-md)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 'var(--space-sm)',
-            fontSize: 'var(--text-base)',
-            color: 'var(--color-text-secondary)',
-          }}
-        >
-          <span>
-            📅 {world.currentDate} · 第{world.weekNumber}周
-          </span>
-          <span>🏟️ {academyName}</span>
-        </div>
-      </div>
+      <div className="dashboard-grid">
+        <section className="dashboard-card">
+          <h3>当前状态</h3>
+          <State label="体能" value={save.health.fitness} />
+          <State label="疲劳" value={save.health.fatigue} />
+          <State label="士气" value={save.currentState.morale} />
+          <State label="状态" value={save.currentState.form} />
+          <State label="教练评价" value={save.clubContext.coachEvaluation} />
+          <p className="muted">一线队：{stageLabels[save.clubContext.firstTeamStage]}</p>
+          {save.health.activeInjury && (
+            <p className="warning">
+              伤情：{save.health.activeInjury.bodyArea}，预计{' '}
+              {save.health.activeInjury.expectedRecoveryWeeks} 周
+            </p>
+          )}
+        </section>
 
-      {/* Player State Bars */}
-      <div
-        style={{
-          background: 'var(--color-card)',
-          border: '1px solid var(--color-border)',
-          borderRadius: 'var(--radius-lg)',
-          padding: 'var(--space-lg)',
-          marginBottom: 'var(--space-lg)',
-        }}
-      >
-        <div
-          style={{
-            fontSize: 'var(--text-lg)',
-            fontWeight: 'bold',
-            color: 'var(--color-ink)',
-            marginBottom: 'var(--space-md)',
-          }}
-        >
-          状态
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-          <StateBar label="体能" value={playerState.fitness} color="#27ae60" />
-          <StateBar label="士气" value={playerState.morale} color="#2980b9" />
-          <StateBar label="教练信任" value={playerState.coachTrust} color="#8e44ad" />
-          <StateBar label="疲劳" value={playerState.fatigue} color="#e67e22" />
-          <div
-            style={{
-              fontSize: 'var(--text-sm)',
-              color: 'var(--color-text-muted)',
-              marginTop: 'var(--space-xs)',
-            }}
-          >
-            队内地位：
-            {playerState.teamStatus === 'fringe'
-              ? '边缘'
-              : playerState.teamStatus === 'rotation'
-                ? '轮换'
-                : playerState.teamStatus === 'regular'
-                  ? '常规'
-                  : '核心'}
-          </div>
-        </div>
-      </div>
-
-      {/* Training Settings */}
-      <TrainingSettings
-        trainingFocus={trainingFocus}
-        trainingIntensity={trainingIntensity}
-        onFocusChange={(focus) => {
-          setTrainingFocus(focus);
-          onSaveUpdate({
-            ...save,
-            context: {
-              ...save.context,
-              trainingFocus: focus,
-              trainingIntensity,
-            },
-          });
-        }}
-        onIntensityChange={(intensity) => {
-          setTrainingIntensity(intensity);
-          onSaveUpdate({
-            ...save,
-            context: {
-              ...save.context,
-              trainingFocus,
-              trainingIntensity: intensity,
-            },
-          });
-        }}
-        position={player.identity.primaryPosition}
-      />
-
-      {/* Relationships */}
-      {save.relationships.persons.length > 0 && (
-        <div
-          style={{
-            background: 'var(--color-card)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-lg)',
-            padding: 'var(--space-lg)',
-            marginBottom: 'var(--space-lg)',
-          }}
-        >
-          <div
-            style={{
-              fontSize: 'var(--text-lg)',
-              fontWeight: 'bold',
-              color: 'var(--color-ink)',
-              marginBottom: 'var(--space-md)',
-            }}
-          >
-            人际关系
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-            {save.relationships.persons.map((person) => {
-              const avgRel =
-                (person.relationship.trust +
-                  person.relationship.respect +
-                  person.relationship.closeness) /
-                3;
-              const relLabel = getRelationshipLabel(avgRel);
-              const roleLabel = person.role === 'coach' ? '教练' : '队友';
-              const avatarChar = person.name.charAt(0);
-              const recentMemories = person.memories.slice(-3);
-
-              return (
-                <div
-                  key={person.id}
-                  style={{
-                    border: '1px solid var(--color-border-light)',
-                    borderRadius: 'var(--radius-md)',
-                    padding: 'var(--space-md)',
-                  }}
-                >
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--space-md)',
-                      marginBottom: 'var(--space-sm)',
-                    }}
-                  >
-                    {/* Avatar placeholder */}
-                    <div
-                      style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '50%',
-                        background: person.role === 'coach' ? '#8e44ad' : '#2980b9',
-                        color: '#fff',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 'var(--text-lg)',
-                        fontWeight: 'bold',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {avatarChar}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div
-                        style={{
-                          fontSize: 'var(--text-base)',
-                          fontWeight: 'bold',
-                          color: 'var(--color-ink)',
-                        }}
-                      >
-                        {person.name}
-                      </div>
-                      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
-                        {roleLabel} · {relLabel}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Relationship bars */}
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '2px',
-                      marginBottom: 'var(--space-sm)',
-                    }}
-                  >
-                    <StateBar label="信任" value={person.relationship.trust} color="#27ae60" />
-                    <StateBar label="尊重" value={person.relationship.respect} color="#2980b9" />
-                    <StateBar label="亲近" value={person.relationship.closeness} color="#e67e22" />
-                  </div>
-
-                  {/* Recent memories */}
-                  {recentMemories.length > 0 && (
-                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
-                      <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>最近记忆</div>
-                      {recentMemories.map((mem, i) => (
-                        <div
-                          key={i}
-                          style={{ padding: '1px 0', display: 'flex', gap: 'var(--space-xs)' }}
-                        >
-                          <span>
-                            {mem.emotionalImpact === 'positive'
-                              ? '😊'
-                              : mem.emotionalImpact === 'negative'
-                                ? '😞'
-                                : '😐'}
-                          </span>
-                          <span>{mem.summary}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Attributes */}
-      <div
-        style={{
-          background: 'var(--color-card)',
-          border: '1px solid var(--color-border)',
-          borderRadius: 'var(--radius-lg)',
-          padding: 'var(--space-lg)',
-          marginBottom: 'var(--space-lg)',
-        }}
-      >
-        <div
-          style={{
-            fontSize: 'var(--text-lg)',
-            fontWeight: 'bold',
-            color: 'var(--color-ink)',
-            marginBottom: 'var(--space-md)',
-          }}
-        >
-          属性
-        </div>
-        {ATTRIBUTE_GROUPS.map((group) => (
-          <div key={group.label} style={{ marginBottom: 'var(--space-sm)' }}>
-            <div
-              style={{
-                fontSize: 'var(--text-xs)',
-                color: 'var(--color-text-muted)',
-                textTransform: 'uppercase',
-                marginBottom: 'var(--space-xs)',
-              }}
+        <section className="dashboard-card">
+          <h3>训练计划</h3>
+          <label>
+            重点
+            <select
+              aria-label="训练重点"
+              value={save.trainingPlan.focus}
+              onChange={(event) =>
+                onTrainingPlanChange({
+                  ...save.trainingPlan,
+                  focus: event.target.value as TrainingPlan['focus'],
+                })
+              }
             >
-              {group.label}
-            </div>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '2px var(--space-md)',
-              }}
-            >
-              {group.keys.map((key, i) => (
-                <div
-                  key={key}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    fontSize: 'var(--text-base)',
-                    padding: '1px 0',
-                  }}
-                >
-                  <span style={{ color: 'var(--color-text-secondary)' }}>{group.labels[i]}</span>
-                  <span style={{ fontWeight: 'bold' }}>{allAttrs[key] ?? '-'}</span>
-                </div>
+              {Object.entries(focusLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
               ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Recent Events */}
-      <div
-        style={{
-          background: 'var(--color-card)',
-          border: '1px solid var(--color-border)',
-          borderRadius: 'var(--radius-lg)',
-          padding: 'var(--space-lg)',
-          marginBottom: 'var(--space-lg)',
-        }}
-      >
-        <div
-          style={{
-            fontSize: 'var(--text-lg)',
-            fontWeight: 'bold',
-            color: 'var(--color-ink)',
-            marginBottom: 'var(--space-md)',
-          }}
-        >
-          最近动态
-        </div>
-        {save.ledger.length <= 1 && (
-          <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
-            暂无记录 - 开始你的第一周训练吧！
-          </div>
-        )}
-        {save.ledger
-          .slice(-5)
-          .reverse()
-          .map((entry, i) => (
-            <div
-              key={i}
-              style={{
-                fontSize: 'var(--text-sm)',
-                color: 'var(--color-text-secondary)',
-                padding: 'var(--space-xs) 0',
-                borderBottom:
-                  i < Math.min(save.ledger.length, 5) - 1
-                    ? '1px solid var(--color-border-light)'
-                    : 'none',
-              }}
+            </select>
+          </label>
+          <label>
+            强度
+            <select
+              aria-label="训练强度"
+              value={save.trainingPlan.intensity}
+              onChange={(event) =>
+                onTrainingPlanChange({
+                  ...save.trainingPlan,
+                  intensity: event.target.value as TrainingPlan['intensity'],
+                })
+              }
             >
-              {entry.type === 'career-started' && `🎯 生涯开始于 ${entry.date}`}
-              {entry.type === 'youth-opportunity-chosen' && `🏟️ 加入 ${entry.academyName}`}
-              {entry.type === 'week-advanced' && `📅 第 ${entry.week} 周`}
-              {entry.type === 'training-week' && `🏋️ 训练：${entry.focus}`}
-              {entry.type === 'match-week' &&
-                `⚽ 比赛：${entry.played ? `${entry.homeScore}-${entry.awayScore} (评分 ${entry.rating})` : `未出场`}`}
-              {entry.type === 'event-week' && `📰 ${entry.title}`}
+              <option value="light">轻量</option>
+              <option value="normal">正常</option>
+              <option value="intense">高强度</option>
+            </select>
+          </label>
+          <p className="muted">设置会持续生效，直到你再次调整。</p>
+        </section>
+
+        <section className="dashboard-card attributes">
+          <h3>球员属性</h3>
+          <div className="attribute-grid">
+            {attributes.map(({ group, key, value }) => (
+              <div key={`${group}-${key}`}>
+                <span>{key}</span>
+                <strong>{value}</strong>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="dashboard-card">
+          <h3>关键人物</h3>
+          {save.relationships.persons.map((person) => (
+            <div className="person-row" key={person.id}>
+              <div>
+                <strong>{person.name}</strong>
+                <span>{person.role}</span>
+              </div>
+              <span>
+                信任 {person.relationship.trust} · 尊重 {person.relationship.respect} · 亲近{' '}
+                {person.relationship.closeness}
+              </span>
             </div>
           ))}
+        </section>
+
+        <section className="dashboard-card timeline">
+          <h3>最近记录</h3>
+          {save.ledger
+            .slice(-10)
+            .reverse()
+            .map((fact) => (
+              <details key={fact.id}>
+                <summary>
+                  {fact.weekKey} · {fact.type}
+                </summary>
+                <p>{fact.summary}</p>
+              </details>
+            ))}
+        </section>
       </div>
 
-      {/* Action Buttons */}
-      <div
-        style={{
-          borderTop: '1px solid var(--color-border)',
-          paddingTop: 'var(--space-lg)',
-          display: 'flex',
-          gap: 'var(--space-md)',
-          flexWrap: 'wrap',
-          justifyContent: 'center',
-        }}
-      >
+      <footer className="career-actions">
         <button
-          onClick={handleAdvance}
-          disabled={advancing || !!batchResult}
-          style={{
-            background: 'var(--color-accent)',
-            color: '#fff',
-            border: 'none',
-            padding: 'var(--space-md) 30px',
-            borderRadius: 'var(--radius-sm)',
-            fontSize: 'var(--text-base)',
-            fontWeight: 'bold',
-            letterSpacing: '1px',
-            cursor: advancing || batchResult ? 'default' : 'pointer',
-            opacity: advancing || batchResult ? 0.5 : 1,
-            boxShadow: 'var(--shadow-md)',
-          }}
+          className="primary-action"
+          onClick={onAdvance}
+          disabled={advancing || save.season.completed}
         >
-          推进一周 →
+          {advancing ? '推进中…' : '推进到下个月'}
         </button>
-        <button
-          onClick={handleBatchAdvance}
-          disabled={advancing || !!batchResult}
-          style={{
-            background: '#27ae60',
-            color: '#fff',
-            border: 'none',
-            padding: 'var(--space-md) 30px',
-            borderRadius: 'var(--radius-sm)',
-            fontSize: 'var(--text-base)',
-            fontWeight: 'bold',
-            cursor: advancing || batchResult ? 'default' : 'pointer',
-            opacity: advancing || batchResult ? 0.5 : 1,
-          }}
-        >
-          {advancing ? '推进中...' : '⏩ 快进到下一事件'}
-        </button>
-        <button
-          onClick={onNewCareer}
-          disabled={!!batchResult}
-          style={{
-            background: 'transparent',
-            color: 'var(--color-text-secondary)',
-            border: '1px solid var(--color-border)',
-            padding: 'var(--space-md) 20px',
-            borderRadius: 'var(--radius-sm)',
-            fontSize: 'var(--text-base)',
-            cursor: batchResult ? 'default' : 'pointer',
-            opacity: batchResult ? 0.5 : 1,
-          }}
-        >
+        <button className="secondary-action" onClick={onNewCareer}>
           新生涯
         </button>
-      </div>
-    </div>
+      </footer>
+    </section>
   );
 }
 
-function StateBar({ label, value, color }: { label: string; value: number; color: string }) {
+function State({ label, value }: { label: string; value: number }) {
   return (
-    <div>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          fontSize: 'var(--text-sm)',
-          marginBottom: '2px',
-        }}
-      >
-        <span style={{ color: 'var(--color-text-secondary)' }}>{label}</span>
-        <span style={{ fontWeight: 'bold', color }}>{value}</span>
+    <div className="state-row">
+      <span>{label}</span>
+      <div>
+        <i style={{ width: `${value}%` }} />
       </div>
-      <div
-        style={{
-          background: 'var(--color-bg-muted)',
-          borderRadius: '10px',
-          height: '8px',
-          overflow: 'hidden',
-        }}
-      >
-        <div
-          style={{
-            background: color,
-            width: `${value}%`,
-            height: '100%',
-            borderRadius: '10px',
-            transition: 'width 0.3s ease',
-          }}
-        />
-      </div>
+      <strong>{value}</strong>
     </div>
   );
 }

@@ -72,7 +72,7 @@ describe('App', () => {
     await waitFor(() => {
       expect(screen.getByText('青训生涯')).toBeDefined();
     });
-    expect(screen.getByRole('button', { name: /推进一周/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: '推进到下个月' })).toBeDefined();
   });
 
   it('resumes a saved pending event instead of opening the dashboard', async () => {

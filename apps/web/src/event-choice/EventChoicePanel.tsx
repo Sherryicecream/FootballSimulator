@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react';
-import type { EventInstance } from '@football/contracts';
+import type { EventInstance, YouthEventInstance } from '@football/contracts';
 
 interface EventChoicePanelProps {
-  event: EventInstance;
+  event: EventInstance | YouthEventInstance;
   onSubmit: (choiceId: string) => void;
 }
 

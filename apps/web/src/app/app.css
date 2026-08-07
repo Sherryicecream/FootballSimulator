@@ -28,6 +28,164 @@ textarea {
   min-height: 100vh;
 }
 
+.career-shell {
+  width: 100%;
+}
+.career-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: end;
+  border-bottom: 2px solid var(--color-accent);
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+}
+.career-hero h2 {
+  margin: 4px 0 0;
+  font-size: 2rem;
+}
+.eyebrow {
+  color: var(--color-accent);
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+}
+.career-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  color: var(--color-text-secondary);
+}
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.dashboard-card,
+.report-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+.dashboard-card h3,
+.report-card h3 {
+  margin-top: 0;
+}
+.dashboard-card label {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.dashboard-card select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: white;
+}
+.attributes,
+.timeline,
+.report-card {
+  grid-column: 1 / -1;
+  margin-bottom: 16px;
+}
+.attribute-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px 18px;
+}
+.attribute-grid div,
+.person-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--color-border-light);
+}
+.person-row div {
+  display: grid;
+}
+.person-row span,
+.muted {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+.warning {
+  color: #b45309;
+}
+.state-row {
+  display: grid;
+  grid-template-columns: 74px 1fr 34px;
+  align-items: center;
+  gap: 8px;
+  margin: 9px 0;
+}
+.state-row > div {
+  height: 7px;
+  background: var(--color-bg-muted);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.state-row i {
+  display: block;
+  height: 100%;
+  background: var(--color-accent);
+}
+.timeline details {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border-light);
+}
+.career-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+.career-actions button,
+.error-card button {
+  padding: 12px 22px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+.primary-action {
+  border: 0;
+  background: var(--color-accent);
+  color: white;
+}
+.secondary-action {
+  background: transparent;
+  border: 1px solid var(--color-border);
+}
+.error-card {
+  padding: 14px;
+  margin-bottom: 16px;
+  border: 1px solid #dc2626;
+  color: #991b1b;
+  background: #fef2f2;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+@media (max-width: 720px) {
+  .career-hero {
+    align-items: start;
+    flex-direction: column;
+  }
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-card {
+    grid-column: 1;
+  }
+  .attribute-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .person-row {
+    flex-direction: column;
+  }
+}
+
 @media (max-width: 720px) {
   .app {
     padding: var(--space-lg) var(--space-md);

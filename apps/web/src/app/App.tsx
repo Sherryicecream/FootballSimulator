@@ -1,207 +1,194 @@
-import { useState, useEffect } from 'react';
-import type { CareerSave, EventInstance, PlayerState } from '@football/contracts';
-import { createBootstrapContent, createYouthEvents } from './bootstrap-dependencies';
+import { useEffect, useState } from 'react';
+import type { CareerSave, CareerSaveV2, MonthlyReport, TrainingPlan } from '@football/contracts';
+import { getYouthContent } from '@football/content';
+import {
+  advanceCareerMonth,
+  completeYouthSeason,
+  createAdvanceToDecision,
+  createSubmitYouthChoice,
+  createYouthCareerV2,
+  loadCareer,
+  submitCareerDecision,
+  updateTrainingPlan,
+  type YouthSeasonOutcome,
+} from '@football/application';
 import { CareerCreationForm } from '../career-creation/CareerCreationForm';
 import { YouthOpportunityPanel } from '../event-choice/YouthOpportunityPanel';
 import { EventChoicePanel } from '../event-choice/EventChoicePanel';
-import { EventResultPanel } from '../event-choice/EventResultPanel';
 import { CareerDashboard } from '../career-dashboard/CareerDashboard';
-import {
-  createAdvanceToDecision,
-  createSubmitYouthChoice,
-  createSubmitEventChoice,
-} from '@football/application';
-import { createLocalStorageSavePort } from '../persistence/local-storage-save';
+import { createBootstrapContent } from './bootstrap-dependencies';
+import { createLocalStorageCareerV2Port } from '../persistence/local-storage-save';
 import './app.css';
 
-type FlowStep =
-  'creation' | 'opportunity' | 'dashboard' | 'event-choice' | 'event-result' | 'weekly-report';
-
-const content = createBootstrapContent();
-const events = createYouthEvents();
-const advanceToDecision = createAdvanceToDecision(content);
-const submitYouthChoice = createSubmitYouthChoice();
-const submitEventChoice = createSubmitEventChoice();
-const savePort = createLocalStorageSavePort();
+type Step = 'creation' | 'opportunity' | 'dashboard' | 'event';
+const bootstrapContent = createBootstrapContent();
+const youthContent = getYouthContent();
+const advanceToDecision = createAdvanceToDecision(bootstrapContent);
+const chooseYouthOpportunity = createSubmitYouthChoice();
+const savePort = createLocalStorageCareerV2Port();
 
 export function App() {
-  const [step, setStep] = useState<FlowStep>('creation');
-  const [save, setSave] = useState<CareerSave | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [pendingEvent, setPendingEvent] = useState<EventInstance | null>(null);
-  const [chosenChoiceId, setChosenChoiceId] = useState<string | null>(null);
-  const [oldPlayerState, setOldPlayerState] = useState<PlayerState | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [step, setStep] = useState<Step>('creation');
+  const [bootstrapSave, setBootstrapSave] = useState<CareerSave | null>(null);
+  const [save, setSave] = useState<CareerSaveV2 | null>(null);
+  const [report, setReport] = useState<MonthlyReport | null>(null);
+  const [outcome, setOutcome] = useState<YouthSeasonOutcome | null>(null);
+  const [advancing, setAdvancing] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [invalidSlot, setInvalidSlot] = useState<string | null>(null);
 
-  // Try to load saved career on startup
   useEffect(() => {
-    const loadSaved = async () => {
-      try {
-        const slots = await savePort.list();
-        if (slots.length > 0) {
-          const slotId = slots[0]!;
-          const saved = await savePort.load(slotId);
-          if (saved) {
-            setSave(saved);
-            setPendingEvent(saved.context.pendingEvent);
-            setStep(saved.context.pendingEvent ? 'event-choice' : 'dashboard');
-            setLoaded(true);
-            return;
+    void (async () => {
+      const slot = (await savePort.list())[0];
+      if (slot) {
+        const result = await savePort.load(slot);
+        if (result.status === 'loaded') {
+          const restored = loadCareer(result.save, youthContent);
+          if (restored.season.completed && !restored.story.pendingEvent) {
+            const completed = completeYouthSeason(restored);
+            setSave(completed.save);
+            setOutcome(completed.outcome);
+            setStep('dashboard');
+          } else {
+            setSave(restored);
+            setStep(restored.story.pendingEvent ? 'event' : 'dashboard');
           }
+        } else if (result.status === 'invalid') {
+          setError(`存档无法恢复：${result.reason}`);
+          setInvalidSlot(slot);
         }
-      } catch (e) {
-        console.error('Failed to load saved career:', e);
       }
       setLoaded(true);
-    };
-    loadSaved();
+    })();
   }, []);
 
-  const handleCreationComplete = (careerSave: CareerSave) => {
-    setSave(careerSave);
-    setLoading(true);
-    setError(null);
+  const persist = (next: CareerSaveV2) => {
+    setSave(next);
+    void savePort.save(next.careerId, next);
+  };
+  const start = (created: CareerSave) => {
     try {
-      const pending = advanceToDecision(careerSave);
-      setSave(pending);
+      const pending = advanceToDecision(created);
+      setBootstrapSave(pending);
       setStep('opportunity');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '推进失败');
-    } finally {
-      setLoading(false);
+    } catch (caught) {
+      setError(message(caught));
     }
   };
-
-  const handleChoice = (offerId: string) => {
-    if (!save) return;
+  const chooseAcademy = (offerId: string) => {
+    if (!bootstrapSave) return;
     try {
-      const updated = submitYouthChoice(save, offerId);
-      setSave(updated);
+      const selected = chooseYouthOpportunity(bootstrapSave, offerId);
+      const next = createYouthCareerV2(selected, youthContent);
+      persist(next);
+      setBootstrapSave(null);
       setStep('dashboard');
-      savePort.save(updated.careerId, updated).catch(console.error);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '选择失败');
+    } catch (caught) {
+      setError(message(caught));
     }
   };
-
-  const handleAdvance = (updatedSave: CareerSave) => {
-    setSave(updatedSave);
-    if (updatedSave.context.pendingEvent) {
-      setPendingEvent(updatedSave.context.pendingEvent);
-      setStep('event-choice');
-    } else {
-      setStep('dashboard');
+  const progress = (current: CareerSaveV2) => {
+    const result = advanceCareerMonth(current, youthContent.academies, youthContent.events);
+    persist(result.save);
+    if (result.status === 'awaiting-decision') {
+      setStep('event');
+      return;
     }
-    savePort.save(updatedSave.careerId, updatedSave).catch(console.error);
+    setReport(result.report);
+    if (result.status === 'season-complete') {
+      const completed = completeYouthSeason(result.save);
+      persist(completed.save);
+      setOutcome(completed.outcome);
+    }
+    setStep('dashboard');
   };
-
-  const handleEventChoice = (choiceId: string) => {
+  const advance = () => {
     if (!save) return;
-    try {
-      // Save old state for comparison before applying choice
-      setOldPlayerState(save.context.playerState);
-      setChosenChoiceId(choiceId);
-      const updated = submitEventChoice(save, choiceId);
-      setSave(updated);
-      setStep('event-result');
-      savePort.save(updated.careerId, updated).catch(console.error);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '提交失败');
-    }
-  };
-
-  const handleNewCareer = () => {
-    if (save) {
-      savePort.delete(save.careerId).catch(console.error);
-    }
-    setSave(null);
-    setPendingEvent(null);
-    setChosenChoiceId(null);
-    setOldPlayerState(null);
+    setAdvancing(true);
     setError(null);
+    try {
+      progress(save);
+    } catch (caught) {
+      setError(message(caught));
+    } finally {
+      setAdvancing(false);
+    }
+  };
+  const decide = (choiceId: string) => {
+    if (!save?.story.pendingEvent) return;
+    try {
+      progress(submitCareerDecision(save, save.story.pendingEvent.eventId, choiceId));
+    } catch (caught) {
+      setError(message(caught));
+    }
+  };
+  const changePlan = (plan: TrainingPlan) => {
+    if (save) persist(updateTrainingPlan(save, plan));
+  };
+  const newCareer = () => {
+    if (save) void savePort.delete(save.careerId);
+    setSave(null);
+    setBootstrapSave(null);
+    setReport(null);
+    setOutcome(null);
     setStep('creation');
   };
+  const discardInvalid = () => {
+    if (invalidSlot) void savePort.delete(invalidSlot);
+    setInvalidSlot(null);
+    setError(null);
+  };
 
-  if (!loaded) {
+  if (!loaded)
     return (
-      <div
-        style={{
-          textAlign: 'center',
-          padding: '40px',
-          fontFamily: 'var(--font-serif)',
-          color: 'var(--color-text-secondary)',
-        }}
-      >
-        加载中...
-      </div>
+      <main className="app">
+        <p>加载中…</p>
+      </main>
     );
-  }
-
+  const academyName =
+    youthContent.academies.find(({ id }) => id === save?.season.academyId)?.name ??
+    save?.season.academyId ??
+    '';
   return (
-    <div className="app" role="main">
-      <h1
-        style={{
-          fontSize: 'var(--text-2xl)',
-          color: 'var(--color-ink)',
-          marginBottom: 'var(--space-2xl)',
-          letterSpacing: '1px',
-        }}
-      >
-        足球生涯模拟器
-      </h1>
-
+    <main className="app">
+      <h1>足球生涯模拟器</h1>
       {error && (
-        <div
-          role="alert"
-          style={{
-            background: '#fef2f2',
-            border: '1px solid var(--color-accent)',
-            borderRadius: 'var(--radius-md)',
-            padding: 'var(--space-md)',
-            marginBottom: 'var(--space-lg)',
-            fontSize: 'var(--text-base)',
-            color: 'var(--color-accent)',
-          }}
-        >
+        <div role="alert" className="error-card">
           {error}
+          {invalidSlot && <button onClick={discardInvalid}>清除损坏存档</button>}
         </div>
       )}
-
-      {step === 'creation' && (
-        <CareerCreationForm onComplete={handleCreationComplete} content={content} />
-      )}
-
-      {step === 'opportunity' && save?.context.pendingOpportunity && (
+      {step === 'creation' && <CareerCreationForm onComplete={start} content={bootstrapContent} />}
+      {step === 'opportunity' && bootstrapSave?.context.pendingOpportunity && (
         <YouthOpportunityPanel
-          opportunity={save.context.pendingOpportunity}
-          onChoose={handleChoice}
-          disabled={loading}
+          opportunity={bootstrapSave.context.pendingOpportunity}
+          onChoose={chooseAcademy}
+          disabled={false}
         />
       )}
-
       {step === 'dashboard' && save && (
         <CareerDashboard
           save={save}
-          onSaveUpdate={handleAdvance}
-          onNewCareer={handleNewCareer}
-          events={events}
+          academyName={academyName}
+          report={report}
+          outcome={outcome}
+          advancing={advancing}
+          onAdvance={advance}
+          onTrainingPlanChange={changePlan}
+          onNewCareer={newCareer}
         />
       )}
-
-      {step === 'event-choice' && pendingEvent && (
-        <EventChoicePanel event={pendingEvent} onSubmit={handleEventChoice} />
-      )}
-
-      {step === 'event-result' && pendingEvent && chosenChoiceId && oldPlayerState && save && (
-        <EventResultPanel
-          event={pendingEvent}
-          chosenChoiceId={chosenChoiceId}
-          oldPlayerState={oldPlayerState}
-          newPlayerState={save.context.playerState}
-          onContinue={() => setStep('dashboard')}
+      {step === 'event' && save?.story.pendingEvent && (
+        <EventChoicePanel
+          key={save.story.pendingEvent.eventId}
+          event={save.story.pendingEvent}
+          onSubmit={decide}
         />
       )}
-    </div>
+    </main>
   );
 }
+
+const message = (caught: unknown) =>
+  caught instanceof Error ? caught.message : '操作失败，请重试';

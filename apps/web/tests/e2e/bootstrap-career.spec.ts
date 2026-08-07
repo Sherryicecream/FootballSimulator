@@ -19,9 +19,9 @@ test.describe('Bootstrap Career Flow', () => {
     await offers.first().click();
 
     // Step 3: Career dashboard
-    await expect(page.getByText('青训生涯')).toBeVisible();
-    await expect(page.getByText('林岳')).toBeVisible();
-    await expect(page.getByText('推进一周')).toBeVisible();
+    await expect(page.getByLabel('青训生涯仪表盘')).toBeVisible();
+    await expect(page.getByRole('heading', { name: '林岳' })).toBeVisible();
+    await expect(page.getByText('推进到下个月')).toBeVisible();
   });
 
   test('same seed produces same result', async ({ page }) => {
