@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createLocalStorageSavePort } from '../../src/persistence/local-storage-save';
-import type { CareerSave } from '@football/contracts';
+import {
+  createLocalStorageCareerV2Port,
+  createLocalStorageSavePort,
+} from '../../src/persistence/local-storage-save';
+import { migrateCareerSave, type CareerSave } from '@football/contracts';
 
 const mockSave: CareerSave = {
   schemaVersion: 1,
@@ -119,5 +122,42 @@ describe('createLocalStorageSavePort', () => {
     localStorage.setItem('football-save-test-career', '{corrupted json');
     const loaded = await port.load('test-career');
     expect(loaded).toBeUndefined();
+  });
+
+  it('validates v2 saves before writing and loads them with a typed result', async () => {
+    const port = createLocalStorageCareerV2Port();
+    const v2 = migrateCareerSave(mockSave);
+
+    await port.save(v2.careerId, v2);
+    const loaded = await port.load(v2.careerId);
+
+    expect(loaded.status).toBe('loaded');
+    if (loaded.status === 'loaded') {
+      expect(loaded.save.schemaVersion).toBe(2);
+    }
+  });
+
+  it('deterministically migrates a wrapped v1 save without deleting the raw data', async () => {
+    const key = 'football-save-test-career';
+    const raw = JSON.stringify({ version: 1, savedAt: '2024-09-01T00:00:00.000Z', data: mockSave });
+    localStorage.setItem(key, raw);
+
+    const loaded = await createLocalStorageCareerV2Port().load('test-career');
+
+    expect(loaded.status).toBe('loaded');
+    expect(localStorage.getItem(key)).toBe(raw);
+  });
+
+  it('returns a recoverable reason for a damaged save and keeps the raw data', async () => {
+    const key = 'football-save-damaged';
+    localStorage.setItem(key, '{damaged');
+
+    const loaded = await createLocalStorageCareerV2Port().load('damaged');
+
+    expect(loaded.status).toBe('invalid');
+    if (loaded.status === 'invalid') {
+      expect(loaded.reason).toContain('解析');
+    }
+    expect(localStorage.getItem(key)).toBe('{damaged');
   });
 });

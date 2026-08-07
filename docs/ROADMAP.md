@@ -5,6 +5,7 @@
 ## 当前状态
 
 - 稳定基线已经恢复：未完成的毕业/合同契约已移除，周状态投影、事件冷却、批量账本和待决事件恢复均有回归测试。
+- v2 青训领域、内容校验、v1→v2 迁移和固定整季初始化已经完成；当前网页仍使用 v1 周流程，待月度模拟闭环接入后切换。
 - 当前活动设计：`docs/superpowers/specs/2026-08-07-youth-season-vertical-slice-design.md`。
 - 当前活动计划：`docs/superpowers/plans/2026-08-07-youth-season-vertical-slice.md`。
 - 当前目标：完成一个可信、稳定、可重复模拟的完整青训赛季。

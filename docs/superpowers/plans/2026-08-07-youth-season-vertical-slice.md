@@ -349,19 +349,19 @@ export const validateYouthContent = (content: YouthContentBundle): YouthContentB
 
 `YouthAcademyProfile` 必须包含设施、教练、竞争、风格、赛事层级、一线队层级、提拔倾向和异地压力；`YouthSeasonState` 必须包含固定赛程、位置深度、当前月、月内游标和完成状态；`InjuryStatus` 必须表达伤情、严重度、预计恢复周、已恢复周和复发风险。
 
-- [ ] **2.1 用契约测试锁定 v2 数据边界**
+- [x] **2.1 用契约测试锁定 v2 数据边界**
 
   测试分项潜力结构、成长节奏、伤病状态、固定赛程、关键人物、位置竞争、月度游标、事件参与者和 CareerSaveV2。验证 v2 不包含正式合同、转会、国家队和完整职业联赛字段。
 
-- [ ] **2.2 将机构、赛事、人物和事件引用移入 content 并校验**
+- [x] **2.2 将机构、赛事、人物和事件引用移入 content 并校验**
 
   从 simulation 移除硬编码机构和对手名称。内容校验必须拒绝重复 ID、未知地区或机构引用、赛程冲突、越界评分、未知事件效果键、无条件重大事件、断裂故事链和真实俱乐部品牌词。
 
-- [ ] **2.3 实现 v1→v2 迁移及浏览器加载策略**
+- [x] **2.3 实现 v1→v2 迁移及浏览器加载策略**
 
   迁移保留球员身份、属性、青训选择、随机种子和可解释账本；对 v1 无法推导的数据使用确定性默认值或基于原始种子的确定性生成。加载失败返回带原因的结果，不删除原始 localStorage 数据。保存前必须先通过 v2 Schema。
 
-- [ ] **2.4 验证并提交领域与内容基线**
+- [x] **2.4 验证并提交领域与内容基线**
 
   运行 contracts、content、persistence 聚焦测试及完整 `pnpm test`、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`。提交建议：`feat: define validated youth season save v2`。
 
