@@ -4,7 +4,7 @@ import {
   chooseYouthOpportunity,
 } from '../../src/career/youth-opportunity';
 import { createSeededRandomSource } from '../../src/randomness/seeded-random-source';
-import type { CareerSave, RegionProfile } from '@football/contracts';
+import type { CareerSave, RegionProfile, YouthAcademyProfile } from '@football/contracts';
 import { createCalendar } from '../../src/career/calendar';
 
 const neutralRegion: RegionProfile = {
@@ -21,6 +21,40 @@ const neutralRegion: RegionProfile = {
   climate: '温和',
   footballCulture: '一般',
 };
+
+const academy = (
+  id: string,
+  name: string,
+  regionId: string,
+  pathway: YouthAcademyProfile['pathway'],
+): YouthAcademyProfile => ({
+  id,
+  name,
+  regionId,
+  pathway,
+  facilityLevel: 70,
+  coachingLevel: 70,
+  competitionLevel: 70,
+  competitionIntensity: 70,
+  developmentStyle: '均衡',
+  firstTeamLevel: 65,
+  promotionTendency: 55,
+  relocationPressure: pathway === 'relocation-academy' ? 70 : 20,
+});
+
+const testAcademies: YouthAcademyProfile[] = [
+  academy('local-test', '本地发展中心', 'test-region', 'local-academy'),
+  academy('local-test-two', '城市青年中心', 'test-region', 'local-academy'),
+  academy('local-shanghai', '浦江发展中心', 'shanghai', 'local-academy'),
+  academy('local-shandong', '齐鲁发展中心', 'shandong', 'local-academy'),
+  academy('local-guangdong', '南岭发展中心', 'guangdong', 'local-academy'),
+  academy('local-beijing', '京华发展中心', 'beijing-tianjin', 'local-academy'),
+  academy('school-test', '校园精英计划', 'test-region', 'school-elite'),
+  academy('school-test-two', '校园联赛计划', 'test-region', 'school-elite'),
+  academy('relocation-a', '远方新星学院', 'shandong', 'relocation-academy'),
+  academy('relocation-b', '海湾青年学院', 'guangdong', 'relocation-academy'),
+  academy('relocation-c', '北境竞技学院', 'dongbei', 'relocation-academy'),
+];
 
 function createMockSave(seed: number = 42): CareerSave {
   const calendar = createCalendar('2024-09-01', 2024);
@@ -98,7 +132,13 @@ function createMockSave(seed: number = 42): CareerSave {
 describe('generateYouthOpportunity', () => {
   it('生成包含 2-3 个选项的机会', () => {
     const rng = createSeededRandomSource(42);
-    const opportunity = generateYouthOpportunity(createMockSave(42), neutralRegion, rng, 3);
+    const opportunity = generateYouthOpportunity(
+      createMockSave(42),
+      neutralRegion,
+      testAcademies,
+      rng,
+      3,
+    );
 
     expect(opportunity.week).toBe(3);
     expect(opportunity.offers.length).toBeGreaterThanOrEqual(2);
@@ -109,8 +149,20 @@ describe('generateYouthOpportunity', () => {
     const rng1 = createSeededRandomSource(42);
     const rng2 = createSeededRandomSource(42);
 
-    const opp1 = generateYouthOpportunity(createMockSave(42), neutralRegion, rng1, 3);
-    const opp2 = generateYouthOpportunity(createMockSave(42), neutralRegion, rng2, 3);
+    const opp1 = generateYouthOpportunity(
+      createMockSave(42),
+      neutralRegion,
+      testAcademies,
+      rng1,
+      3,
+    );
+    const opp2 = generateYouthOpportunity(
+      createMockSave(42),
+      neutralRegion,
+      testAcademies,
+      rng2,
+      3,
+    );
 
     expect(opp1.offers.map((o) => o.academyId)).toEqual(opp2.offers.map((o) => o.academyId));
     expect(opp1.offers.map((o) => o.pathway)).toEqual(opp2.offers.map((o) => o.pathway));
@@ -124,7 +176,13 @@ describe('generateYouthOpportunity', () => {
       scoutingCoverage: 80,
     };
     const rng = createSeededRandomSource(42);
-    const opportunity = generateYouthOpportunity(createMockSave(42), highFacilityRegion, rng, 3);
+    const opportunity = generateYouthOpportunity(
+      createMockSave(42),
+      highFacilityRegion,
+      testAcademies,
+      rng,
+      3,
+    );
 
     const pathways = opportunity.offers.map((o) => o.pathway);
     expect(pathways).toContain('local-academy');
@@ -138,7 +196,13 @@ describe('generateYouthOpportunity', () => {
       scoutingCoverage: 30,
     };
     const rng = createSeededRandomSource(42);
-    const opportunity = generateYouthOpportunity(createMockSave(42), lowFacilityRegion, rng, 3);
+    const opportunity = generateYouthOpportunity(
+      createMockSave(42),
+      lowFacilityRegion,
+      testAcademies,
+      rng,
+      3,
+    );
 
     const pathways = opportunity.offers.map((o) => o.pathway);
     expect(pathways).toContain('relocation-academy');
@@ -146,7 +210,13 @@ describe('generateYouthOpportunity', () => {
 
   it('所有选项有唯一的 ID', () => {
     const rng = createSeededRandomSource(42);
-    const opportunity = generateYouthOpportunity(createMockSave(42), neutralRegion, rng, 3);
+    const opportunity = generateYouthOpportunity(
+      createMockSave(42),
+      neutralRegion,
+      testAcademies,
+      rng,
+      3,
+    );
 
     const ids = opportunity.offers.map((o) => o.id);
     expect(new Set(ids).size).toBe(ids.length);
@@ -156,8 +226,20 @@ describe('generateYouthOpportunity', () => {
     const rng1 = createSeededRandomSource(42);
     const rng2 = createSeededRandomSource(99);
 
-    const opp1 = generateYouthOpportunity(createMockSave(42), neutralRegion, rng1, 3);
-    const opp2 = generateYouthOpportunity(createMockSave(99), neutralRegion, rng2, 3);
+    const opp1 = generateYouthOpportunity(
+      createMockSave(42),
+      neutralRegion,
+      testAcademies,
+      rng1,
+      3,
+    );
+    const opp2 = generateYouthOpportunity(
+      createMockSave(99),
+      neutralRegion,
+      testAcademies,
+      rng2,
+      3,
+    );
 
     // 至少有一个选项不同
     const ids1 = opp1.offers.map((o) => o.academyId).join(',');
@@ -179,6 +261,7 @@ describe('generateYouthOpportunity', () => {
         const opportunity = generateYouthOpportunity(
           createMockSave(seed),
           region,
+          testAcademies,
           createSeededRandomSource(seed),
           3,
         );
@@ -194,7 +277,7 @@ describe('chooseYouthOpportunity', () => {
   it('选择选项后设置 academyId 并清除 pendingOpportunity', () => {
     const save = createMockSave(42);
     const rng = createSeededRandomSource(42);
-    const opportunity = generateYouthOpportunity(save, neutralRegion, rng, 3);
+    const opportunity = generateYouthOpportunity(save, neutralRegion, testAcademies, rng, 3);
 
     const saveWithOpp = {
       ...save,
@@ -212,7 +295,7 @@ describe('chooseYouthOpportunity', () => {
   it('选择后追加一条账本条目', () => {
     const save = createMockSave(42);
     const rng = createSeededRandomSource(42);
-    const opportunity = generateYouthOpportunity(save, neutralRegion, rng, 3);
+    const opportunity = generateYouthOpportunity(save, neutralRegion, testAcademies, rng, 3);
 
     const saveWithOpp = {
       ...save,
@@ -227,7 +310,7 @@ describe('chooseYouthOpportunity', () => {
   it('使用不存在的选项 ID 抛出错误', () => {
     const save = createMockSave(42);
     const rng = createSeededRandomSource(42);
-    const opportunity = generateYouthOpportunity(save, neutralRegion, rng, 3);
+    const opportunity = generateYouthOpportunity(save, neutralRegion, testAcademies, rng, 3);
 
     const saveWithOpp = {
       ...save,

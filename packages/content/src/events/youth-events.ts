@@ -348,7 +348,7 @@ export const youthEvents: EventDefinition[] = [
     title: '媒体的关注',
     description:
       '你在上一场比赛中的出色表现引起了本地媒体的注意。一名记者来到训练基地，想要采访你——这是你第一次面对镜头。',
-    condition: {},
+    condition: { minReputation: 20 },
     choices: [
       {
         id: 'ma-accept',
@@ -374,7 +374,7 @@ export const youthEvents: EventDefinition[] = [
     title: '球探在看你',
     description:
       '今天的训练场上来了几张陌生的面孔——听队友说，那是来自其他俱乐部青年队的球探。他们在场边认真记录着每个球员的表现。',
-    condition: {},
+    condition: { minReputation: 15 },
     choices: [
       {
         id: 'sw-show-off',
@@ -400,7 +400,7 @@ export const youthEvents: EventDefinition[] = [
     title: '试训邀请',
     description:
       '你的表现引起了一家知名俱乐部青训营的注意！他们发来了一份为期一周的试训邀请函。如果表现出色，有可能被正式录取。这是一个改变命运的机会。',
-    condition: {},
+    condition: { minReputation: 25 },
     choices: [
       {
         id: 'ti-go',

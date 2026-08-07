@@ -66,6 +66,25 @@ describe('simulateYouthMatch', () => {
     expect(result.opponent.length).toBeGreaterThan(0);
   });
 
+  it('uses the opponent supplied by validated content', () => {
+    const rng = createSeededRandomSource(42);
+    const player = createMockPlayer();
+    const state: PlayerState = {
+      fitness: 70,
+      morale: 60,
+      coachTrust: 40,
+      fatigue: 10,
+      teamStatus: 'fringe',
+    };
+
+    const result = simulateYouthMatch(player, state, 5, 2024, rng, {
+      name: '浦江青训中心',
+      competitionLevel: 74,
+    });
+
+    expect(result.opponent).toBe('浦江青训中心');
+  });
+
   it('rating is between 1 and 10', () => {
     const rng = createSeededRandomSource(42);
     const player = createMockPlayer();

@@ -18,6 +18,7 @@ export { advanceCareerWeek } from './career/weekly-advance';
 export { pickEventForWeek } from './career/event-integration';
 export { simulateMatch } from './match/match-engine';
 export { simulateYouthMatch } from './match/youth-match';
+export type { YouthMatchOpponent } from './match/youth-match';
 export { createLeagueStandings, updateStandings, getStandings } from './world/league-season';
 export { filterEligibleEvents, selectEvent } from './events/event-selector';
 export type { PlayerContext } from './events/event-selector';

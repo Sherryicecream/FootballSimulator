@@ -2,20 +2,10 @@ import type { PlayerCareer, PlayerState, YouthMatchResult } from '@football/cont
 import type { SeededRandomSource } from '../randomness/seeded-random-source';
 import { simulateMatch } from './match-engine';
 
-const YOUTH_OPPONENTS = [
-  '华东青年联队',
-  '华北青年联队',
-  '华南青年联队',
-  '西南青年队',
-  '西北青年队',
-  '东北青年队',
-  '城市足球学院',
-  '绿茵青年训练营',
-  '阳光青少年队',
-  '未来之星联队',
-  '麒麟青训营',
-  '飞鹰青年队',
-];
+export interface YouthMatchOpponent {
+  name: string;
+  competitionLevel: number;
+}
 
 /**
  * 模拟青训比赛
@@ -27,8 +17,9 @@ export function simulateYouthMatch(
   weekNumber: number,
   season: number,
   rng: SeededRandomSource,
+  opponentProfile?: YouthMatchOpponent,
 ): YouthMatchResult {
-  const opponent = rng.pick(YOUTH_OPPONENTS);
+  const opponent = opponentProfile?.name ?? `青年联赛对手 ${String(weekNumber).padStart(2, '0')}`;
   const isHome = rng.next() < 0.5;
 
   // Determine if player is selected
@@ -39,10 +30,11 @@ export function simulateYouthMatch(
 
   // Simulate match
   const playerTeamStrength = calculateTeamStrength(player);
+  const opponentLevel = opponentProfile?.competitionLevel ?? 55;
   const opponentStrength = {
-    attack: rng.nextInt(40, 70),
-    midfield: rng.nextInt(40, 70),
-    defence: rng.nextInt(40, 70),
+    attack: clamp(rng.nextInt(opponentLevel - 8, opponentLevel + 8), 0, 100),
+    midfield: clamp(rng.nextInt(opponentLevel - 8, opponentLevel + 8), 0, 100),
+    defence: clamp(rng.nextInt(opponentLevel - 8, opponentLevel + 8), 0, 100),
     overall: 0,
   };
   opponentStrength.overall = Math.round(
@@ -179,4 +171,8 @@ function calculatePlayerOverall(player: PlayerCareer): number {
   };
   const values = Object.values(allAttrs);
   return Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }

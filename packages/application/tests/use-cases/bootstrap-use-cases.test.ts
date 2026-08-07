@@ -3,7 +3,7 @@ import { createAdvanceToDecision } from '../../src/use-cases/advance-to-decision
 import { createSubmitYouthChoice } from '../../src/use-cases/submit-youth-choice';
 import { createCareerSave, type StartCareerParams } from '../../src/use-cases/start-career';
 import { type BootstrapContentPort } from '../../src/ports/bootstrap-content';
-import { CareerSaveSchema } from '@football/contracts';
+import { CareerSaveSchema, type YouthAcademyProfile } from '@football/contracts';
 
 const mockRegion: Parameters<BootstrapContentPort['getRegionProfile']>[0] = {
   id: 'shanghai',
@@ -22,7 +22,35 @@ const mockRegion: Parameters<BootstrapContentPort['getRegionProfile']>[0] = {
 
 const content: BootstrapContentPort = {
   getRegionProfile: (id) => (id === 'shanghai' ? mockRegion : undefined),
+  getYouthAcademies: () => academies,
 };
+
+const academy = (
+  id: string,
+  name: string,
+  regionId: string,
+  pathway: YouthAcademyProfile['pathway'],
+): YouthAcademyProfile => ({
+  id,
+  name,
+  regionId,
+  pathway,
+  facilityLevel: 70,
+  coachingLevel: 70,
+  competitionLevel: 70,
+  competitionIntensity: 70,
+  developmentStyle: '均衡',
+  firstTeamLevel: 65,
+  promotionTendency: 55,
+  relocationPressure: 40,
+});
+
+const academies = [
+  academy('shanghai-local', '申城青年中心', 'shanghai', 'local-academy'),
+  academy('shanghai-school', '申城校园计划', 'shanghai', 'school-elite'),
+  academy('relocation-a', '远方新星学院', 'shandong', 'relocation-academy'),
+  academy('relocation-b', '海湾青年学院', 'guangdong', 'relocation-academy'),
+];
 
 const input: StartCareerParams = {
   playerName: '张伟',

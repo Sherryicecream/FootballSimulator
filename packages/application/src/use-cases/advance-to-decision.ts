@@ -26,7 +26,13 @@ export function createAdvanceToDecision(content: BootstrapContentPort) {
       // 检查是否到了机会出现周
       if (week === save.story.bootstrapOpportunityWeek) {
         const rng = createSeededRandomSource(save.randomState.seed + week);
-        const opportunity = generateYouthOpportunity(save, region, rng, week);
+        const opportunity = generateYouthOpportunity(
+          save,
+          region,
+          content.getYouthAcademies(),
+          rng,
+          week,
+        );
 
         // 更新日历
         const calendar = createCalendar(save.world.currentDate, save.world.season);

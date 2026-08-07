@@ -1,4 +1,4 @@
-import type { RegionProfile } from '@football/contracts';
+import type { RegionProfile, YouthAcademyProfile } from '@football/contracts';
 
 /**
  * 内容端口：提供地域档案查询
@@ -6,4 +6,5 @@ import type { RegionProfile } from '@football/contracts';
  */
 export interface BootstrapContentPort {
   getRegionProfile(id: string): RegionProfile | undefined;
+  getYouthAcademies(): YouthAcademyProfile[];
 }
