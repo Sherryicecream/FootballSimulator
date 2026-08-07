@@ -6,7 +6,7 @@
 
 - 当前分支包含未完成的毕业/合同契约工作，质量门禁尚未恢复为绿色。
 - 当前活动设计：`docs/superpowers/specs/2026-08-07-youth-season-vertical-slice-design.md`。
-- 当前活动计划：待设计文档复核后创建。
+- 当前活动计划：`docs/superpowers/plans/2026-08-07-youth-season-vertical-slice.md`。
 - 当前目标：完成一个可信、稳定、可重复模拟的完整青训赛季。
 
 ## 里程碑
