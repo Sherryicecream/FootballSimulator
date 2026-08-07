@@ -140,6 +140,8 @@ export const migrateCareerSave = (raw: unknown): CareerSaveV2 => {
             ...save.context.pendingEvent,
             participantIds: [],
             factRefs: [],
+            storyId: null,
+            nextEventIds: [],
           }
         : null,
     },
@@ -149,6 +151,8 @@ export const migrateCareerSave = (raw: unknown): CareerSaveV2 => {
       totalWeeks: 4,
       status: save.context.pendingEvent ? 'awaiting-decision' : 'idle',
       developmentAccrual: {},
+      factIds: [],
+      matchIds: [],
     },
     ledger: save.ledger.map((entry, index) => ({
       id: `migrated-${index + 1}`,

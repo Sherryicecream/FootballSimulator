@@ -111,6 +111,8 @@ export const createYouthSave = (overrides: Partial<CareerSaveV2> = {}): CareerSa
     totalWeeks: 4,
     status: 'idle',
     developmentAccrual: {},
+    factIds: [],
+    matchIds: [],
   },
   ledger: [],
   randomState: { seed: 42, sequencePosition: 0 },

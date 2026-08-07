@@ -87,7 +87,8 @@ export const youthEvents: EventDefinition[] = [
     rarity: 'uncommon',
     title: '轻微不适',
     description: '训练中你感到小腿有些酸痛，队医建议你休息几天，但最近正是竞争主力位置的关键时期。',
-    condition: {},
+    condition: { requireActiveInjury: true },
+    participantRoles: ['youth-coach'],
     choices: [
       {
         id: 'mi-rest',
@@ -112,7 +113,8 @@ export const youthEvents: EventDefinition[] = [
     title: '位置竞争',
     description:
       '队里来了一个新球员，和你踢同一个位置。教练在训练中让你们轮流上场，似乎正在考察谁更适合首发。',
-    condition: {},
+    condition: { requirePersonRole: 'rival' },
+    participantRoles: ['rival', 'youth-coach'],
     choices: [
       {
         id: 'cw-train-harder',
@@ -136,7 +138,8 @@ export const youthEvents: EventDefinition[] = [
     rarity: 'common',
     title: '家人的鼓励',
     description: '父母打电话来关心你的训练和生活，叮嘱你注意身体，说他们为你感到骄傲。',
-    condition: {},
+    condition: { requirePersonRole: 'family' },
+    participantRoles: ['family'],
     choices: [
       {
         id: 'fs-touched',
@@ -348,7 +351,8 @@ export const youthEvents: EventDefinition[] = [
     title: '媒体的关注',
     description:
       '你在上一场比赛中的出色表现引起了本地媒体的注意。一名记者来到训练基地，想要采访你——这是你第一次面对镜头。',
-    condition: { minReputation: 20 },
+    condition: { minReputation: 10, requireFactType: 'match', requireFactText: '突出表现' },
+    participantRoles: ['youth-coach'],
     choices: [
       {
         id: 'ma-accept',
@@ -416,6 +420,104 @@ export const youthEvents: EventDefinition[] = [
       },
     ],
     cooldownWeeks: 20,
+  },
+  {
+    id: 'relocation-homesickness',
+    version: 1,
+    category: 'off-pitch',
+    rarity: 'uncommon',
+    title: '异地生活的夜晚',
+    description: '离家训练的第三个月，你开始想念熟悉的饭菜和家人的声音。',
+    condition: { requireRelocation: true, requirePersonRole: 'family' },
+    participantRoles: ['family'],
+    choices: [
+      {
+        id: 'rh-call-home',
+        text: '给家里打电话',
+        riskLabel: 'low',
+        effects: { morale: 4, closeness: 3 },
+      },
+      {
+        id: 'rh-adapt',
+        text: '整理房间并适应新生活',
+        riskLabel: 'medium',
+        effects: { confidence: 3, morale: -1 },
+      },
+    ],
+    cooldownWeeks: 12,
+  },
+  {
+    id: 'academy-school-balance',
+    version: 1,
+    category: 'off-pitch',
+    rarity: 'uncommon',
+    title: '训练与学业',
+    description: '连续客场让课程落下了一些，老师希望你补上本月的学习计划。',
+    condition: { requireFactType: 'match' },
+    choices: [
+      {
+        id: 'as-plan',
+        text: '和助教制定补课计划',
+        riskLabel: 'low',
+        effects: { fatigue: 2, confidence: 2 },
+      },
+      {
+        id: 'as-delay',
+        text: '先专注下一场比赛',
+        riskLabel: 'medium',
+        effects: { fatigue: -2, morale: -2 },
+      },
+    ],
+    cooldownWeeks: 14,
+  },
+  {
+    id: 'idol-message',
+    version: 1,
+    category: 'off-pitch',
+    rarity: 'rare',
+    title: '偶像的寄语',
+    description: '一位你长期关注的职业球员为青训营录制视频，并点评了年轻球员的坚持。',
+    condition: { requireFactType: 'monthly-settlement', minReputation: 10 },
+    choices: [
+      {
+        id: 'im-learn',
+        text: '记录他的训练建议',
+        riskLabel: 'low',
+        effects: { confidence: 4, morale: 3 },
+      },
+      {
+        id: 'im-own-way',
+        text: '把鼓励化为自己的风格',
+        riskLabel: 'low',
+        effects: { confidence: 5 },
+      },
+    ],
+    cooldownWeeks: 20,
+  },
+  {
+    id: 'upset-aftermath',
+    version: 1,
+    category: 'dressing-room',
+    rarity: 'rare',
+    title: '爆冷之后',
+    description: '击败公认更强的对手后，更衣室很兴奋，教练提醒大家别被一场胜利冲昏头脑。',
+    condition: { requireFactType: 'match', requireFactText: '爆冷' },
+    participantRoles: ['youth-coach', 'teammate'],
+    choices: [
+      {
+        id: 'ua-grounded',
+        text: '和队友复盘比赛细节',
+        riskLabel: 'low',
+        effects: { respect: 3, confidence: 2 },
+      },
+      {
+        id: 'ua-celebrate',
+        text: '尽情庆祝这场胜利',
+        riskLabel: 'medium',
+        effects: { morale: 6, fatigue: 3, closeness: 2 },
+      },
+    ],
+    cooldownWeeks: 18,
   },
 ];
 

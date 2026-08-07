@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { PositionSchema } from './primitives';
 
 export const PersonMemorySchema = z.object({
   eventId: z.string().min(1).max(40),
@@ -25,6 +26,7 @@ export const PersonSchema = z.object({
   age: z.number().int().min(16).max(80),
   personality: z.string().min(1).max(30),
   traits: z.record(z.string(), z.number().int().min(0).max(100)).default({}),
+  primaryPosition: PositionSchema.optional(),
   relationship: RelationshipDimensionSchema,
   memories: z.array(PersonMemorySchema).default([]),
 });

@@ -116,6 +116,8 @@ export const MonthlyAdvanceCursorSchema = z.strictObject({
   totalWeeks: z.number().int().min(4).max(5),
   status: z.enum(['idle', 'advancing', 'awaiting-decision', 'report-ready']),
   developmentAccrual: z.record(z.string(), z.number().min(0)).default({}),
+  factIds: z.array(IdSchema).default([]),
+  matchIds: z.array(IdSchema).default([]),
 });
 export type MonthlyAdvanceCursor = z.infer<typeof MonthlyAdvanceCursorSchema>;
 
@@ -136,7 +138,10 @@ export const YouthEventInstanceSchema = z.strictObject({
   resolvedChoiceId: IdSchema.nullable(),
   participantIds: z.array(IdSchema),
   factRefs: z.array(IdSchema),
+  storyId: IdSchema.nullable().default(null),
+  nextEventIds: z.array(IdSchema).default([]),
 });
+export type YouthEventInstance = z.infer<typeof YouthEventInstanceSchema>;
 
 export const YouthStoryStateSchema = z.strictObject({
   activeStorylines: z.array(IdSchema),

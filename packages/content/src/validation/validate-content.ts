@@ -28,6 +28,9 @@ const allowedEffectKeys = new Set([
   'composure',
   'determination',
   'discipline',
+  'trust',
+  'respect',
+  'closeness',
 ]);
 
 const realClubBrands = [

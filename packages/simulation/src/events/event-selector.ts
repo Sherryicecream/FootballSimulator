@@ -1,4 +1,4 @@
-import type { EventDefinition, StoryState } from '@football/contracts';
+import type { CareerSaveV2, EventDefinition, StoryState } from '@football/contracts';
 import type { SeededRandomSource } from '../randomness/seeded-random-source';
 
 export interface PlayerContext {
@@ -7,6 +7,52 @@ export interface PlayerContext {
   season: number;
   week: number;
   storyState: StoryState;
+}
+
+export function filterEligibleYouthEvents(
+  events: EventDefinition[],
+  save: CareerSaveV2,
+): EventDefinition[] {
+  const legacyEligible = filterEligibleEvents(events, {
+    age: save.player.age,
+    reputation: save.player.reputation,
+    season: Number(save.season.startDate.slice(0, 4)),
+    week: save.season.currentWeek,
+    storyState: {
+      activeStorylines: save.story.activeStorylines,
+      completedStoryIds: save.story.completedStoryIds,
+      cooldowns: save.story.cooldownsByEventId,
+      pendingDelayedEffects: [],
+    },
+  });
+  return legacyEligible.filter(({ condition }) => {
+    if (
+      condition.requireFactType &&
+      !save.ledger.slice(-8).some(({ type }) => type === condition.requireFactType)
+    )
+      return false;
+    if (
+      condition.requireFactText &&
+      !save.ledger.slice(-8).some(({ summary }) => summary.includes(condition.requireFactText!))
+    )
+      return false;
+    if (
+      condition.requireActiveInjury !== undefined &&
+      Boolean(save.health.activeInjury) !== condition.requireActiveInjury
+    )
+      return false;
+    if (
+      condition.requirePersonRole &&
+      !save.relationships.persons.some(({ role }) => role === condition.requirePersonRole)
+    )
+      return false;
+    if (
+      condition.requireRelocation !== undefined &&
+      save.season.academyId.startsWith('relocation-') !== condition.requireRelocation
+    )
+      return false;
+    return true;
+  });
 }
 
 /**

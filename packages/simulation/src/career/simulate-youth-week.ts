@@ -62,7 +62,14 @@ export const simulateYouthWeek = (
     save.monthlyAdvance.developmentAccrual as DevelopmentAccrual,
     weeklyAccrual,
   );
-  const facts = createFacts(save, weekKey, load, matchResult, injury);
+  const facts = createFacts(
+    save,
+    weekKey,
+    load,
+    matchResult,
+    injury,
+    matchTags(save, matchResult, academies),
+  );
   const nextDate = addDays(save.season.currentDate, 7);
   const fixtures = save.season.fixtures.map((candidate) =>
     fixture && candidate.id === fixture.id
@@ -71,6 +78,7 @@ export const simulateYouthWeek = (
   );
   const nextSave: CareerSaveV2 = {
     ...save,
+    player: { ...save.player, age: deriveAge(save.player.identity.dateOfBirth, nextDate) },
     season: {
       ...save.season,
       currentDate: nextDate,
@@ -103,6 +111,14 @@ const addDays = (isoDate: string, days: number): string => {
   return date.toISOString().slice(0, 10);
 };
 
+export const deriveAge = (dateOfBirth: string, currentDate: string): number => {
+  const [birthYear, birthMonth, birthDay] = dateOfBirth.split('-').map(Number);
+  const [year, month, day] = currentDate.split('-').map(Number);
+  let age = year! - birthYear!;
+  if (month! < birthMonth! || (month === birthMonth && day! < birthDay!)) age -= 1;
+  return age;
+};
+
 const advanceInjury = (injury: CareerSaveV2['health']['activeInjury']) => {
   if (!injury) return { active: null, recovered: null };
   const advanced = { ...injury, recoveredWeeks: injury.recoveredWeeks + 1 };
@@ -117,6 +133,7 @@ const createFacts = (
   load: number,
   match: YouthMatchResultV2 | null,
   injury: CareerSaveV2['health']['activeInjury'],
+  tags: string[],
 ): CareerLedgerEntryV2[] => {
   const facts: CareerLedgerEntryV2[] = [
     {
@@ -132,7 +149,7 @@ const createFacts = (
       id: match.id,
       weekKey,
       type: 'match',
-      summary: `${match.opponentName} ${match.homeScore}:${match.awayScore}；${match.played ? `出场 ${match.minutesPlayed} 分钟` : '未出场'}`,
+      summary: `${match.opponentName} ${match.homeScore}:${match.awayScore}；${match.played ? `出场 ${match.minutesPlayed} 分钟，评分 ${match.rating}` : '未出场'}${tags.length ? `；${tags.join('、')}` : ''}`,
       participantIds: [],
     });
   if (injury)
@@ -144,6 +161,29 @@ const createFacts = (
       participantIds: [],
     });
   return facts;
+};
+
+const matchTags = (
+  save: CareerSaveV2,
+  match: YouthMatchResultV2 | null,
+  academies: readonly YouthAcademyProfile[],
+): string[] => {
+  if (!match) return [];
+  const tags: string[] = [];
+  if ((match.rating ?? 0) >= 8 || match.goals >= 2 || match.assists >= 2) tags.push('突出表现');
+  const own = academies.find(({ id }) => id === save.season.academyId);
+  const opponent = academies.find(({ id }) => id === match.opponentId);
+  const ownGoals = match.isHome ? match.homeScore : match.awayScore;
+  const opponentGoals = match.isHome ? match.awayScore : match.homeScore;
+  if (
+    own &&
+    opponent &&
+    opponent.competitionLevel >= own.competitionLevel + 5 &&
+    ownGoals > opponentGoals
+  ) {
+    tags.push('爆冷');
+  }
+  return tags;
 };
 
 const ownScore = (match: YouthMatchResultV2) => (match.isHome ? match.homeScore : match.awayScore);

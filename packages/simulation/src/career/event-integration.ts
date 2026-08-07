@@ -1,6 +1,17 @@
-import type { EventDefinition, EventInstance, CareerSave } from '@football/contracts';
+import type {
+  CareerSaveV2,
+  EventDefinition,
+  EventInstance,
+  CareerSave,
+  YouthEventInstance,
+} from '@football/contracts';
 import type { SeededRandomSource } from '../randomness/seeded-random-source';
-import { filterEligibleEvents, selectEvent } from '../events/event-selector';
+import {
+  filterEligibleEvents,
+  filterEligibleYouthEvents,
+  selectEvent,
+} from '../events/event-selector';
+import { createSeededRandomSource } from '../randomness';
 import type { PlayerContext } from '../events/event-selector';
 
 export interface EventPickResult {
@@ -18,6 +29,73 @@ export const decrementEventCooldowns = (
     }
   }
   return decremented;
+};
+
+export interface YouthEventPickResult {
+  save: CareerSaveV2;
+  event: YouthEventInstance | null;
+}
+
+export const pickYouthEventForWeek = (
+  events: readonly EventDefinition[],
+  save: CareerSaveV2,
+): YouthEventPickResult => {
+  const cooldownsByEventId = decrementEventCooldowns(save.story.cooldownsByEventId);
+  const rng = createSeededRandomSource(save.randomState.seed);
+  for (let index = 0; index < save.randomState.sequencePosition; index += 1) rng.next();
+  const eligible = filterEligibleYouthEvents([...events], {
+    ...save,
+    story: { ...save.story, cooldownsByEventId },
+  });
+  const selected =
+    eligible.length > 0 && rng.next() < 0.34 ? selectEvent(eligible, rng) : undefined;
+  const event = selected ? instantiateYouthEvent(selected, save) : null;
+  return {
+    event,
+    save: {
+      ...save,
+      story: {
+        ...save.story,
+        cooldownsByEventId: selected
+          ? { ...cooldownsByEventId, [selected.id]: selected.cooldownWeeks }
+          : cooldownsByEventId,
+        pendingEvent: event,
+      },
+      monthlyAdvance: event
+        ? { ...save.monthlyAdvance, status: 'awaiting-decision' }
+        : save.monthlyAdvance,
+      randomState: { ...save.randomState, sequencePosition: rng.getPosition() },
+    },
+  };
+};
+
+const instantiateYouthEvent = (
+  definition: EventDefinition,
+  save: CareerSaveV2,
+): YouthEventInstance => {
+  const participantIds = (definition.participantRoles ?? []).flatMap((role) => {
+    const matches = save.relationships.persons.filter((person) => person.role === role);
+    return role === 'teammate'
+      ? matches.slice(0, 2).map(({ id }) => id)
+      : matches.slice(0, 1).map(({ id }) => id);
+  });
+  const factRefs = definition.condition.requireFactType
+    ? save.ledger
+        .filter(({ type }) => type === definition.condition.requireFactType)
+        .slice(-3)
+        .map(({ id }) => id)
+    : [];
+  return {
+    eventId: definition.id,
+    title: definition.title,
+    description: definition.description,
+    choices: definition.choices,
+    resolvedChoiceId: null,
+    participantIds,
+    factRefs,
+    storyId: definition.storyId ?? null,
+    nextEventIds: definition.nextEvents ?? [],
+  };
 };
 
 /**

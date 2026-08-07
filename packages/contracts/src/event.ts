@@ -31,6 +31,25 @@ export const EventConditionSchema = z.object({
   position: z.string().optional(),
   requireStoryId: z.string().optional(),
   excludeStoryId: z.string().optional(),
+  requireFactType: z
+    .enum([
+      'training',
+      'match',
+      'health',
+      'event',
+      'decision',
+      'relationship',
+      'first-team',
+      'monthly-settlement',
+      'season-outcome',
+    ])
+    .optional(),
+  requireFactText: z.string().min(1).max(40).optional(),
+  requireActiveInjury: z.boolean().optional(),
+  requirePersonRole: z
+    .enum(['youth-coach', 'assistant-coach', 'teammate', 'rival', 'family'])
+    .optional(),
+  requireRelocation: z.boolean().optional(),
 });
 
 export const EventDefinitionSchema = z.object({
@@ -46,6 +65,9 @@ export const EventDefinitionSchema = z.object({
   storyId: z.string().optional(),
   nextEvents: z.array(z.string()).optional(),
   narrativeTemplate: z.string().optional(),
+  participantRoles: z
+    .array(z.enum(['youth-coach', 'assistant-coach', 'teammate', 'rival', 'family']))
+    .optional(),
 });
 
 export type EventDefinition = z.infer<typeof EventDefinitionSchema>;
