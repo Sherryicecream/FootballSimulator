@@ -115,6 +115,7 @@ export const MonthlyAdvanceCursorSchema = z.strictObject({
   nextWeekIndex: z.number().int().min(0).max(5),
   totalWeeks: z.number().int().min(4).max(5),
   status: z.enum(['idle', 'advancing', 'awaiting-decision', 'report-ready']),
+  developmentAccrual: z.record(z.string(), z.number().min(0)).default({}),
 });
 export type MonthlyAdvanceCursor = z.infer<typeof MonthlyAdvanceCursorSchema>;
 
@@ -164,6 +165,40 @@ export const CareerLedgerEntryV2Schema = z.strictObject({
   participantIds: z.array(IdSchema),
 });
 export type CareerLedgerEntryV2 = z.infer<typeof CareerLedgerEntryV2Schema>;
+
+export const YouthMatchResultV2Schema = z.strictObject({
+  id: IdSchema,
+  fixtureId: IdSchema,
+  opponentId: IdSchema,
+  opponentName: z.string().min(1).max(80),
+  isHome: z.boolean(),
+  homeScore: z.number().int().min(0).max(50),
+  awayScore: z.number().int().min(0).max(50),
+  played: z.boolean(),
+  minutesPlayed: z.number().int().min(0).max(90),
+  rating: z.number().min(1).max(10).nullable(),
+  goals: z.number().int().min(0).max(50),
+  assists: z.number().int().min(0).max(50),
+});
+export type YouthMatchResultV2 = z.infer<typeof YouthMatchResultV2Schema>;
+
+export const MonthlyReportSchema = z.strictObject({
+  monthKey: z.string().regex(/^\d{4}-\d{2}$/),
+  facts: z.array(CareerLedgerEntryV2Schema),
+  attributeChanges: z.array(
+    z.strictObject({
+      attribute: z.string().min(1),
+      oldValue: ScoreSchema,
+      newValue: ScoreSchema,
+    }),
+  ),
+  stateSummary: PlayerCurrentStateSchema.extend({
+    fitness: ScoreSchema,
+    fatigue: ScoreSchema,
+  }),
+  matchIds: z.array(IdSchema),
+});
+export type MonthlyReport = z.infer<typeof MonthlyReportSchema>;
 
 export const YouthContentBundleSchema = z.strictObject({
   academies: z.array(YouthAcademyProfileSchema),

@@ -19,6 +19,16 @@ export { pickEventForWeek } from './career/event-integration';
 export { simulateMatch } from './match/match-engine';
 export { simulateYouthMatch } from './match/youth-match';
 export type { YouthMatchOpponent } from './match/youth-match';
+export {
+  accrueWeeklyDevelopment,
+  mergeDevelopmentAccrual,
+  settleMonthlyDevelopment,
+} from './player-development/development';
+export type { AttributeKey, DevelopmentAccrual } from './player-development/development';
+export { simulateInjuryRisk } from './health/injury-model';
+export { simulateScheduledYouthMatch } from './match/scheduled-youth-match';
+export { simulateYouthWeek } from './career/simulate-youth-week';
+export type { YouthWeekTransition } from './career/simulate-youth-week';
 export { createLeagueStandings, updateStandings, getStandings } from './world/league-season';
 export { filterEligibleEvents, selectEvent } from './events/event-selector';
 export type { PlayerContext } from './events/event-selector';
