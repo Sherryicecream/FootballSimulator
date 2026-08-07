@@ -1,22 +1,32 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { migrateCareerSave } from '@football/contracts';
+import { migrateCareerSave, type CareerSaveV2, type MonthlyReport } from '@football/contracts';
 import { createCareerSave } from '@football/application';
 import { CareerDashboard } from '../../src/career-dashboard/CareerDashboard';
 
-const save = migrateCareerSave(
+const baseSave = migrateCareerSave(
   createCareerSave({
     playerName: '林河',
     hometown: '上海',
     primaryPosition: 'CENTER_BACK',
     preferredFoot: 'RIGHT',
-    weakFootLevel: 30,
-    growthBackground: 'academy',
-    personalityTendency: 'composed',
     regionId: 'shanghai',
     seed: 42,
   }),
 );
+
+const save: CareerSaveV2 = {
+  ...baseSave,
+  ledger: [
+    {
+      id: 'training-1',
+      weekKey: '2024-W01',
+      type: 'training',
+      summary: 'internal training detail',
+      participantIds: [],
+    },
+  ],
+};
 
 describe('CareerDashboard v2', () => {
   it('shows the player, monthly action and no weekly advance action', () => {
@@ -55,5 +65,55 @@ describe('CareerDashboard v2', () => {
     expect(screen.getByLabelText('训练强度')).toBeDefined();
     expect(screen.getByText('体能')).toBeDefined();
     expect(screen.getByText('教练评价')).toBeDefined();
+  });
+
+  it('shows Chinese attributes, hides relationships and consolidates recent records', () => {
+    render(
+      <CareerDashboard
+        save={save}
+        academyName="浦江青训中心"
+        report={null}
+        outcome={null}
+        advancing={false}
+        onAdvance={() => {}}
+        onTrainingPlanChange={() => {}}
+        onNewCareer={() => {}}
+      />,
+    );
+
+    expect(screen.getByText('停球')).toBeVisible();
+    expect(screen.getByText('无球跑动')).toBeVisible();
+    expect(screen.queryByText('firstTouch')).toBeNull();
+    expect(screen.queryByText('offTheBall')).toBeNull();
+    expect(screen.queryByText('关键人物')).toBeNull();
+    expect(screen.queryByText(/信任|尊重|亲近/)).toBeNull();
+    expect(screen.queryByText('training')).toBeNull();
+    expect(screen.getByText(/本月持续完成训练与能力积累/)).toBeVisible();
+  });
+
+  it('uses Chinese attribute labels in the monthly report', () => {
+    const report: MonthlyReport = {
+      monthKey: '2024-09',
+      facts: [],
+      attributeChanges: [{ attribute: 'firstTouch', oldValue: 40, newValue: 41 }],
+      stateSummary: { morale: 60, form: 50, confidence: 50, fitness: 70, fatigue: 10 },
+      matchIds: [],
+    };
+
+    render(
+      <CareerDashboard
+        save={save}
+        academyName="浦江青训中心"
+        report={report}
+        outcome={null}
+        advancing={false}
+        onAdvance={() => {}}
+        onTrainingPlanChange={() => {}}
+        onNewCareer={() => {}}
+      />,
+    );
+
+    expect(screen.getByText(/停球 40→41/)).toBeVisible();
+    expect(screen.queryByText(/firstTouch/)).toBeNull();
   });
 });

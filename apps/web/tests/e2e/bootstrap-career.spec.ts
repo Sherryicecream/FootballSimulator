@@ -31,7 +31,6 @@ test.describe('Bootstrap Career Flow', () => {
     await page.selectOption('select[aria-label="家乡"]', 'shanghai');
     await page.selectOption('select[aria-label="主位置"]', 'CENTER_BACK');
     await page.click('label:has-text("右脚")');
-    await page.fill('input[aria-label="随机种子"]', '42');
     await page.click('text=开始生涯');
 
     // Get first offer name
@@ -42,7 +41,6 @@ test.describe('Bootstrap Career Flow', () => {
     await page.selectOption('select[aria-label="家乡"]', 'shanghai');
     await page.selectOption('select[aria-label="主位置"]', 'CENTER_BACK');
     await page.click('label:has-text("右脚")');
-    await page.fill('input[aria-label="随机种子"]', '42');
     await page.click('text=开始生涯');
 
     const secondOffer = await page.locator('button[aria-pressed]').first().textContent();

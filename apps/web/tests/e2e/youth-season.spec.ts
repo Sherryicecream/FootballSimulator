@@ -46,11 +46,12 @@ async function createCareer(page: Page) {
   await page.selectOption('select[aria-label="家乡"]', 'shanghai');
   await page.selectOption('select[aria-label="主位置"]', 'CENTER_BACK');
   await page.click('label:has-text("右脚")');
-  await page.fill('input[aria-label="随机种子"]', '42');
   await page.click('text=开始生涯');
   await expect(page.getByText('你的青训机会')).toBeVisible();
   await page.locator('button[aria-pressed]').first().click();
   await expect(page.getByRole('button', { name: '推进到下个月' })).toBeVisible();
+  await expect(page.getByText('停球')).toBeVisible();
+  await expect(page.getByText('关键人物')).toHaveCount(0);
 }
 
 async function resolveUntilDashboard(page: Page) {

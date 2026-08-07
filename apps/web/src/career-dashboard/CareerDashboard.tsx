@@ -1,5 +1,6 @@
 import type { CareerSaveV2, MonthlyReport, TrainingPlan } from '@football/contracts';
 import type { YouthSeasonOutcome } from '@football/application';
+import { buildRecentRecords, labelAttribute } from './career-presentation';
 
 interface CareerDashboardProps {
   save: CareerSaveV2;
@@ -41,6 +42,7 @@ export function CareerDashboard({
   const attributes = Object.entries(save.player.attributes).flatMap(([group, values]) =>
     Object.entries(values).map(([key, value]) => ({ group, key, value })),
   );
+  const recentRecords = buildRecentRecords(save);
   return (
     <section className="career-shell" aria-label="青训生涯仪表盘">
       <header className="career-hero">
@@ -72,7 +74,10 @@ export function CareerDashboard({
           {report.attributeChanges.length > 0 && (
             <p>
               {report.attributeChanges
-                .map(({ attribute, oldValue, newValue }) => `${attribute} ${oldValue}→${newValue}`)
+                .map(
+                  ({ attribute, oldValue, newValue }) =>
+                    `${labelAttribute(attribute)} ${oldValue}→${newValue}`,
+                )
                 .join('，')}
             </p>
           )}
@@ -142,42 +147,24 @@ export function CareerDashboard({
           <div className="attribute-grid">
             {attributes.map(({ group, key, value }) => (
               <div key={`${group}-${key}`}>
-                <span>{key}</span>
+                <span>{labelAttribute(key)}</span>
                 <strong>{value}</strong>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="dashboard-card">
-          <h3>关键人物</h3>
-          {save.relationships.persons.map((person) => (
-            <div className="person-row" key={person.id}>
-              <div>
-                <strong>{person.name}</strong>
-                <span>{person.role}</span>
-              </div>
-              <span>
-                信任 {person.relationship.trust} · 尊重 {person.relationship.respect} · 亲近{' '}
-                {person.relationship.closeness}
-              </span>
-            </div>
-          ))}
-        </section>
-
         <section className="dashboard-card timeline">
           <h3>最近记录</h3>
-          {save.ledger
-            .slice(-10)
-            .reverse()
-            .map((fact) => (
-              <details key={fact.id}>
-                <summary>
-                  {fact.weekKey} · {fact.type}
-                </summary>
-                <p>{fact.summary}</p>
-              </details>
-            ))}
+          {recentRecords.length === 0 && <p className="muted">暂无重要生涯记录。</p>}
+          {recentRecords.map((record) => (
+            <article key={record.monthKey}>
+              <h4>{record.monthKey}</h4>
+              {record.lines.map((line) => (
+                <p key={line}>{line}</p>
+              ))}
+            </article>
+          ))}
         </section>
       </div>
 
