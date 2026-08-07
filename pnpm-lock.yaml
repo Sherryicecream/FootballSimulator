@@ -132,9 +132,15 @@ importers:
 
   tools/balance:
     dependencies:
+      '@football/application':
+        specifier: workspace:*
+        version: link:../../packages/application
       '@football/content':
         specifier: workspace:*
         version: link:../../packages/content
+      '@football/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       '@football/simulation':
         specifier: workspace:*
         version: link:../../packages/simulation

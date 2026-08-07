@@ -27,7 +27,12 @@ const allowedWorkspaceDependencies = {
   '@football/simulation': ['@football/contracts'],
   '@football/application': ['@football/contracts', '@football/simulation'],
   '@football/content': ['@football/contracts'],
-  '@football/balance': ['@football/content', '@football/simulation'],
+  '@football/balance': [
+    '@football/application',
+    '@football/content',
+    '@football/contracts',
+    '@football/simulation',
+  ],
   '@football/architecture': [],
 };
 

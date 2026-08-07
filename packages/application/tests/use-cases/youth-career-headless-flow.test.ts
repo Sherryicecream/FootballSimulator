@@ -54,7 +54,12 @@ describe('headless youth career flow', () => {
         .filter(({ type }) => type === 'training')
         .map(({ id }) => id);
       expect(new Set(weeklyFactIds).size).toBe(weeklyFactIds.length);
-      expect(completeYouthSeason(save).outcome.status).toMatch(/retained|released/);
+      const completed = completeYouthSeason(save);
+      const completedAgain = completeYouthSeason(completed.save);
+      expect(completed.outcome.status).toMatch(/retained|released/);
+      expect(
+        completedAgain.save.ledger.filter(({ type }) => type === 'season-outcome'),
+      ).toHaveLength(1);
     }
   });
 });

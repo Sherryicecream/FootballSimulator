@@ -99,7 +99,11 @@ export const advanceCareerMonth = (
   save = {
     ...save,
     player: settlement.player,
-    clubContext: { ...save.clubContext, firstTeamStage: pathway.nextStage },
+    clubContext: {
+      ...save.clubContext,
+      firstTeamStage: pathway.nextStage,
+      playerRole: roleFromEvaluation(save.clubContext.coachEvaluation),
+    },
     monthlyAdvance: {
       monthKey: save.season.currentMonth,
       nextWeekIndex: 0,
@@ -124,4 +128,11 @@ export const advanceCareerMonth = (
     matchIds,
   };
   return { status: save.season.completed ? 'season-complete' : 'month-complete', save, report };
+};
+
+const roleFromEvaluation = (evaluation: number): CareerSaveV2['clubContext']['playerRole'] => {
+  if (evaluation >= 72) return 'starter';
+  if (evaluation >= 60) return 'regular';
+  if (evaluation >= 46) return 'rotation';
+  return 'fringe';
 };

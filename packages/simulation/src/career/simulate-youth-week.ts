@@ -93,6 +93,14 @@ export const simulateYouthWeek = (
       form: clamp(save.currentState.form + formDelta(matchResult)),
       confidence: clamp(save.currentState.confidence + confidenceDelta(matchResult)),
     },
+    clubContext: {
+      ...save.clubContext,
+      coachEvaluation: clamp(
+        save.clubContext.coachEvaluation +
+          evaluationDelta(matchResult) +
+          (rng.next() < 0.25 ? 1 : 0),
+      ),
+    },
     monthlyAdvance: { ...save.monthlyAdvance, developmentAccrual, status: 'advancing' },
     ledger: [...save.ledger, ...facts],
     randomState: { ...save.randomState, sequencePosition: rng.getPosition() },
@@ -193,3 +201,10 @@ const formDelta = (match: YouthMatchResultV2 | null) =>
   match?.rating == null ? 0 : Math.round(match.rating - 6);
 const confidenceDelta = (match: YouthMatchResultV2 | null) =>
   match?.played ? (match.goals + match.assists > 0 ? 2 : 0) : -1;
+const evaluationDelta = (match: YouthMatchResultV2 | null) => {
+  if (!match?.played || match.rating === null) return 0;
+  if (match.rating >= 7.5) return 2;
+  if (match.rating >= 6) return 1;
+  if (match.rating < 4.5) return -1;
+  return 0;
+};

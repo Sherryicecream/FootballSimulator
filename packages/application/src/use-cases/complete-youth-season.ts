@@ -16,10 +16,11 @@ export const completeYouthSeason = (
   const signals = deriveDevelopmentSignals(save);
   const sustainedRisks = [
     signals.includes('release-risk'),
-    save.clubContext.coachEvaluation < 30,
+    save.clubContext.coachEvaluation < 60,
     save.currentState.form < 35,
-    save.currentState.confidence < 35,
+    save.currentState.confidence < 32,
     save.health.activeInjury?.kind === 'severe',
+    ['fringe', 'rotation'].includes(save.clubContext.playerRole),
   ].filter(Boolean).length;
   const released = sustainedRisks >= 3;
   const nextPath = released
@@ -42,7 +43,11 @@ export const completeYouthSeason = (
       .filter(({ role }) => role === 'youth-coach')
       .map(({ id }) => id),
   };
-  return { save: { ...save, ledger: [...save.ledger, fact] }, outcome };
+  const hasOutcomeFact = save.ledger.some(({ id }) => id === fact.id);
+  return {
+    save: hasOutcomeFact ? save : { ...save, ledger: [...save.ledger, fact] },
+    outcome,
+  };
 };
 
 const pathLabel = (path: YouthSeasonOutcome['nextPath']) =>

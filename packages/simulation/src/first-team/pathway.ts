@@ -47,8 +47,8 @@ export const advanceFirstTeamPathway = (
 };
 
 const qualifies = (save: CareerSaveV2, stageIndex: number): boolean => {
-  const evaluationThreshold = [72, 76, 80, 84, 90][stageIndex] ?? 100;
-  const formThreshold = [62, 65, 68, 72, 78][stageIndex] ?? 100;
+  const evaluationThreshold = [50, 57, 64, 72, 82][stageIndex] ?? 100;
+  const formThreshold = [55, 58, 62, 68, 75][stageIndex] ?? 100;
   return (
     save.clubContext.coachEvaluation >= evaluationThreshold &&
     save.currentState.form >= formThreshold &&
@@ -58,6 +58,6 @@ const qualifies = (save: CareerSaveV2, stageIndex: number): boolean => {
   );
 };
 
-const chance = (stageIndex: number): number => [0.55, 0.4, 0.28, 0.13, 0.04][stageIndex] ?? 0;
+const chance = (stageIndex: number): number => [0.03, 0.55, 0.45, 0.28, 0.05][stageIndex] ?? 0;
 const coachIds = (save: CareerSaveV2) =>
   save.relationships.persons.filter(({ role }) => role.includes('coach')).map(({ id }) => id);

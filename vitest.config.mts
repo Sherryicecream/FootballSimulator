@@ -5,6 +5,13 @@ export default defineConfig({
     projects: [
       {
         test: {
+          name: 'balance',
+          environment: 'node',
+          include: ['tools/balance/tests/**/*.test.ts'],
+        },
+      },
+      {
+        test: {
           name: 'domain',
           environment: 'node',
           include: ['packages/*/tests/**/*.test.ts'],

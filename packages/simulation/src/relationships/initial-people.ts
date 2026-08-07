@@ -60,7 +60,7 @@ export function generateTeammates(playerPosition: string, rng: SeededRandomSourc
     const position =
       availablePositions.length > 0 ? rng.pick(availablePositions) : rng.pick(TEAMMATE_POSITIONS);
     usedPositions.add(position);
-    const age = rng.nextInt(15, 18);
+    const age = rng.nextInt(16, 18);
     const person = createPerson(`teammate-${i + 1}`, name, 'teammate', age, personality);
     teammates.push(person);
   }
