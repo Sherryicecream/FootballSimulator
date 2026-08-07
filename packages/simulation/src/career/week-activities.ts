@@ -23,7 +23,7 @@ export function generateWeekActivity(
 
   const roll = rng.next();
   const isEvent = !isMatchWeek && roll < 0.15;
-  const isQuiet = !isMatchWeek && !isEvent && roll < 0.20;
+  const isQuiet = !isMatchWeek && !isEvent && roll < 0.2;
   const hasTraining = !isQuiet && !isEvent;
 
   let activity: WeekActivity;

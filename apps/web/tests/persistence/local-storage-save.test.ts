@@ -59,7 +59,13 @@ const mockSave: CareerSave = {
     trainingIntensity: 'normal',
   },
   relationships: { persons: [], activeRelations: [] },
-  story: { bootstrapOpportunityWeek: 3, resolvedOpportunityIds: [], completedStoryIds: [], activeStorylines: [], cooldowns: {} },
+  story: {
+    bootstrapOpportunityWeek: 3,
+    resolvedOpportunityIds: [],
+    completedStoryIds: [],
+    activeStorylines: [],
+    cooldowns: {},
+  },
   ledger: [
     {
       type: 'career-started',

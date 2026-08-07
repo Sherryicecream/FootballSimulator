@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import type { CareerSave, EventDefinition, TrainingIntensity } from '@football/contracts';
-import { createAdvanceCareerWeek, createBatchAdvanceWeeks } from '@football/application';
+import {
+  createAdvanceCareerWeek,
+  createBatchAdvanceWeeks,
+  getRelationshipLabel,
+} from '@football/application';
 import type { BatchAdvanceResult } from '@football/application';
-import { getRelationshipLabel } from '@football/simulation';
 import { TrainingSettings } from './TrainingSettings';
 
 interface CareerDashboardProps {
@@ -43,8 +46,12 @@ export function CareerDashboard({ save, onSaveUpdate, onNewCareer, events }: Car
   const advanceWeek = createAdvanceCareerWeek(events);
   const batchAdvance = createBatchAdvanceWeeks(events);
   const [batchResult, setBatchResult] = useState<BatchAdvanceResult | null>(null);
-  const [trainingFocus, setTrainingFocus] = useState<string | null>(save.context.trainingFocus ?? null);
-  const [trainingIntensity, setTrainingIntensity] = useState<TrainingIntensity>(save.context.trainingIntensity ?? 'normal');
+  const [trainingFocus, setTrainingFocus] = useState<string | null>(
+    save.context.trainingFocus ?? null,
+  );
+  const [trainingIntensity, setTrainingIntensity] = useState<TrainingIntensity>(
+    save.context.trainingIntensity ?? 'normal',
+  );
   const [advancing, setAdvancing] = useState(false);
 
   const handleAdvance = () => {
@@ -159,7 +166,9 @@ export function CareerDashboard({ save, onSaveUpdate, onNewCareer, events }: Car
               marginBottom: 'var(--space-md)',
             }}
           >
-            <span>📅 {batchResult.save.world.currentDate} · 第{batchResult.save.world.weekNumber}周</span>
+            <span>
+              📅 {batchResult.save.world.currentDate} · 第{batchResult.save.world.weekNumber}周
+            </span>
             {batchResult.matchCount > 0 && <span>⚽ {batchResult.matchCount} 场比赛</span>}
             {batchResult.eventCount > 0 && <span>📰 {batchResult.eventCount} 个事件</span>}
           </div>
@@ -181,7 +190,7 @@ export function CareerDashboard({ save, onSaveUpdate, onNewCareer, events }: Car
                 fontStyle: 'italic',
               }}
             >
-              这{ batchResult.totalWeeks }周风平浪静
+              这{batchResult.totalWeeks}周风平浪静
             </div>
           )}
           <div style={{ marginTop: 'var(--space-md)', textAlign: 'center' }}>
@@ -361,7 +370,14 @@ export function CareerDashboard({ save, onSaveUpdate, onNewCareer, events }: Car
                     padding: 'var(--space-md)',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-sm)' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 'var(--space-md)',
+                      marginBottom: 'var(--space-sm)',
+                    }}
+                  >
                     {/* Avatar placeholder */}
                     <div
                       style={{
@@ -381,7 +397,13 @@ export function CareerDashboard({ save, onSaveUpdate, onNewCareer, events }: Car
                       {avatarChar}
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 'var(--text-base)', fontWeight: 'bold', color: 'var(--color-ink)' }}>
+                      <div
+                        style={{
+                          fontSize: 'var(--text-base)',
+                          fontWeight: 'bold',
+                          color: 'var(--color-ink)',
+                        }}
+                      >
                         {person.name}
                       </div>
                       <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
@@ -391,7 +413,14 @@ export function CareerDashboard({ save, onSaveUpdate, onNewCareer, events }: Car
                   </div>
 
                   {/* Relationship bars */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: 'var(--space-sm)' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '2px',
+                      marginBottom: 'var(--space-sm)',
+                    }}
+                  >
                     <StateBar label="信任" value={person.relationship.trust} color="#27ae60" />
                     <StateBar label="尊重" value={person.relationship.respect} color="#2980b9" />
                     <StateBar label="亲近" value={person.relationship.closeness} color="#e67e22" />
@@ -402,9 +431,16 @@ export function CareerDashboard({ save, onSaveUpdate, onNewCareer, events }: Car
                     <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
                       <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>最近记忆</div>
                       {recentMemories.map((mem, i) => (
-                        <div key={i} style={{ padding: '1px 0', display: 'flex', gap: 'var(--space-xs)' }}>
+                        <div
+                          key={i}
+                          style={{ padding: '1px 0', display: 'flex', gap: 'var(--space-xs)' }}
+                        >
                           <span>
-                            {mem.emotionalImpact === 'positive' ? '😊' : mem.emotionalImpact === 'negative' ? '😞' : '😐'}
+                            {mem.emotionalImpact === 'positive'
+                              ? '😊'
+                              : mem.emotionalImpact === 'negative'
+                                ? '😞'
+                                : '😐'}
                           </span>
                           <span>{mem.summary}</span>
                         </div>

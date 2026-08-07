@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from '../../src/app/App';
+import { createCareerSave } from '@football/application';
+import type { CareerSave } from '@football/contracts';
 
 // Mock localStorage for persistence
 const localStorageMock = (() => {
@@ -72,4 +74,65 @@ describe('App', () => {
     });
     expect(screen.getByRole('button', { name: /推进一周/ })).toBeDefined();
   });
+
+  it('resumes a saved pending event instead of opening the dashboard', async () => {
+    const save = createSaveWithPendingEvent();
+    storeSave(save);
+
+    render(<App />);
+
+    expect(await screen.findByText('必须处理的事件')).toBeDefined();
+    expect(screen.queryByText('青训生涯')).toBeNull();
+  });
+
+  it('does not offer a dashboard bypass while an event is pending', async () => {
+    storeSave(createSaveWithPendingEvent());
+
+    render(<App />);
+
+    expect(await screen.findByText('必须处理的事件')).toBeDefined();
+    expect(screen.queryByRole('button', { name: '返回仪表盘' })).toBeNull();
+  });
 });
+
+const createSaveWithPendingEvent = (): CareerSave => {
+  const save = createCareerSave({
+    playerName: '林岳',
+    hometown: '上海',
+    primaryPosition: 'CENTER_BACK',
+    preferredFoot: 'RIGHT',
+    weakFootLevel: 30,
+    growthBackground: 'academy',
+    personalityTendency: 'composed',
+    regionId: 'shanghai',
+    seed: 42,
+  });
+
+  return {
+    ...save,
+    context: {
+      ...save.context,
+      pendingEvent: {
+        eventId: 'required-event',
+        title: '必须处理的事件',
+        description: '需要先作出决定。',
+        choices: [
+          {
+            id: 'continue',
+            text: '继续',
+            riskLabel: 'low',
+            effects: {},
+          },
+        ],
+        resolvedChoiceId: null,
+      },
+    },
+  };
+};
+
+const storeSave = (save: CareerSave): void => {
+  localStorage.setItem(
+    `football-save-${save.careerId}`,
+    JSON.stringify({ version: 1, savedAt: '2024-09-01T00:00:00.000Z', data: save }),
+  );
+};

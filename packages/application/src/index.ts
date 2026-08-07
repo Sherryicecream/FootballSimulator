@@ -6,6 +6,8 @@ export { createAdvanceCareerWeek } from './use-cases/advance-career-week';
 export { createSubmitEventChoice } from './use-cases/submit-event-choice';
 export { createBatchAdvanceWeeks } from './use-cases/batch-advance';
 export type { BatchAdvanceResult } from './use-cases/batch-advance';
+export { projectWeekResult } from './use-cases/project-week-result';
+export { getRelationshipLabel } from '@football/simulation';
 export { createInMemorySaveStore } from './ports/save-port';
 export type { SavePort, InMemorySaveStore } from './ports/save-port';
 export type { BootstrapContentPort } from './ports/bootstrap-content';

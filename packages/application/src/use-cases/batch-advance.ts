@@ -1,5 +1,10 @@
-import { type CareerSave, type WeeklyAdvanceResult, type EventDefinition, type PlayerCareer } from '@football/contracts';
+import {
+  type CareerSave,
+  type WeeklyAdvanceResult,
+  type EventDefinition,
+} from '@football/contracts';
 import { advanceCareerWeek, createSeededRandomSource } from '@football/simulation';
+import { projectWeekResult } from './project-week-result';
 
 export interface BatchAdvanceResult {
   save: CareerSave;
@@ -38,7 +43,7 @@ export function createBatchAdvanceWeeks(events?: EventDefinition[]) {
       const result = advanceCareerWeek(currentSave, rng, events);
 
       // Apply state changes to build updated save
-      currentSave = buildUpdatedSave(currentSave, result, rng);
+      currentSave = projectWeekResult(currentSave, result, rng.getPosition());
 
       weekResults.push(result);
 
@@ -87,91 +92,4 @@ function buildSummary(
   if (event > 0) parts.push(`事件 ${event} 次`);
   if (quiet > 0) parts.push(`平淡 ${quiet} 周`);
   return parts.join(' · ');
-}
-
-function buildUpdatedSave(
-  save: CareerSave,
-  result: WeeklyAdvanceResult,
-  rng: ReturnType<typeof createSeededRandomSource>,
-): CareerSave {
-  // Apply attribute changes
-  let player = { ...save.player };
-  if (result.trainingSummary) {
-    for (const change of result.trainingSummary.attributeChanges) {
-      player = applyAttributeChange(player, change);
-    }
-  }
-
-  const findState = (key: string): number | undefined => {
-    const found = result.stateChanges.find((s) => s.key === key);
-    return found?.newValue;
-  };
-
-  return {
-    ...save,
-    player,
-    world: {
-      currentDate: result.date,
-      season: result.season,
-      weekNumber: result.week,
-    },
-    context: {
-      ...save.context,
-      playerState: {
-        fitness: clamp(findState('fitness') ?? save.context.playerState.fitness, 0, 100),
-        morale: clamp(findState('morale') ?? save.context.playerState.morale, 0, 100),
-        coachTrust: clamp(findState('coachTrust') ?? save.context.playerState.coachTrust, 0, 100),
-        fatigue: clamp(findState('fatigue') ?? save.context.playerState.fatigue, 0, 100),
-        teamStatus: save.context.playerState.teamStatus,
-      },
-      pendingEvent: result.event,
-    },
-    story: {
-      ...save.story,
-      cooldowns: result.eventCooldowns,
-    },
-    randomState: {
-      ...save.randomState,
-      sequencePosition: rng.getPosition(),
-    },
-  };
-}
-
-function applyAttributeChange(
-  player: PlayerCareer,
-  change: { attribute: string; newValue: number },
-): PlayerCareer {
-  const { technical, physical, mental } = player.attributes;
-  if (change.attribute in technical) {
-    return {
-      ...player,
-      attributes: {
-        ...player.attributes,
-        technical: { ...technical, [change.attribute]: change.newValue },
-      },
-    };
-  }
-  if (change.attribute in physical) {
-    return {
-      ...player,
-      attributes: {
-        ...player.attributes,
-        physical: { ...physical, [change.attribute]: change.newValue },
-      },
-    };
-  }
-  if (change.attribute in mental) {
-    return {
-      ...player,
-      attributes: {
-        ...player.attributes,
-        mental: { ...mental, [change.attribute]: change.newValue },
-      },
-    };
-  }
-  return player;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
 }

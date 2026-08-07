@@ -102,7 +102,13 @@ function createMockSaveWithEvent(): CareerSave {
       ],
       activeRelations: [],
     },
-    story: { bootstrapOpportunityWeek: 3, resolvedOpportunityIds: [], completedStoryIds: [], activeStorylines: [], cooldowns: {} },
+    story: {
+      bootstrapOpportunityWeek: 3,
+      resolvedOpportunityIds: [],
+      completedStoryIds: [],
+      activeStorylines: [],
+      cooldowns: {},
+    },
     ledger: [
       {
         type: 'career-started',
@@ -236,7 +242,10 @@ describe('createSubmitEventChoice', () => {
     const submit = createSubmitEventChoice();
     const save = createMockSaveWithEvent();
     // Cast pendingEvent to include nextEvents (not on EventInstance type)
-    (save.context.pendingEvent as Record<string, unknown>).nextEvents = ['coach-praise-followup-1', 'coach-praise-followup-2'];
+    (save.context.pendingEvent as Record<string, unknown>).nextEvents = [
+      'coach-praise-followup-1',
+      'coach-praise-followup-2',
+    ];
     const result = submit(save, 'c1');
     expect(result.story.activeStorylines).toContain('coach-praise-followup-1');
     expect(result.story.activeStorylines).toContain('coach-praise-followup-2');

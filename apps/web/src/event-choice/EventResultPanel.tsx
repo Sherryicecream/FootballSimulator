@@ -165,7 +165,9 @@ export function EventResultPanel({
                     borderBottom: '1px solid var(--color-border-light)',
                   }}
                 >
-                  <span style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-secondary)' }}>
+                  <span
+                    style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-secondary)' }}
+                  >
                     {label}
                   </span>
                   <span
@@ -175,7 +177,8 @@ export function EventResultPanel({
                       fontSize: 'var(--text-lg)',
                     }}
                   >
-                    {sign}{value}
+                    {sign}
+                    {value}
                   </span>
                 </div>
               );
@@ -248,7 +251,8 @@ export function EventResultPanel({
                   {newVal}
                   {changed && (
                     <span style={{ fontSize: 'var(--text-xs)', marginLeft: '2px' }}>
-                      ({newVal > oldVal ? '+' : ''}{newVal - oldVal})
+                      ({newVal > oldVal ? '+' : ''}
+                      {newVal - oldVal})
                     </span>
                   )}
                 </div>

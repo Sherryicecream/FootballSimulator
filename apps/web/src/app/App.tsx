@@ -14,7 +14,8 @@ import {
 import { createLocalStorageSavePort } from '../persistence/local-storage-save';
 import './app.css';
 
-type FlowStep = 'creation' | 'opportunity' | 'dashboard' | 'event-choice' | 'event-result' | 'weekly-report';
+type FlowStep =
+  'creation' | 'opportunity' | 'dashboard' | 'event-choice' | 'event-result' | 'weekly-report';
 
 const content = createBootstrapContent();
 const events = createYouthEvents();
@@ -43,7 +44,8 @@ export function App() {
           const saved = await savePort.load(slotId);
           if (saved) {
             setSave(saved);
-            setStep('dashboard');
+            setPendingEvent(saved.context.pendingEvent);
+            setStep(saved.context.pendingEvent ? 'event-choice' : 'dashboard');
             setLoaded(true);
             return;
           }
@@ -179,38 +181,16 @@ export function App() {
       )}
 
       {step === 'dashboard' && save && (
-        <CareerDashboard save={save} onSaveUpdate={handleAdvance} onNewCareer={handleNewCareer} events={events} />
+        <CareerDashboard
+          save={save}
+          onSaveUpdate={handleAdvance}
+          onNewCareer={handleNewCareer}
+          events={events}
+        />
       )}
 
       {step === 'event-choice' && pendingEvent && (
-        <div>
-          <EventChoicePanel event={pendingEvent} onSubmit={handleEventChoice} />
-          <div
-            style={{
-              borderTop: '1px solid var(--color-border)',
-              paddingTop: 'var(--space-lg)',
-              textAlign: 'center',
-            }}
-          >
-            <button
-              onClick={() => {
-                setStep('dashboard');
-                setPendingEvent(null);
-              }}
-              style={{
-                background: 'transparent',
-                color: 'var(--color-text-secondary)',
-                border: '1px solid var(--color-border)',
-                padding: 'var(--space-md) 20px',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: 'var(--text-base)',
-                cursor: 'pointer',
-              }}
-            >
-              返回仪表盘
-            </button>
-          </div>
-        </div>
+        <EventChoicePanel event={pendingEvent} onSubmit={handleEventChoice} />
       )}
 
       {step === 'event-result' && pendingEvent && chosenChoiceId && oldPlayerState && save && (

@@ -10,7 +10,7 @@ import { advanceOneWeek } from './calendar';
 import { generateWeekActivity } from './week-activities';
 import { simulateTraining } from '../player-development/training';
 import { simulateYouthMatch } from '../match/youth-match';
-import { pickEventForWeek } from './event-integration';
+import { decrementEventCooldowns, pickEventForWeek } from './event-integration';
 
 /**
  * 推进一周
@@ -47,7 +47,13 @@ export function advanceCareerWeek(
 
   // Execute training
   const trainingSummary = weekActivity.hasTraining
-    ? simulateTraining(save.player, save.context.playerState, rng, save.context.trainingFocus ?? undefined, save.context.trainingIntensity)
+    ? simulateTraining(
+        save.player,
+        save.context.playerState,
+        rng,
+        save.context.trainingFocus ?? undefined,
+        save.context.trainingIntensity,
+      )
     : null;
 
   // Execute match
@@ -91,9 +97,10 @@ export function advanceCareerWeek(
   }
 
   // 3. Event selection (if applicable)
-  const eventResult = weekActivity.activity === 'event' && events
-    ? pickEventForWeek(events, save, weekNumber, rng)
-    : { event: null, updatedCooldowns: {} as Record<string, number> };
+  const eventResult =
+    weekActivity.activity === 'event' && events
+      ? pickEventForWeek(events, save, weekNumber, rng)
+      : { event: null, updatedCooldowns: decrementEventCooldowns(save.story.cooldowns) };
   const event = eventResult.event;
   const eventCooldowns = eventResult.updatedCooldowns;
 

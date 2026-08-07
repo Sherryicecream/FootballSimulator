@@ -8,6 +8,18 @@ export interface EventPickResult {
   updatedCooldowns: Record<string, number>;
 }
 
+export const decrementEventCooldowns = (
+  cooldowns: Record<string, number>,
+): Record<string, number> => {
+  const decremented: Record<string, number> = {};
+  for (const [eventId, remaining] of Object.entries(cooldowns)) {
+    if (remaining > 1) {
+      decremented[eventId] = remaining - 1;
+    }
+  }
+  return decremented;
+};
+
 /**
  * 从候选事件列表中为当前周选取一个事件
  * 读取存档中的冷却期，选择后自动设置冷却
@@ -20,14 +32,7 @@ export function pickEventForWeek(
   rng: SeededRandomSource,
 ): EventPickResult {
   // 1. 递减所有已有冷却期
-  const decrementedCooldowns: Record<string, number> = {};
-  const rawCooldowns = save.story.cooldowns ?? {};
-  for (const [eventId, remaining] of Object.entries(rawCooldowns)) {
-    const r = remaining as number;
-    if (r > 1) {
-      decrementedCooldowns[eventId] = r - 1;
-    }
-  }
+  const decrementedCooldowns = decrementEventCooldowns(save.story.cooldowns ?? {});
 
   const context: PlayerContext = {
     age: save.player.age,

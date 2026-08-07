@@ -14,8 +14,18 @@ function createMockEvents(): EventDefinition[] {
       description: '教练在训练后表扬了你的表现。',
       condition: {},
       choices: [
-        { id: 'cp-humble', text: '感谢教练，继续努力', riskLabel: 'low', effects: { morale: 5, coachTrust: 3 } },
-        { id: 'cp-confident', text: '保持自信', riskLabel: 'low', effects: { morale: 3, coachTrust: 5 } },
+        {
+          id: 'cp-humble',
+          text: '感谢教练，继续努力',
+          riskLabel: 'low',
+          effects: { morale: 5, coachTrust: 3 },
+        },
+        {
+          id: 'cp-confident',
+          text: '保持自信',
+          riskLabel: 'low',
+          effects: { morale: 3, coachTrust: 5 },
+        },
       ],
       cooldownWeeks: 4,
     },
@@ -28,8 +38,18 @@ function createMockEvents(): EventDefinition[] {
       description: '今早你睡过了头。',
       condition: {},
       choices: [
-        { id: 'lt-apologize', text: '诚恳道歉', riskLabel: 'low', effects: { coachTrust: -2, morale: -2 } },
-        { id: 'lt-quiet', text: '默默加入训练', riskLabel: 'medium', effects: { coachTrust: -5, morale: -1 } },
+        {
+          id: 'lt-apologize',
+          text: '诚恳道歉',
+          riskLabel: 'low',
+          effects: { coachTrust: -2, morale: -2 },
+        },
+        {
+          id: 'lt-quiet',
+          text: '默默加入训练',
+          riskLabel: 'medium',
+          effects: { coachTrust: -5, morale: -1 },
+        },
       ],
       cooldownWeeks: 8,
     },
@@ -94,7 +114,13 @@ function createMockSave(seed: number = 42): CareerSave {
       trainingIntensity: 'normal',
     },
     relationships: { persons: [], activeRelations: [] },
-    story: { bootstrapOpportunityWeek: 3, resolvedOpportunityIds: [], completedStoryIds: [], activeStorylines: [], cooldowns: {} },
+    story: {
+      bootstrapOpportunityWeek: 3,
+      resolvedOpportunityIds: [],
+      completedStoryIds: [],
+      activeStorylines: [],
+      cooldowns: {},
+    },
     ledger: [
       {
         type: 'career-started',
@@ -215,5 +241,15 @@ describe('advanceCareerWeek', () => {
     const result = advanceCareerWeek(save, rng, []);
     expect(result.event).toBeNull();
     expect(result.hasPendingChoice).toBe(false);
+  });
+
+  it('decrements existing event cooldowns even on a week without an event', () => {
+    const rng = createSeededRandomSource(42);
+    const save = createMockSave(42);
+    save.story.cooldowns = { 'coach-praise': 3, expired: 1 };
+
+    const result = advanceCareerWeek(save, rng, []);
+
+    expect(result.eventCooldowns).toEqual({ 'coach-praise': 2 });
   });
 });

@@ -170,7 +170,11 @@ describe('simulateTraining', () => {
       identity: { ...createMockPlayer().identity, primaryPosition: 'FORWARD' },
     });
     const state: PlayerState = {
-      fitness: 70, morale: 60, coachTrust: 40, fatigue: 10, teamStatus: 'fringe',
+      fitness: 70,
+      morale: 60,
+      coachTrust: 40,
+      fatigue: 10,
+      teamStatus: 'fringe',
     };
     const result = simulateTraining(player, state, rng, '射门');
     expect(result.focus).toBe('射门');
@@ -180,7 +184,11 @@ describe('simulateTraining', () => {
     const rng = createSeededRandomSource(42);
     const player = createMockPlayer();
     const state: PlayerState = {
-      fitness: 70, morale: 60, coachTrust: 40, fatigue: 10, teamStatus: 'fringe',
+      fitness: 70,
+      morale: 60,
+      coachTrust: 40,
+      fatigue: 10,
+      teamStatus: 'fringe',
     };
     const result = simulateTraining(player, state, rng, '速度', 'light');
     // Attribute changes should be ≤ 2 (light has 0.5x multiplier, max base is 3)
@@ -196,12 +204,20 @@ describe('simulateTraining', () => {
     // Use high professionalism player to ensure growth triggers
     const player = createMockPlayer({
       hiddenTraits: {
-        potential: 95, stability: 60, professionalism: 95,
-        pressureResistance: 60, adaptability: 50, injuryProneness: 30,
+        potential: 95,
+        stability: 60,
+        professionalism: 95,
+        pressureResistance: 60,
+        adaptability: 50,
+        injuryProneness: 30,
       },
     });
     const state: PlayerState = {
-      fitness: 70, morale: 60, coachTrust: 40, fatigue: 10, teamStatus: 'fringe',
+      fitness: 70,
+      morale: 60,
+      coachTrust: 40,
+      fatigue: 10,
+      teamStatus: 'fringe',
     };
     const result = simulateTraining(player, state, rng, '速度', 'intense');
     // Intense has 1.5x multiplier, max base is 3, so max is 4
@@ -213,21 +229,32 @@ describe('simulateTraining', () => {
   it('intense training can cause injury', () => {
     // Run many iterations to hit the 5% chance
     const state: PlayerState = {
-      fitness: 70, morale: 60, coachTrust: 40, fatigue: 10, teamStatus: 'fringe',
+      fitness: 70,
+      morale: 60,
+      coachTrust: 40,
+      fatigue: 10,
+      teamStatus: 'fringe',
     };
     let injuryFound = false;
     for (let seed = 0; seed < 200; seed++) {
       const rng = createSeededRandomSource(seed);
       const player = createMockPlayer();
       const result = simulateTraining(player, state, rng, '速度', 'intense');
-      if (result.injury) { injuryFound = true; break; }
+      if (result.injury) {
+        injuryFound = true;
+        break;
+      }
     }
     expect(injuryFound).toBe(true);
   });
 
   it('light and normal training never cause injury', () => {
     const state: PlayerState = {
-      fitness: 70, morale: 60, coachTrust: 40, fatigue: 10, teamStatus: 'fringe',
+      fitness: 70,
+      morale: 60,
+      coachTrust: 40,
+      fatigue: 10,
+      teamStatus: 'fringe',
     };
     for (const intensity of ['light' as TrainingIntensity, 'normal' as TrainingIntensity]) {
       for (let seed = 0; seed < 50; seed++) {

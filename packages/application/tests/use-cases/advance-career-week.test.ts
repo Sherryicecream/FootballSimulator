@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createAdvanceCareerWeek } from '../../src/use-cases/advance-career-week';
+import { createBatchAdvanceWeeks } from '../../src/use-cases/batch-advance';
 import { CareerSaveSchema } from '@football/contracts';
 import type { CareerSave, EventDefinition } from '@football/contracts';
 
@@ -14,8 +15,18 @@ function createMockEvents(): EventDefinition[] {
       description: '教练在训练后表扬了你的表现。',
       condition: {},
       choices: [
-        { id: 'cp-humble', text: '感谢教练，继续努力', riskLabel: 'low', effects: { morale: 5, coachTrust: 3 } },
-        { id: 'cp-confident', text: '保持自信', riskLabel: 'low', effects: { morale: 3, coachTrust: 5 } },
+        {
+          id: 'cp-humble',
+          text: '感谢教练，继续努力',
+          riskLabel: 'low',
+          effects: { morale: 5, coachTrust: 3 },
+        },
+        {
+          id: 'cp-confident',
+          text: '保持自信',
+          riskLabel: 'low',
+          effects: { morale: 3, coachTrust: 5 },
+        },
       ],
       cooldownWeeks: 4,
     },
@@ -80,7 +91,13 @@ function createMockSave(seed: number = 42): CareerSave {
       trainingIntensity: 'normal',
     },
     relationships: { persons: [], activeRelations: [] },
-    story: { bootstrapOpportunityWeek: 3, resolvedOpportunityIds: [], completedStoryIds: [], activeStorylines: [], cooldowns: {} },
+    story: {
+      bootstrapOpportunityWeek: 3,
+      resolvedOpportunityIds: [],
+      completedStoryIds: [],
+      activeStorylines: [],
+      cooldowns: {},
+    },
     ledger: [
       {
         type: 'career-started',
@@ -147,6 +164,19 @@ describe('createAdvanceCareerWeek', () => {
     const save = createMockSave(42);
     const result = advanceWeek(save);
     expect(result.ledger.length).toBeGreaterThan(save.ledger.length);
+  });
+
+  it('batch advance produces the same ledger as repeated weekly advance', () => {
+    const initial = createMockSave(42);
+    const batch = createBatchAdvanceWeeks([])(initial);
+    const advanceWeek = createAdvanceCareerWeek([]);
+    let repeated = initial;
+
+    for (let index = 0; index < batch.totalWeeks; index++) {
+      repeated = advanceWeek(repeated);
+    }
+
+    expect(batch.save.ledger).toEqual(repeated.ledger);
   });
 
   it('sets pendingEvent when events are provided and activity is event', () => {

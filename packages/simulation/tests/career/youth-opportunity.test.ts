@@ -75,7 +75,13 @@ function createMockSave(seed: number = 42): CareerSave {
     world: { currentDate: calendar.currentDate, season: calendar.season },
     context: { academyId: null, pendingOpportunity: null },
     relationships: { people: [], edges: [] },
-    story: { bootstrapOpportunityWeek: 3, resolvedOpportunityIds: [], completedStoryIds: [], activeStorylines: [], cooldowns: {} },
+    story: {
+      bootstrapOpportunityWeek: 3,
+      resolvedOpportunityIds: [],
+      completedStoryIds: [],
+      activeStorylines: [],
+      cooldowns: {},
+    },
     ledger: [
       {
         type: 'career-started',

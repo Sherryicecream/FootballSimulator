@@ -34,7 +34,10 @@ const ATTR_MAP: Record<string, string[]> = {
 };
 
 /** 强度倍率配置 */
-const INTENSITY_MULTIPLIERS: Record<TrainingIntensity, { growth: number; fatigue: number; fitness: number; injuryChance: number }> = {
+const INTENSITY_MULTIPLIERS: Record<
+  TrainingIntensity,
+  { growth: number; fatigue: number; fitness: number; injuryChance: number }
+> = {
   light: { growth: 0.5, fatigue: 0.5, fitness: 0.5, injuryChance: 0 },
   normal: { growth: 1.0, fatigue: 1.0, fitness: 1.0, injuryChance: 0 },
   intense: { growth: 1.5, fatigue: 1.5, fitness: 1.5, injuryChance: 0.05 },
@@ -90,5 +93,12 @@ export function simulateTraining(
   // Injury check: use multiplier config
   const injury = rng.next() < multiplier.injuryChance;
 
-  return { focus: selectedFocus, attributeChanges, fitnessChange, moraleChange, coachTrustChange, injury };
+  return {
+    focus: selectedFocus,
+    attributeChanges,
+    fitnessChange,
+    moraleChange,
+    coachTrustChange,
+    injury,
+  };
 }

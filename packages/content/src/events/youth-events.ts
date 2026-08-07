@@ -60,8 +60,7 @@ export const youthEvents: EventDefinition[] = [
     category: 'china-youth',
     rarity: 'common',
     title: '队友的邀请',
-    description:
-      '训练结束后，几个队友商量着周末一起去吃火锅，他们热情地邀请你一起参加。',
+    description: '训练结束后，几个队友商量着周末一起去吃火锅，他们热情地邀请你一起参加。',
     condition: {},
     choices: [
       {
@@ -87,8 +86,7 @@ export const youthEvents: EventDefinition[] = [
     category: 'china-youth',
     rarity: 'uncommon',
     title: '轻微不适',
-    description:
-      '训练中你感到小腿有些酸痛，队医建议你休息几天，但最近正是竞争主力位置的关键时期。',
+    description: '训练中你感到小腿有些酸痛，队医建议你休息几天，但最近正是竞争主力位置的关键时期。',
     condition: {},
     choices: [
       {
@@ -137,8 +135,7 @@ export const youthEvents: EventDefinition[] = [
     category: 'china-youth',
     rarity: 'common',
     title: '家人的鼓励',
-    description:
-      '父母打电话来关心你的训练和生活，叮嘱你注意身体，说他们为你感到骄傲。',
+    description: '父母打电话来关心你的训练和生活，叮嘱你注意身体，说他们为你感到骄傲。',
     condition: {},
     choices: [
       {
@@ -270,8 +267,7 @@ export const youthEvents: EventDefinition[] = [
     category: 'off-pitch',
     rarity: 'common',
     title: '周末的安排',
-    description:
-      '周末到了，队友们约好一起去唱卡拉OK，但你最近感觉有点累，也想好好休息一下。',
+    description: '周末到了，队友们约好一起去唱卡拉OK，但你最近感觉有点累，也想好好休息一下。',
     condition: {},
     choices: [
       {

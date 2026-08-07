@@ -30,17 +30,17 @@ const INTENSITY_DESCRIPTIONS: Record<TrainingIntensity, string> = {
 };
 
 const FOCUS_LABELS: Record<string, string> = {
-  '防守': '防守',
-  '空中': '空中能力',
-  '力量': '力量',
-  '速度': '速度',
-  '耐力': '耐力',
-  '传球': '传球',
-  '视野': '视野',
-  '技术': '技术',
-  '盘带': '盘带',
-  '射门': '射门',
-  '跑位': '跑位',
+  防守: '防守',
+  空中: '空中能力',
+  力量: '力量',
+  速度: '速度',
+  耐力: '耐力',
+  传球: '传球',
+  视野: '视野',
+  技术: '技术',
+  盘带: '盘带',
+  射门: '射门',
+  跑位: '跑位',
 };
 
 export function TrainingSettings({
@@ -158,7 +158,9 @@ export function TrainingSettings({
           borderRadius: 'var(--radius-sm)',
         }}
       >
-        <div>💡 当前设置：{focusLabel}训练 · {INTENSITY_LABELS[trainingIntensity]}强度</div>
+        <div>
+          💡 当前设置：{focusLabel}训练 · {INTENSITY_LABELS[trainingIntensity]}强度
+        </div>
         <div>📊 {INTENSITY_DESCRIPTIONS[trainingIntensity]}</div>
       </div>
     </div>
