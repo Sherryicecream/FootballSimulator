@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CareerLedgerEntryV2, CareerSaveV2 } from '@football/contracts';
-import {
-  buildRecentRecords,
-  labelAttribute,
-} from '../../src/career-dashboard/career-presentation';
+import { buildRecentRecords, labelAttribute } from '../../src/career-dashboard/career-presentation';
 
 describe('career presentation', () => {
   it('maps every player-facing attribute to Chinese', () => {

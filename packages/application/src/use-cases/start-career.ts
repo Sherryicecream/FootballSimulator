@@ -33,6 +33,7 @@ export function createCareerSave(params: StartCareerParams): CareerSave {
   }
 
   const rng = createSeededRandomSource(params.seed);
+  const profileRng = createSeededRandomSource(params.seed + 1701);
 
   const player = createPlayer(
     {
@@ -46,6 +47,7 @@ export function createCareerSave(params: StartCareerParams): CareerSave {
       regionId: params.regionId,
     },
     rng,
+    profileRng,
   );
 
   const calendar = createCalendar('2024-09-01', 2024);

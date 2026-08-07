@@ -34,6 +34,7 @@ describe('createCareerSave', () => {
     expect(save.ledger).toHaveLength(1);
     expect(save.ledger[0]!.type).toBe('career-started');
     expect(save.randomState.seed).toBe(12345);
+    expect(save.randomState.sequencePosition).toBe(25);
   });
 
   it('创建的存档通过 Zod 校验', () => {

@@ -161,12 +161,16 @@ function getRegionFacilityBonus(regionId: string): number {
 }
 
 /** 根据位置和区域生成 16 岁青年球员 */
-export function createPlayer(params: CreatePlayerParams, rng: SeededRandomSource): PlayerCareer {
+export function createPlayer(
+  params: CreatePlayerParams,
+  rng: SeededRandomSource,
+  profileRng: SeededRandomSource = rng,
+): PlayerCareer {
   const weights = positionWeights[params.primaryPosition];
   const facilityBonus = getRegionFacilityBonus(params.regionId);
-  const growthBackground = rng.pick(GROWTH_BACKGROUNDS);
-  const personalityTendency = rng.pick(PERSONALITY_TENDENCIES);
-  const weakFootLevel = rng.nextInt(1, 5);
+  const growthBackground = profileRng.pick(GROWTH_BACKGROUNDS);
+  const personalityTendency = profileRng.pick(PERSONALITY_TENDENCIES);
+  const weakFootLevel = profileRng.nextInt(1, 5);
 
   const baseMin = 30;
   const baseMax = 60;

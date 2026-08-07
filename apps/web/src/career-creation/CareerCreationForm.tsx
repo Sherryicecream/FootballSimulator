@@ -3,10 +3,7 @@ import { createCareerSave, type StartCareerParams } from '@football/application'
 import { getAllRegions } from '@football/content';
 import type { BootstrapContentPort } from '@football/application';
 import type { CareerSave } from '@football/contracts';
-import {
-  POSITION_OPTIONS,
-  FOOT_OPTIONS,
-} from './creation-options';
+import { POSITION_OPTIONS, FOOT_OPTIONS } from './creation-options';
 
 interface CareerCreationFormProps {
   onComplete: (save: CareerSave) => void;

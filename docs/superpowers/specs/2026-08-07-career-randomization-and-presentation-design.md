@@ -48,24 +48,24 @@
 
 内部字段保持英文，以维持类型契约和模拟代码稳定。前端新增集中式展示映射，至少覆盖：
 
-| 内部字段 | 中文名称 |
-| --- | --- |
-| `firstTouch` | 停球 |
-| `dribbling` | 盘带 |
-| `passing` | 传球 |
-| `shooting` | 射门 |
-| `defending` | 防守 |
-| `aerialAbility` | 头球 |
-| `pace` | 速度 |
-| `strength` | 力量 |
-| `stamina` | 耐力 |
-| `agility` | 灵活 |
-| `offTheBall` | 无球跑动 |
-| `vision` | 视野 |
-| `decision` | 决策 |
-| `composure` | 镇定 |
-| `determination` | 意志 |
-| `discipline` | 自律 |
+| 内部字段        | 中文名称 |
+| --------------- | -------- |
+| `firstTouch`    | 停球     |
+| `dribbling`     | 盘带     |
+| `passing`       | 传球     |
+| `shooting`      | 射门     |
+| `defending`     | 防守     |
+| `aerialAbility` | 头球     |
+| `pace`          | 速度     |
+| `strength`      | 力量     |
+| `stamina`       | 耐力     |
+| `agility`       | 灵活     |
+| `offTheBall`    | 无球跑动 |
+| `vision`        | 视野     |
+| `decision`      | 决策     |
+| `composure`     | 镇定     |
+| `determination` | 意志     |
+| `discipline`    | 自律     |
 
 球员属性卡和月报属性变化必须共用同一映射，禁止各组件自行维护中文名称。遇到未知字段时使用明确的中文兜底文本并在开发环境暴露问题，不把英文键名展示给玩家。
 
