@@ -172,6 +172,8 @@ const createSave = (seed = 42): CareerSaveV2 => {
       totalWeeks: 4,
       status: 'idle',
       developmentAccrual: {},
+      factIds: [],
+      matchIds: [],
     },
     ledger: [],
     randomState: { seed, sequencePosition: 0 },

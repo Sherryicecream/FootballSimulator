@@ -3,10 +3,12 @@ import {
   YouthContentBundleSchema,
   migrateCareerSave,
   type CareerSaveV2,
+  type Position,
   type ScheduledYouthFixture,
   type YouthCompetitionDefinition,
   type YouthContentBundle,
 } from '@football/contracts';
+import { createSeededRandomSource, initializeYouthRelationships } from '@football/simulation';
 
 export const createYouthCareerV2 = (
   rawSave: unknown,
@@ -24,15 +26,26 @@ export const createYouthCareerV2 = (
 
   return CareerSaveV2Schema.parse({
     ...migrated,
+    relationships:
+      migrated.relationships.persons.length > 0
+        ? migrated.relationships
+        : initializeYouthRelationships(
+            migrated.player.identity.primaryPosition as Position,
+            createSeededRandomSource(migrated.randomState.seed + 7001),
+            Number(migrated.season.startDate.slice(0, 4)),
+          ),
     season: {
       ...migrated.season,
       academyId,
-      fixtures: createFixtures(
-        academyId,
-        competition,
-        migrated.randomState.seed,
-        migrated.season.startDate.slice(0, 4),
-      ),
+      fixtures:
+        migrated.season.fixtures.length > 0
+          ? migrated.season.fixtures
+          : createFixtures(
+              academyId,
+              competition,
+              migrated.randomState.seed,
+              migrated.season.startDate.slice(0, 4),
+            ),
     },
   });
 };
