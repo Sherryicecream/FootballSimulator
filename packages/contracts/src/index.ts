@@ -9,3 +9,6 @@ export * from './region';
 export * from './match';
 export * from './event';
 export * from './person';
+export * from './health';
+export * from './youth-season';
+export * from './save-migration';

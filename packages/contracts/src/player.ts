@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PositionSchema, FootSchema } from './primitives';
+import { PositionSchema, FootSchema, CareerStageSchema } from './primitives';
 
 // Technical attributes (6): 停球、盘带、传球、射门、防守、空中能力
 export const TechnicalAttributesSchema = z.object({
@@ -56,6 +56,21 @@ export const HiddenTraitsSchema = z.object({
 
 export type HiddenTraits = z.infer<typeof HiddenTraitsSchema>;
 
+export const MaturationPaceSchema = z.enum(['early', 'normal', 'late']);
+export type MaturationPace = z.infer<typeof MaturationPaceSchema>;
+
+export const PlayerDevelopmentProfileSchema = z.strictObject({
+  attributePotential: PlayerAttributesSchema,
+  maturationPace: MaturationPaceSchema,
+  professionalism: z.number().int().min(0).max(100),
+  stability: z.number().int().min(0).max(100),
+  pressureResistance: z.number().int().min(0).max(100),
+  adaptability: z.number().int().min(0).max(100),
+  injuryProneness: z.number().int().min(0).max(100),
+});
+
+export type PlayerDevelopmentProfile = z.infer<typeof PlayerDevelopmentProfileSchema>;
+
 // Player identity (§6): 姓名、家乡、位置、惯用脚、背景、性格
 export const PlayerIdentitySchema = z.object({
   name: z.string().min(1).max(50),
@@ -71,3 +86,14 @@ export const PlayerIdentitySchema = z.object({
 });
 
 export type PlayerIdentity = z.infer<typeof PlayerIdentitySchema>;
+
+export const PlayerCareerV2Schema = z.strictObject({
+  identity: PlayerIdentitySchema,
+  attributes: PlayerAttributesSchema,
+  development: PlayerDevelopmentProfileSchema,
+  age: z.number().int().min(14).max(50),
+  careerStage: CareerStageSchema,
+  reputation: z.number().int().min(0).max(100),
+});
+
+export type PlayerCareerV2 = z.infer<typeof PlayerCareerV2Schema>;
