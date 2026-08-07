@@ -15,9 +15,6 @@ function createMockSaveWithEvent(): CareerSave {
         dateOfBirth: '2008-01-01',
         primaryPosition: 'MIDFIELDER',
         preferredFoot: 'RIGHT',
-        weakFootLevel: 30,
-        growthBackground: 'academy',
-        personalityTendency: 'composed',
       },
       attributes: {
         technical: {

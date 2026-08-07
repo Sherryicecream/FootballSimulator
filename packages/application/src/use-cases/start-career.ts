@@ -9,9 +9,6 @@ export interface StartCareerParams {
   primaryPosition: Position;
   secondaryPosition?: Position;
   preferredFoot: 'LEFT' | 'RIGHT' | 'BOTH';
-  weakFootLevel: number;
-  growthBackground: string;
-  personalityTendency: string;
   regionId: string;
   seed: number;
 }
@@ -46,9 +43,6 @@ export function createCareerSave(params: StartCareerParams): CareerSave {
         ? { secondaryPosition: params.secondaryPosition }
         : {}),
       preferredFoot: params.preferredFoot,
-      weakFootLevel: params.weakFootLevel,
-      growthBackground: params.growthBackground,
-      personalityTendency: params.personalityTendency,
       regionId: params.regionId,
     },
     rng,

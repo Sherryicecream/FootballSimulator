@@ -58,9 +58,6 @@ const input: StartCareerParams = {
   primaryPosition: 'CENTER_BACK',
   secondaryPosition: 'FULL_BACK',
   preferredFoot: 'RIGHT',
-  weakFootLevel: 30,
-  growthBackground: '城市青训',
-  personalityTendency: 'balanced',
   regionId: 'shanghai',
   seed: 42,
 };

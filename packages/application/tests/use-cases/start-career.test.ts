@@ -9,9 +9,6 @@ describe('createCareerSave', () => {
     primaryPosition: 'CENTER_BACK' as const,
     secondaryPosition: 'FULL_BACK' as const,
     preferredFoot: 'RIGHT' as const,
-    weakFootLevel: 30,
-    growthBackground: '城市青训',
-    personalityTendency: 'balanced',
     regionId: 'shanghai',
     seed: 12345,
   };
@@ -51,6 +48,11 @@ describe('createCareerSave', () => {
 
     expect(save1.player.attributes).toEqual(save2.player.attributes);
     expect(save1.player.hiddenTraits).toEqual(save2.player.hiddenTraits);
+    expect(save1.player.identity.growthBackground).toBe(save2.player.identity.growthBackground);
+    expect(save1.player.identity.personalityTendency).toBe(
+      save2.player.identity.personalityTendency,
+    );
+    expect(save1.player.identity.weakFootLevel).toBe(save2.player.identity.weakFootLevel);
     expect(save1.careerId).toBe(save2.careerId);
     expect(save1.story.bootstrapOpportunityWeek).toBe(save2.story.bootstrapOpportunityWeek);
   });
@@ -59,7 +61,17 @@ describe('createCareerSave', () => {
     const save1 = createCareerSave({ ...defaultParams, seed: 42 });
     const save2 = createCareerSave({ ...defaultParams, seed: 99 });
 
-    expect(save1.player.attributes).not.toEqual(save2.player.attributes);
+    expect({
+      attributes: save1.player.attributes,
+      background: save1.player.identity.growthBackground,
+      personality: save1.player.identity.personalityTendency,
+      weakFoot: save1.player.identity.weakFootLevel,
+    }).not.toEqual({
+      attributes: save2.player.attributes,
+      background: save2.player.identity.growthBackground,
+      personality: save2.player.identity.personalityTendency,
+      weakFoot: save2.player.identity.weakFootLevel,
+    });
   });
 
   it('不同种子生成不同 careerId', () => {

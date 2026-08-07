@@ -16,11 +16,11 @@ export interface CreatePlayerParams {
   primaryPosition: Position;
   secondaryPosition?: Position;
   preferredFoot: 'LEFT' | 'RIGHT' | 'BOTH';
-  weakFootLevel: number;
-  growthBackground: string;
-  personalityTendency: string;
   regionId: string;
 }
+
+const GROWTH_BACKGROUNDS = ['academy', 'school', 'community', 'late-bloomer'] as const;
+const PERSONALITY_TENDENCIES = ['ambitious', 'composed', 'disciplined', 'expressive'] as const;
 
 /** 位置属性权重：每种位置对 16 项属性的侧重 */
 const positionWeights: Record<
@@ -164,6 +164,9 @@ function getRegionFacilityBonus(regionId: string): number {
 export function createPlayer(params: CreatePlayerParams, rng: SeededRandomSource): PlayerCareer {
   const weights = positionWeights[params.primaryPosition];
   const facilityBonus = getRegionFacilityBonus(params.regionId);
+  const growthBackground = rng.pick(GROWTH_BACKGROUNDS);
+  const personalityTendency = rng.pick(PERSONALITY_TENDENCIES);
+  const weakFootLevel = rng.nextInt(1, 5);
 
   const baseMin = 30;
   const baseMax = 60;
@@ -187,9 +190,9 @@ export function createPlayer(params: CreatePlayerParams, rng: SeededRandomSource
     primaryPosition: params.primaryPosition,
     secondaryPosition: params.secondaryPosition,
     preferredFoot: params.preferredFoot,
-    weakFootLevel: params.weakFootLevel,
-    growthBackground: params.growthBackground,
-    personalityTendency: params.personalityTendency,
+    weakFootLevel,
+    growthBackground,
+    personalityTendency,
   };
 
   const technical: TechnicalAttributes = {

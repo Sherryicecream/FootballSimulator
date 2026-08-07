@@ -10,9 +10,6 @@ describe('createPlayer', () => {
     primaryPosition: 'CENTER_BACK' as const,
     secondaryPosition: 'FULL_BACK' as const,
     preferredFoot: 'RIGHT' as const,
-    weakFootLevel: 30,
-    growthBackground: '城市青训',
-    personalityTendency: 'balanced',
     regionId: 'shanghai',
   };
 
@@ -43,6 +40,26 @@ describe('createPlayer', () => {
 
     expect(player1.attributes).toEqual(player2.attributes);
     expect(player1.hiddenTraits).toEqual(player2.hiddenTraits);
+    expect(player1.identity.growthBackground).toBe(player2.identity.growthBackground);
+    expect(player1.identity.personalityTendency).toBe(player2.identity.personalityTendency);
+    expect(player1.identity.weakFootLevel).toBe(player2.identity.weakFootLevel);
+    expect(player1.identity.weakFootLevel).toBeGreaterThanOrEqual(1);
+    expect(player1.identity.weakFootLevel).toBeLessThanOrEqual(5);
+  });
+
+  it('不同种子能够生成多种有效档案', () => {
+    const profiles = new Set(
+      Array.from({ length: 24 }, (_, seed) => {
+        const player = createPlayer(defaultParams, createSeededRandomSource(seed));
+        return [
+          player.identity.growthBackground,
+          player.identity.personalityTendency,
+          player.identity.weakFootLevel,
+        ].join('|');
+      }),
+    );
+
+    expect(profiles.size).toBeGreaterThan(1);
   });
 
   it('不同种子生成不同属性', () => {
