@@ -1,4 +1,5 @@
 import type { CareerSave } from '@football/contracts';
+import { labelAttribute } from './career-presentation';
 
 interface BootstrapCareerSummaryProps {
   save: CareerSave;
@@ -14,22 +15,22 @@ const POSITION_LABELS: Record<string, string> = {
 };
 
 const KEY_ATTRIBUTES = [
-  { key: 'firstTouch', label: '停球' },
-  { key: 'dribbling', label: '盘带' },
-  { key: 'passing', label: '传球' },
-  { key: 'shooting', label: '射门' },
-  { key: 'defending', label: '防守' },
-  { key: 'aerialAbility', label: '空中' },
-  { key: 'pace', label: '速度' },
-  { key: 'strength', label: '力量' },
-  { key: 'stamina', label: '耐力' },
-  { key: 'agility', label: '灵活' },
-  { key: 'offTheBall', label: '跑位' },
-  { key: 'vision', label: '视野' },
-  { key: 'decision', label: '决策' },
-  { key: 'composure', label: '镇定' },
-  { key: 'determination', label: '意志' },
-  { key: 'discipline', label: '纪律' },
+  'firstTouch',
+  'dribbling',
+  'passing',
+  'shooting',
+  'defending',
+  'aerialAbility',
+  'pace',
+  'strength',
+  'stamina',
+  'agility',
+  'offTheBall',
+  'vision',
+  'decision',
+  'composure',
+  'determination',
+  'discipline',
 ] as const;
 
 export function BootstrapCareerSummary({ save }: BootstrapCareerSummaryProps) {
@@ -141,7 +142,7 @@ export function BootstrapCareerSummary({ save }: BootstrapCareerSummaryProps) {
             gap: 'var(--space-sm)',
           }}
         >
-          {KEY_ATTRIBUTES.map(({ key, label }) => (
+          {KEY_ATTRIBUTES.map((key) => (
             <div
               key={key}
               style={{
@@ -151,7 +152,7 @@ export function BootstrapCareerSummary({ save }: BootstrapCareerSummaryProps) {
                 padding: '2px 0',
               }}
             >
-              <span style={{ color: 'var(--color-text-secondary)' }}>{label}</span>
+              <span style={{ color: 'var(--color-text-secondary)' }}>{labelAttribute(key)}</span>
               <span style={{ fontWeight: 'bold' }}>{allAttrs[key] ?? '-'}</span>
             </div>
           ))}

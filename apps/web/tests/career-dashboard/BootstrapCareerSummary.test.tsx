@@ -91,8 +91,9 @@ describe('BootstrapCareerSummary', () => {
   it('shows attribute summary', () => {
     render(<BootstrapCareerSummary save={mockSave} />);
     expect(screen.getByText('78')).toBeDefined();
-    expect(screen.getByText('跑位').parentElement).toHaveTextContent('60');
+    expect(screen.getByText('无球跑动').parentElement).toHaveTextContent('60');
     expect(screen.getByText('决策').parentElement).toHaveTextContent('63');
+    expect(screen.queryByText('firstTouch')).toBeNull();
   });
 
   it('shows seed fingerprint', () => {
