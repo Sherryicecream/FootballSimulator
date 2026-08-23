@@ -50,6 +50,7 @@ export const advanceCareerMonth = (
       status: 'advancing' as const,
       factIds: resuming ? initialSave.monthlyAdvance.factIds : [],
       matchIds: resuming ? initialSave.monthlyAdvance.matchIds : [],
+      interactiveEventCount: resuming ? initialSave.monthlyAdvance.interactiveEventCount : 0,
     },
   };
 
@@ -112,6 +113,7 @@ export const advanceCareerMonth = (
       developmentAccrual: settlement.remainingAccrual,
       factIds: [],
       matchIds: [],
+      interactiveEventCount: 0,
     },
     ledger: [...save.ledger, settlementFact, ...pathway.facts],
     randomState: { ...save.randomState, sequencePosition: pathwayRng.getPosition() },

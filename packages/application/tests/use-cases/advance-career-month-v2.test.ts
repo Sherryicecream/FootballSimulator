@@ -24,6 +24,7 @@ describe('advanceCareerMonth', () => {
       ),
     ).toBe(true);
     expect(outcome.save.health.fatigue).toBeGreaterThan(0);
+    expect(outcome.save.monthlyAdvance.interactiveEventCount).toBe(0);
   });
 
   it('runs a complete no-decision season for 100 deterministic seeds without illegal state', () => {

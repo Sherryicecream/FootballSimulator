@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { EventDefinition } from '@football/contracts';
 import { filterEligibleYouthEvents } from '../../src/events/event-selector';
 import { calculateYouthEventWeight } from '../../src/events/event-selector';
+import { pickYouthEventForWeek } from '../../src/career/event-integration';
 import { createYouthSave } from '../fixtures/youth-save';
 
 const mediaEvent: EventDefinition = {
@@ -201,4 +202,96 @@ describe('contextual youth event selection', () => {
       calculateYouthEventWeight(training, base),
     );
   });
+});
+
+describe('weekly youth event flow controls', () => {
+  const event = (
+    id: string,
+    interaction: 'decision' | 'automatic',
+    overrides: Partial<EventDefinition> = {},
+  ): EventDefinition => ({
+    id,
+    version: 1,
+    category: 'china-youth',
+    rarity: 'common',
+    theme: 'training',
+    interaction,
+    baseWeight: 100,
+    title: id,
+    description: id,
+    condition: {},
+    choices: [{ id: 'continue', text: '继续', riskLabel: 'low', effects: {} }],
+    cooldownWeeks: 4,
+    ...overrides,
+  });
+
+  it('decrements theme cooldowns and blocks a third monthly decision', () => {
+    const base = createYouthSave();
+    const save = createYouthSave({
+      story: { ...base.story, themeCooldownsByTheme: { training: 2 } },
+      monthlyAdvance: { ...base.monthlyAdvance, interactiveEventCount: 2 },
+    });
+    const result = pickYouthEventForWeek([event('third-decision', 'decision')], save);
+
+    expect(result.event).toBeNull();
+    expect(result.save.story.themeCooldownsByTheme).toEqual({ training: 1 });
+    expect(result.save.monthlyAdvance.interactiveEventCount).toBe(2);
+  });
+
+  it('still permits automatic events after the decision cap', () => {
+    const automatic = event('background-change', 'automatic');
+    const result = firstPicked([automatic], (base) => ({
+      monthlyAdvance: { ...base.monthlyAdvance, interactiveEventCount: 2 },
+    }));
+
+    expect(result.event?.eventId).toBe('background-change');
+    expect(result.event?.interaction).toBe('automatic');
+    expect(result.save.monthlyAdvance.interactiveEventCount).toBe(2);
+    expect(result.save.monthlyAdvance.status).toBe('idle');
+  });
+
+  it('prioritizes an active follow-up without bypassing its hard conditions', () => {
+    const unrelated = event('unrelated', 'automatic', { theme: 'off-pitch' });
+    const followUp = event('position-review', 'automatic', {
+      condition: { requireStoryId: 'position-race-opened' },
+    });
+    const selected = firstPicked([unrelated, followUp], (base) => ({
+      story: {
+        ...base.story,
+        activeStorylines: ['position-review'],
+        completedStoryIds: ['position-race-opened'],
+      },
+    }));
+    expect(selected.event?.eventId).toBe('position-review');
+
+    const blocked = firstPicked(
+      [unrelated, { ...followUp, condition: { ...followUp.condition, requireActiveInjury: true } }],
+      (base) => ({
+        story: {
+          ...base.story,
+          activeStorylines: ['position-review'],
+          completedStoryIds: ['position-race-opened'],
+        },
+      }),
+    );
+    expect(blocked.event?.eventId).toBe('unrelated');
+  });
+
+  const firstPicked = (
+    events: EventDefinition[],
+    overrides: (
+      base: ReturnType<typeof createYouthSave>,
+    ) => Partial<ReturnType<typeof createYouthSave>>,
+  ) => {
+    for (let seed = 1; seed <= 100; seed += 1) {
+      const base = createYouthSave();
+      const save = createYouthSave({
+        ...overrides(base),
+        randomState: { seed, sequencePosition: 0 },
+      });
+      const result = pickYouthEventForWeek(events, save);
+      if (result.event) return result;
+    }
+    throw new Error('测试种子中没有触发事件');
+  };
 });

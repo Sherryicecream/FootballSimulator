@@ -10,6 +10,7 @@ import {
   filterEligibleEvents,
   filterEligibleYouthEvents,
   selectEvent,
+  selectYouthEvent,
 } from '../events/event-selector';
 import { createSeededRandomSource } from '../randomness';
 import type { PlayerContext } from '../events/event-selector';
@@ -36,33 +37,61 @@ export interface YouthEventPickResult {
   event: YouthEventInstance | null;
 }
 
+const decrementThemeCooldowns = (cooldowns: Record<string, number>): Record<string, number> => {
+  const decremented: Record<string, number> = {};
+  for (const [theme, remaining] of Object.entries(cooldowns)) {
+    if (remaining > 1) decremented[theme] = remaining - 1;
+  }
+  return decremented;
+};
+
 export const pickYouthEventForWeek = (
   events: readonly EventDefinition[],
   save: CareerSaveV2,
 ): YouthEventPickResult => {
   const cooldownsByEventId = decrementEventCooldowns(save.story.cooldownsByEventId);
+  const themeCooldownsByTheme = decrementThemeCooldowns(save.story.themeCooldownsByTheme ?? {});
   const rng = createSeededRandomSource(save.randomState.seed);
   for (let index = 0; index < save.randomState.sequencePosition; index += 1) rng.next();
-  const eligible = filterEligibleYouthEvents([...events], {
+  const selectionSave: CareerSaveV2 = {
     ...save,
-    story: { ...save.story, cooldownsByEventId },
-  });
+    story: { ...save.story, cooldownsByEventId, themeCooldownsByTheme },
+  };
+  const eligible = filterEligibleYouthEvents([...events], selectionSave).filter(
+    (definition) =>
+      (definition.interaction ?? 'decision') === 'automatic' ||
+      save.monthlyAdvance.interactiveEventCount < 2,
+  );
+  const activeFollowUps = eligible.filter((definition) =>
+    save.story.activeStorylines.includes(definition.id),
+  );
+  const selectionPool = activeFollowUps.length > 0 ? activeFollowUps : eligible;
   const selected =
-    eligible.length > 0 && rng.next() < 0.34 ? selectEvent(eligible, rng) : undefined;
+    selectionPool.length > 0 && rng.next() < 0.34
+      ? selectYouthEvent(selectionPool, selectionSave, rng)
+      : undefined;
   const event = selected ? instantiateYouthEvent(selected, save) : null;
+  const isDecision = (selected?.interaction ?? 'decision') === 'decision';
   return {
     event,
     save: {
-      ...save,
+      ...selectionSave,
       story: {
-        ...save.story,
+        ...selectionSave.story,
         cooldownsByEventId: selected
           ? { ...cooldownsByEventId, [selected.id]: selected.cooldownWeeks }
           : cooldownsByEventId,
+        themeCooldownsByTheme: selected
+          ? { ...themeCooldownsByTheme, [selected.theme ?? 'off-pitch']: 2 }
+          : themeCooldownsByTheme,
         pendingEvent: event,
       },
       monthlyAdvance: event
-        ? { ...save.monthlyAdvance, status: 'awaiting-decision' }
+        ? {
+            ...save.monthlyAdvance,
+            status: isDecision ? 'awaiting-decision' : save.monthlyAdvance.status,
+            interactiveEventCount: save.monthlyAdvance.interactiveEventCount + (isDecision ? 1 : 0),
+          }
         : save.monthlyAdvance,
       randomState: { ...save.randomState, sequencePosition: rng.getPosition() },
     },
@@ -95,6 +124,7 @@ const instantiateYouthEvent = (
     factRefs,
     storyId: definition.storyId ?? null,
     nextEventIds: definition.nextEvents ?? [],
+    interaction: definition.interaction ?? 'decision',
   };
 };
 
