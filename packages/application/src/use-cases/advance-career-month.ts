@@ -13,6 +13,7 @@ import {
   simulateYouthWeek,
   type DevelopmentAccrual,
 } from '@football/simulation';
+import { resolveCareerEvent } from './resolve-career-event';
 
 export type AdvanceMonthOutcome =
   | {
@@ -73,6 +74,10 @@ export const advanceCareerMonth = (
     const canInterrupt = save.season.currentMonth === monthKey && !save.season.completed;
     const eventPick = pickYouthEventForWeek(canInterrupt ? events : [], save);
     save = eventPick.save;
+    if (eventPick.event?.interaction === 'automatic') {
+      save = resolveCareerEvent(save, eventPick.event.choices[0]!.id);
+      continue;
+    }
     if (eventPick.event) {
       return { status: 'awaiting-decision', save, event: eventPick.event };
     }

@@ -16,6 +16,7 @@ export { completeYouthSeason } from './use-cases/complete-youth-season';
 export type { YouthSeasonOutcome } from './use-cases/complete-youth-season';
 export { loadCareer } from './use-cases/load-career';
 export { getRelationshipLabel } from '@football/simulation';
+export { resolveCareerEvent } from './use-cases/resolve-career-event';
 export { createInMemorySaveStore } from './ports/save-port';
 export type { SavePort, InMemorySaveStore } from './ports/save-port';
 export type { BootstrapContentPort } from './ports/bootstrap-content';

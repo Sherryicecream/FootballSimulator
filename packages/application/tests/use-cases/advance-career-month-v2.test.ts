@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CareerSaveV2, YouthAcademyProfile } from '@football/contracts';
+import type { EventDefinition } from '@football/contracts';
 import { advanceCareerMonth } from '../../src/use-cases/advance-career-month';
 
 describe('advanceCareerMonth', () => {
@@ -185,3 +186,44 @@ const createSave = (seed = 42): CareerSaveV2 => {
     randomState: { seed, sequencePosition: 0 },
   };
 };
+
+describe('automatic youth events', () => {
+  it('resolves a one-choice background event and continues the month', () => {
+    const automaticEvent: EventDefinition = {
+      id: 'automatic-recovery-note',
+      version: 1,
+      category: 'china-youth',
+      rarity: 'common',
+      theme: 'health',
+      interaction: 'automatic',
+      baseWeight: 100,
+      title: '恢复提醒',
+      description: '助教提醒你降低当天训练负荷。',
+      condition: {},
+      choices: [
+        { id: 'recover', text: '接受恢复安排', riskLabel: 'low', effects: { fatigue: -2 } },
+      ],
+      cooldownWeeks: 52,
+    };
+    let completed: ReturnType<typeof advanceCareerMonth> | undefined;
+
+    for (let seed = 1; seed <= 100; seed += 1) {
+      const outcome = advanceCareerMonth(createSave(seed), academies, [automaticEvent]);
+      expect(outcome.status).not.toBe('awaiting-decision');
+      if (
+        outcome.status !== 'awaiting-decision' &&
+        outcome.report.facts.some(({ summary }) => summary.includes('恢复提醒'))
+      ) {
+        completed = outcome;
+        break;
+      }
+    }
+
+    expect(completed).toBeDefined();
+    if (!completed || completed.status === 'awaiting-decision') return;
+    expect(
+      completed.save.ledger.filter(({ summary }) => summary.includes('恢复提醒')),
+    ).toHaveLength(1);
+    expect(completed.save.story.pendingEvent).toBeNull();
+  });
+});
