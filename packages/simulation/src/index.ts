@@ -38,6 +38,7 @@ export type { FirstTeamPathwayResult } from './first-team/pathway';
 export { createLeagueStandings, updateStandings, getStandings } from './world/league-season';
 export { filterEligibleEvents, selectEvent } from './events/event-selector';
 export { filterEligibleYouthEvents } from './events/event-selector';
+export { calculateYouthEventWeight, selectYouthEvent } from './events/event-selector';
 export type { PlayerContext } from './events/event-selector';
 export {
   createPerson,

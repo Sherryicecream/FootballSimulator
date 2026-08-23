@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { EventDefinition } from '@football/contracts';
 import { filterEligibleYouthEvents } from '../../src/events/event-selector';
+import { calculateYouthEventWeight } from '../../src/events/event-selector';
 import { createYouthSave } from '../fixtures/youth-save';
 
 const mediaEvent: EventDefinition = {
@@ -57,5 +58,147 @@ describe('filterEligibleYouthEvents', () => {
     expect(
       filterEligibleYouthEvents([mediaEvent, injuryEvent], injured).map(({ id }) => id),
     ).toEqual(['injury-choice']);
+  });
+});
+
+describe('contextual youth event selection', () => {
+  const contextualEvent: EventDefinition = {
+    ...mediaEvent,
+    id: 'contextual',
+    theme: 'off-pitch',
+    interaction: 'decision',
+    baseWeight: 20,
+    condition: {
+      minSeason: 2024,
+      position: 'FORWARD',
+      growthBackgrounds: ['school'],
+      personalityTendencies: ['disciplined'],
+      maturationPaces: ['late'],
+      playerRoles: ['rotation'],
+      firstTeamStages: ['watchlist'],
+      minWeek: 20,
+      maxWeek: 30,
+      maxMorale: 60,
+      minConfidence: 40,
+      minFatigue: 25,
+      maxFatigue: 80,
+      minCoachEvaluation: 50,
+      maxCoachEvaluation: 80,
+      minProfessionalism: 65,
+      minStability: 50,
+    },
+  };
+  const matchingSave = () => {
+    const base = createYouthSave();
+    return createYouthSave({
+      player: {
+        ...base.player,
+        identity: {
+          ...base.player.identity,
+          growthBackground: 'school',
+          personalityTendency: 'disciplined',
+        },
+        development: { ...base.player.development, maturationPace: 'late' },
+      },
+      season: { ...base.season, currentWeek: 24 },
+      clubContext: {
+        ...base.clubContext,
+        playerRole: 'rotation',
+        firstTeamStage: 'watchlist',
+      },
+      health: { ...base.health, fatigue: 35 },
+      currentState: { ...base.currentState, morale: 50, confidence: 50 },
+    });
+  };
+
+  it('enforces profile, season, position and current-state hard conditions', () => {
+    const matching = matchingSave();
+    expect(filterEligibleYouthEvents([contextualEvent], matching)).toHaveLength(1);
+
+    const mismatches = [
+      createYouthSave({
+        player: {
+          ...matching.player,
+          identity: { ...matching.player.identity, growthBackground: 'academy' },
+        },
+      }),
+      createYouthSave({
+        player: {
+          ...matching.player,
+          identity: { ...matching.player.identity, personalityTendency: 'composed' },
+        },
+      }),
+      createYouthSave({
+        player: {
+          ...matching.player,
+          identity: { ...matching.player.identity, primaryPosition: 'CENTER_BACK' },
+        },
+      }),
+      createYouthSave({
+        player: {
+          ...matching.player,
+          development: { ...matching.player.development, maturationPace: 'normal' },
+        },
+      }),
+      createYouthSave({ season: { ...matching.season, currentWeek: 10 } }),
+      createYouthSave({ clubContext: { ...matching.clubContext, playerRole: 'regular' } }),
+      createYouthSave({ clubContext: { ...matching.clubContext, firstTeamStage: 'none' } }),
+      createYouthSave({ health: { ...matching.health, fatigue: 10 } }),
+      createYouthSave({ currentState: { ...matching.currentState, morale: 75 } }),
+      createYouthSave({ clubContext: { ...matching.clubContext, coachEvaluation: 90 } }),
+      createYouthSave({
+        player: {
+          ...matching.player,
+          development: { ...matching.player.development, professionalism: 40 },
+        },
+      }),
+    ];
+    for (const mismatch of mismatches) {
+      expect(filterEligibleYouthEvents([contextualEvent], mismatch)).toHaveLength(0);
+    }
+  });
+
+  it('weights themes by background, personality, state and recent theme cooldown', () => {
+    const base = createYouthSave();
+    const offPitch = { ...contextualEvent, id: 'off-pitch', condition: {} };
+    const training = {
+      ...contextualEvent,
+      id: 'training',
+      theme: 'training' as const,
+      condition: {},
+    };
+    const health = { ...contextualEvent, id: 'health', theme: 'health' as const, condition: {} };
+    const school = createYouthSave({
+      player: { ...base.player, identity: { ...base.player.identity, growthBackground: 'school' } },
+    });
+    const disciplined = createYouthSave({
+      player: {
+        ...base.player,
+        identity: { ...base.player.identity, personalityTendency: 'disciplined' },
+      },
+    });
+    const expressive = createYouthSave({
+      player: {
+        ...base.player,
+        identity: { ...base.player.identity, personalityTendency: 'expressive' },
+      },
+    });
+    const fatigued = createYouthSave({ health: { ...base.health, fatigue: 70 } });
+    const cooling = createYouthSave({
+      story: { ...base.story, themeCooldownsByTheme: { training: 2 } },
+    });
+
+    expect(calculateYouthEventWeight(offPitch, school)).toBeGreaterThan(
+      calculateYouthEventWeight(offPitch, base),
+    );
+    expect(calculateYouthEventWeight(training, disciplined)).toBeGreaterThan(
+      calculateYouthEventWeight(training, expressive),
+    );
+    expect(calculateYouthEventWeight(health, fatigued)).toBeGreaterThan(
+      calculateYouthEventWeight(health, base),
+    );
+    expect(calculateYouthEventWeight(training, cooling)).toBeLessThan(
+      calculateYouthEventWeight(training, base),
+    );
   });
 });

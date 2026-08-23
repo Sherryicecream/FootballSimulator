@@ -51,6 +51,35 @@ export function filterEligibleYouthEvents(
       save.season.academyId.startsWith('relocation-') !== condition.requireRelocation
     )
       return false;
+    if (condition.position && save.player.identity.primaryPosition !== condition.position)
+      return false;
+    if (!includesIfDefined(condition.growthBackgrounds, save.player.identity.growthBackground))
+      return false;
+    if (
+      !includesIfDefined(condition.personalityTendencies, save.player.identity.personalityTendency)
+    )
+      return false;
+    if (!includesIfDefined(condition.maturationPaces, save.player.development.maturationPace))
+      return false;
+    if (!includesIfDefined(condition.playerRoles, save.clubContext.playerRole)) return false;
+    if (!includesIfDefined(condition.firstTeamStages, save.clubContext.firstTeamStage))
+      return false;
+    if (!within(save.season.currentWeek, condition.minWeek, condition.maxWeek)) return false;
+    if (!within(save.currentState.morale, condition.minMorale, condition.maxMorale)) return false;
+    if (!within(save.currentState.confidence, condition.minConfidence, condition.maxConfidence))
+      return false;
+    if (!within(save.health.fatigue, condition.minFatigue, condition.maxFatigue)) return false;
+    if (
+      !within(
+        save.clubContext.coachEvaluation,
+        condition.minCoachEvaluation,
+        condition.maxCoachEvaluation,
+      )
+    )
+      return false;
+    if (!within(save.player.development.professionalism, condition.minProfessionalism, undefined))
+      return false;
+    if (!within(save.player.development.stability, condition.minStability, undefined)) return false;
     return true;
   });
 }
@@ -68,6 +97,7 @@ export function filterEligibleEvents(
 
     if (c.minAge !== undefined && context.age < c.minAge) return false;
     if (c.maxAge !== undefined && context.age > c.maxAge) return false;
+    if (c.minSeason !== undefined && context.season < c.minSeason) return false;
     if (c.minReputation !== undefined && context.reputation < c.minReputation) return false;
     if (c.maxReputation !== undefined && context.reputation > c.maxReputation) return false;
 
@@ -115,3 +145,52 @@ export function selectEvent(
 
   return eligibleEvents[eligibleEvents.length - 1];
 }
+const within = (value: number, min?: number, max?: number): boolean =>
+  (min === undefined || value >= min) && (max === undefined || value <= max);
+
+const includesIfDefined = <T>(values: readonly T[] | undefined, value: T): boolean =>
+  values === undefined || values.includes(value);
+
+const BACKGROUND_THEME_BONUS: Record<string, Partial<Record<string, number>>> = {
+  academy: { training: 1.25, relationships: 1.15 },
+  school: { 'off-pitch': 1.35, match: 1.1 },
+  community: { 'off-pitch': 1.25, relationships: 1.15 },
+  'late-bloomer': { training: 1.2, trajectory: 1.25 },
+};
+
+const PERSONALITY_THEME_BONUS: Record<string, Partial<Record<string, number>>> = {
+  ambitious: { match: 1.2, trajectory: 1.2 },
+  composed: { health: 1.15 },
+  disciplined: { training: 1.25 },
+  expressive: { relationships: 1.2, 'off-pitch': 1.15 },
+};
+
+export const calculateYouthEventWeight = (event: EventDefinition, save: CareerSaveV2): number => {
+  const theme = event.theme ?? 'off-pitch';
+  let weight = event.baseWeight ?? 20;
+  weight *= BACKGROUND_THEME_BONUS[save.player.identity.growthBackground]?.[theme] ?? 1;
+  weight *= PERSONALITY_THEME_BONUS[save.player.identity.personalityTendency]?.[theme] ?? 1;
+
+  if (save.health.fatigue >= 60 && theme === 'health') weight *= 1.35;
+  if (save.currentState.morale <= 35 && (theme === 'health' || theme === 'off-pitch'))
+    weight *= 1.2;
+  if (save.clubContext.coachEvaluation >= 65 && (theme === 'match' || theme === 'trajectory'))
+    weight *= 1.15;
+
+  const themeCooldown = save.story.themeCooldownsByTheme?.[theme] ?? 0;
+  weight *= themeCooldown > 0 ? 0.45 : 1.05;
+  return Math.min(200, Math.max(1, Math.round(weight)));
+};
+
+export const selectYouthEvent = (
+  eligibleEvents: EventDefinition[],
+  save: CareerSaveV2,
+  rng: SeededRandomSource,
+): EventDefinition | undefined => {
+  if (eligibleEvents.length === 0) return undefined;
+  const rarityFactors = { common: 1, uncommon: 0.7, rare: 0.35, legendary: 0.12 };
+  const weights = eligibleEvents.map(
+    (event) => calculateYouthEventWeight(event, save) * rarityFactors[event.rarity],
+  );
+  return rng.pickWeighted(eligibleEvents, weights);
+};
