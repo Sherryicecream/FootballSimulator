@@ -106,6 +106,9 @@ export const validateYouthContent = (raw: YouthContentBundle): YouthContentBundl
 const validateEvents = (events: EventDefinition[]): void => {
   const eventIds = new Set(events.map(({ id }) => id));
   for (const event of events) {
+    if (event.interaction === 'automatic' && event.choices.length !== 1) {
+      throw new Error(`自动事件只能有一个选项：${event.id}`);
+    }
     if ((event.rarity === 'rare' || event.rarity === 'legendary') && isEmpty(event.condition)) {
       throw new Error(`重大事件必须有条件：${event.id}`);
     }

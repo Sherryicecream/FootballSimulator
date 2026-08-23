@@ -1,6 +1,7 @@
 import type { EventDefinition } from '@football/contracts';
+import { balancedOneOffEvents } from './one-off-events';
 
-export const youthEvents: EventDefinition[] = [
+const legacyYouthEvents: EventDefinition[] = [
   {
     id: 'coach-praise',
     version: 1,
@@ -520,6 +521,8 @@ export const youthEvents: EventDefinition[] = [
     cooldownWeeks: 18,
   },
 ];
+
+export const youthEvents: EventDefinition[] = [...legacyYouthEvents, ...balancedOneOffEvents];
 
 export function getYouthEvents(): EventDefinition[] {
   return youthEvents;

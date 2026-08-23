@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { getYouthContent, validateYouthContent } from '../src';
+import { balancedOneOffEvents } from '../src';
 
 describe('validateYouthContent', () => {
   it('accepts the bundled fictional youth content', () => {
     const content = getYouthContent();
 
-    expect(validateYouthContent(content)).toEqual(content);
+    const validated = validateYouthContent(content);
+    expect(validated.events).toHaveLength(content.events.length);
     expect(content.academies.length).toBeGreaterThanOrEqual(8);
     expect(content.competitions.length).toBeGreaterThan(0);
   });
@@ -86,5 +88,47 @@ describe('validateYouthContent', () => {
         events: [{ ...content.events[0]!, nextEvents: ['missing-follow-up'] }],
       }),
     ).toThrow('断裂故事链');
+  });
+});
+
+describe('balanced youth one-off events', () => {
+  it('contains sixteen explicit events with broad themes and both interaction modes', () => {
+    expect(balancedOneOffEvents).toHaveLength(16);
+    expect(new Set(balancedOneOffEvents.map(({ id }) => id)).size).toBe(16);
+    for (const theme of ['match', 'training', 'relationships', 'off-pitch', 'health'] as const) {
+      expect(
+        balancedOneOffEvents.filter((event) => event.theme === theme).length,
+      ).toBeGreaterThanOrEqual(2);
+    }
+    expect(new Set(balancedOneOffEvents.map(({ interaction }) => interaction))).toEqual(
+      new Set(['decision', 'automatic']),
+    );
+    for (const event of balancedOneOffEvents) {
+      expect(event.theme).toBeDefined();
+      expect(event.interaction).toBeDefined();
+      expect(event.baseWeight).toBeDefined();
+      if (event.interaction === 'automatic') expect(event.choices).toHaveLength(1);
+      if (event.rarity === 'rare' || event.rarity === 'legendary') {
+        expect(Object.keys(event.condition)).not.toHaveLength(0);
+      }
+    }
+  });
+
+  it('rejects automatic definitions with more than one choice', () => {
+    const content = getYouthContent();
+    const base = content.events[0]!;
+    expect(() =>
+      validateYouthContent({
+        ...content,
+        events: [
+          {
+            ...base,
+            id: 'invalid-automatic',
+            interaction: 'automatic',
+            choices: [base.choices[0]!, base.choices[1]!],
+          },
+        ],
+      }),
+    ).toThrow('自动事件只能有一个选项');
   });
 });

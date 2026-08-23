@@ -116,7 +116,12 @@ export const EventDefinitionSchema = z.object({
     .optional(),
 });
 
-export type EventDefinition = z.infer<typeof EventDefinitionSchema>;
+export type ResolvedEventDefinition = z.infer<typeof EventDefinitionSchema>;
+export type EventDefinition = Omit<
+  ResolvedEventDefinition,
+  'theme' | 'interaction' | 'baseWeight'
+> &
+  Partial<Pick<ResolvedEventDefinition, 'theme' | 'interaction' | 'baseWeight'>>;
 
 export const DelayedEffectSchema = z.object({
   triggerWeek: z.number().int(),
