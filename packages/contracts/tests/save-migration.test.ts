@@ -13,6 +13,8 @@ describe('migrateCareerSave', () => {
     expect(first.season.academyId).toBe('shanghai-pujiang');
     expect(first.randomState).toEqual(v1.randomState);
     expect(first.ledger).toHaveLength(v1.ledger.length);
+    expect(first.story.themeCooldownsByTheme).toEqual({});
+    expect(first.monthlyAdvance.interactiveEventCount).toBe(0);
     expect(CareerSaveV2Schema.safeParse(first).success).toBe(true);
   });
 

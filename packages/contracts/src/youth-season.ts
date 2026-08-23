@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { PositionSchema } from './primitives';
-import { EventChoiceSchema, EventDefinitionSchema } from './event';
+import { EventChoiceSchema, EventDefinitionSchema, EventInteractionSchema } from './event';
 
 const IdSchema = z.string().min(1).max(60);
 const ScoreSchema = z.number().int().min(0).max(100);
@@ -118,6 +118,7 @@ export const MonthlyAdvanceCursorSchema = z.strictObject({
   developmentAccrual: z.record(z.string(), z.number().min(0)).default({}),
   factIds: z.array(IdSchema).default([]),
   matchIds: z.array(IdSchema).default([]),
+  interactiveEventCount: z.number().int().min(0).max(2).default(0),
 });
 export type MonthlyAdvanceCursor = z.infer<typeof MonthlyAdvanceCursorSchema>;
 
@@ -140,6 +141,7 @@ export const YouthEventInstanceSchema = z.strictObject({
   factRefs: z.array(IdSchema),
   storyId: IdSchema.nullable().default(null),
   nextEventIds: z.array(IdSchema).default([]),
+  interaction: EventInteractionSchema.default('decision'),
 });
 export type YouthEventInstance = z.infer<typeof YouthEventInstanceSchema>;
 
@@ -147,6 +149,7 @@ export const YouthStoryStateSchema = z.strictObject({
   activeStorylines: z.array(IdSchema),
   completedStoryIds: z.array(IdSchema),
   cooldownsByEventId: z.record(IdSchema, z.number().int().min(0).max(52)),
+  themeCooldownsByTheme: z.record(z.string(), z.number().int().min(0).max(52)).default({}),
   pendingDelayedEffects: z.array(YouthDelayedEffectSchema),
   pendingEvent: YouthEventInstanceSchema.nullable().default(null),
 });

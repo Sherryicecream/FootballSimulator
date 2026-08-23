@@ -134,6 +134,7 @@ export const migrateCareerSave = (raw: unknown): CareerSaveV2 => {
       activeStorylines: save.story.activeStorylines,
       completedStoryIds: save.story.completedStoryIds,
       cooldownsByEventId: save.story.cooldowns,
+      themeCooldownsByTheme: {},
       pendingDelayedEffects: [],
       pendingEvent: save.context.pendingEvent
         ? {
@@ -142,6 +143,7 @@ export const migrateCareerSave = (raw: unknown): CareerSaveV2 => {
             factRefs: [],
             storyId: null,
             nextEventIds: [],
+            interaction: 'decision',
           }
         : null,
     },
@@ -153,6 +155,7 @@ export const migrateCareerSave = (raw: unknown): CareerSaveV2 => {
       developmentAccrual: {},
       factIds: [],
       matchIds: [],
+      interactiveEventCount: 0,
     },
     ledger: save.ledger.map((entry, index) => ({
       id: `migrated-${index + 1}`,

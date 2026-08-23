@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CareerSaveV2Schema,
+  EventDefinitionSchema,
   InjuryStatusSchema,
   PlayerDevelopmentProfileSchema,
   YouthEventInstanceSchema,
@@ -92,6 +93,57 @@ describe('youth season v2 contracts', () => {
     expect(injury.recoveredWeeks).toBe(2);
     expect(event.participantIds).toEqual(['rival-7', 'coach-1']);
     expect(event.factRefs).toEqual(['fact-depth-chart-3']);
+    expect(event.interaction).toBe('decision');
+  });
+
+  it('defaults legacy events and accepts contextual youth conditions', () => {
+    const legacyEvent = EventDefinitionSchema.parse({
+      id: 'legacy-event',
+      version: 1,
+      category: 'china-youth',
+      rarity: 'common',
+      title: '旧事件',
+      description: '旧内容无需立即补写新字段。',
+      choices: [{ id: 'continue', text: '继续', riskLabel: 'low', effects: {} }],
+    });
+    const contextualEvent = EventDefinitionSchema.parse({
+      id: 'late-bloomer-window',
+      version: 1,
+      category: 'china-youth',
+      rarity: 'rare',
+      theme: 'trajectory',
+      interaction: 'automatic',
+      baseWeight: 8,
+      title: '迟来的窗口',
+      description: '身体和比赛理解在赛季后段出现新的增长迹象。',
+      condition: {
+        growthBackgrounds: ['school'],
+        personalityTendencies: ['resilient'],
+        maturationPaces: ['late'],
+        playerRoles: ['rotation', 'regular'],
+        firstTeamStages: ['none', 'watchlist'],
+        minWeek: 20,
+        maxWeek: 40,
+        minMorale: 30,
+        maxMorale: 90,
+        minConfidence: 30,
+        maxConfidence: 90,
+        minFatigue: 0,
+        maxFatigue: 60,
+        minCoachEvaluation: 35,
+        maxCoachEvaluation: 75,
+        minProfessionalism: 55,
+        minStability: 45,
+      },
+      choices: [{ id: 'notice', text: '记录变化', riskLabel: 'low', effects: {} }],
+    });
+
+    expect(legacyEvent.theme).toBe('off-pitch');
+    expect(legacyEvent.interaction).toBe('decision');
+    expect(legacyEvent.baseWeight).toBe(20);
+    expect(contextualEvent.condition.maturationPaces).toEqual(['late']);
+    expect(contextualEvent.condition.minProfessionalism).toBe(55);
+    expect(contextualEvent.interaction).toBe('automatic');
   });
 
   it('rejects professional career fields from the v2 save boundary', () => {

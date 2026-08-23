@@ -2,6 +2,19 @@ import { z } from 'zod';
 
 export const RaritySchema = z.enum(['common', 'uncommon', 'rare', 'legendary']);
 
+export const YouthEventThemeSchema = z.enum([
+  'match',
+  'training',
+  'relationships',
+  'off-pitch',
+  'health',
+  'trajectory',
+]);
+export type YouthEventTheme = z.infer<typeof YouthEventThemeSchema>;
+
+export const EventInteractionSchema = z.enum(['decision', 'automatic']);
+export type EventInteraction = z.infer<typeof EventInteractionSchema>;
+
 export const EventCategorySchema = z.enum([
   'china-youth',
   'dressing-room',
@@ -50,6 +63,36 @@ export const EventConditionSchema = z.object({
     .enum(['youth-coach', 'assistant-coach', 'teammate', 'rival', 'family'])
     .optional(),
   requireRelocation: z.boolean().optional(),
+  growthBackgrounds: z.array(z.string().min(1).max(50)).optional(),
+  personalityTendencies: z.array(z.string().min(1).max(30)).optional(),
+  maturationPaces: z.array(z.enum(['early', 'normal', 'late'])).optional(),
+  playerRoles: z
+    .array(z.enum(['fringe', 'rotation', 'regular', 'starter', 'first-team-radar']))
+    .optional(),
+  firstTeamStages: z
+    .array(
+      z.enum([
+        'none',
+        'watchlist',
+        'training-invite',
+        'bench-list',
+        'substitute-appearance',
+        'starting-appearance',
+      ]),
+    )
+    .optional(),
+  minWeek: z.number().int().min(1).max(60).optional(),
+  maxWeek: z.number().int().min(1).max(60).optional(),
+  minMorale: z.number().int().min(0).max(100).optional(),
+  maxMorale: z.number().int().min(0).max(100).optional(),
+  minConfidence: z.number().int().min(0).max(100).optional(),
+  maxConfidence: z.number().int().min(0).max(100).optional(),
+  minFatigue: z.number().int().min(0).max(100).optional(),
+  maxFatigue: z.number().int().min(0).max(100).optional(),
+  minCoachEvaluation: z.number().int().min(0).max(100).optional(),
+  maxCoachEvaluation: z.number().int().min(0).max(100).optional(),
+  minProfessionalism: z.number().int().min(0).max(100).optional(),
+  minStability: z.number().int().min(0).max(100).optional(),
 });
 
 export const EventDefinitionSchema = z.object({
@@ -58,6 +101,9 @@ export const EventDefinitionSchema = z.object({
   category: EventCategorySchema,
   rarity: RaritySchema,
   title: z.string().min(1).max(100),
+  theme: YouthEventThemeSchema.default('off-pitch'),
+  interaction: EventInteractionSchema.default('decision'),
+  baseWeight: z.number().int().min(1).max(100).default(20),
   description: z.string().min(1).max(500),
   condition: EventConditionSchema.default({}),
   choices: z.array(EventChoiceSchema).min(1),
