@@ -34,7 +34,42 @@ test.describe('Youth season monthly flow', () => {
     await page.reload();
     await expect(page.getByText('赛季总结')).toBeVisible();
   });
+
+  test('enters the offseason after the season and starts the next campaign', async ({ page }) => {
+    await createCareer(page);
+    await completeSeason(page);
+
+    await page.getByRole('button', { name: '进入休赛期' }).click();
+    await expect(page.getByText('休赛期简报')).toBeVisible();
+    await expect(page.getByText('毕业资格评估')).toBeVisible();
+
+    // 刷新后应恢复到休赛期阶段
+    await page.reload();
+    await expect(page.getByText('休赛期简报')).toBeVisible();
+
+    await page.getByRole('button', { name: '开始下赛季' }).click();
+    await expect(page.getByRole('button', { name: '推进到下个月' })).toBeEnabled();
+    await page.getByRole('button', { name: '推进到下个月' }).click();
+    await resolveUntilDashboard(page);
+    await expect(page.getByLabel('月报')).toBeVisible();
+
+    // 下个赛季刷新恢复
+    await page.reload();
+    await expect(page.getByRole('button', { name: '推进到下个月' })).toBeVisible();
+  });
 });
+
+/** 反复推进月份直至赛季完成并显示赛季总结。 */
+async function completeSeason(page: Page) {
+  for (let guard = 0; guard < 40; guard += 1) {
+    if (await isSeasonComplete(page)) return;
+    const advance = page.getByRole('button', { name: '推进到下个月' });
+    await expect(advance).toBeVisible();
+    await advance.click();
+    await resolveUntilDashboard(page, true);
+  }
+  throw new Error('赛季未在保护步数内完成');
+}
 
 async function createCareer(page: Page) {
   await page.goto('/');

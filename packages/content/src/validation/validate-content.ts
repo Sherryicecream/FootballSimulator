@@ -99,6 +99,29 @@ export const validateYouthContent = (raw: YouthContentBundle): YouthContentBundl
     }
   }
 
+  assertUniqueIds(
+    '俱乐部',
+    content.clubs.map(({ id }) => id),
+  );
+  assertUniqueIds(
+    '经纪人',
+    content.agents.map(({ id }) => id),
+  );
+  for (const club of content.clubs) {
+    if (!regionIds.has(club.regionId)) {
+      throw new Error(`未知地区：${club.regionId}`);
+    }
+    assertNoRealClubBrand(club.name);
+    if (new Set(club.positionalNeeds).size !== club.positionalNeeds.length) {
+      throw new Error(`俱乐部位置需求重复：${club.id}`);
+    }
+  }
+  for (const agent of content.agents) {
+    if (agent.focusTierMin > agent.focusTierMax) {
+      throw new Error(`经纪人层级区间无效：${agent.id}`);
+    }
+  }
+
   validateEvents(content.events);
   return content;
 };

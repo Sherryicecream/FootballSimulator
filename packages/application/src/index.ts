@@ -22,3 +22,9 @@ export type { SavePort, InMemorySaveStore } from './ports/save-port';
 export type { BootstrapContentPort } from './ports/bootstrap-content';
 export { enterOffseason } from './use-cases/enter-offseason';
 export { startNextYouthSeason } from './use-cases/start-next-season';
+export {
+  submitAgentPreferences,
+  generateContractOffers,
+  signContract,
+  rejectOffers,
+} from './use-cases/contract-flow';

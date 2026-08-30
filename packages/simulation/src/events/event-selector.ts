@@ -1,8 +1,4 @@
-import type {
-  CareerSaveV2Like,
-  EventDefinition,
-  StoryState,
-} from '@football/contracts';
+import type { CareerSaveV2Like, EventDefinition, StoryState } from '@football/contracts';
 import type { SeededRandomSource } from '../randomness/seeded-random-source';
 
 export interface PlayerContext {

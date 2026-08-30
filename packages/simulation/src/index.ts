@@ -58,3 +58,4 @@ export {
   graduationAbilityThreshold,
 } from './career/graduation';
 export { startNextSeason, createYouthFixtures } from './career/start-next-season';
+export { generateOffers } from './career/offer-generation';

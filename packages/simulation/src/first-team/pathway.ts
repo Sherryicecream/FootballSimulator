@@ -1,8 +1,4 @@
-import type {
-  CareerLedgerEntryV2,
-  CareerSaveV2Like,
-  FirstTeamStage,
-} from '@football/contracts';
+import type { CareerLedgerEntryV2, CareerSaveV2Like, FirstTeamStage } from '@football/contracts';
 import type { SeededRandomSource } from '../randomness';
 
 export interface FirstTeamPathwayResult {

@@ -179,3 +179,33 @@ describe('youth stories and trajectory signals', () => {
     );
   });
 });
+
+describe('俱乐部与经纪人内容', () => {
+  it('捆绑内容包含经过校验的俱乐部与经纪人', () => {
+    const content = getYouthContent();
+    const validated = validateYouthContent(content);
+
+    expect(validated.clubs.length).toBeGreaterThanOrEqual(12);
+    expect(validated.clubs.every(({ tier }) => tier >= 3 && tier <= 8)).toBe(true);
+    expect(validated.clubs.every(({ name }) => name.length > 0)).toBe(true);
+    expect(validated.agents.length).toBeGreaterThanOrEqual(2);
+    expect(
+      validated.agents.every(({ focusTierMin, focusTierMax }) => focusTierMin <= focusTierMax),
+    ).toBe(true);
+  });
+
+  it('拒绝重复俱乐部 ID、未知地区与真实品牌词', () => {
+    const content = getYouthContent();
+    const duplicated = { ...content, clubs: [...content.clubs, content.clubs[0]!] };
+    expect(() => validateYouthContent(duplicated)).toThrow(/俱乐部/);
+
+    const unknownRegion = {
+      ...content,
+      clubs: [{ ...content.clubs[0]!, id: 'club-x', regionId: 'atlantis' }],
+    };
+    expect(() => validateYouthContent(unknownRegion)).toThrow(/未知地区/);
+
+    const branded = { ...content, clubs: [{ ...content.clubs[0]!, name: '皇家马德里青年联' }] };
+    expect(() => validateYouthContent(branded)).toThrow();
+  });
+});

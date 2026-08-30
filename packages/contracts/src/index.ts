@@ -13,3 +13,4 @@ export * from './health';
 export * from './youth-season';
 export * from './save-migration';
 export * from './graduation';
+export * from './clubs';

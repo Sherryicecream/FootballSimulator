@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { PositionSchema } from './primitives';
 import { EventChoiceSchema, EventDefinitionSchema, EventInteractionSchema } from './event';
+import { ClubProfileSchema, AgentArchetypeSchema } from './clubs';
 
 const IdSchema = z.string().min(1).max(60);
 const ScoreSchema = z.number().int().min(0).max(100);
@@ -216,5 +217,7 @@ export const YouthContentBundleSchema = z.strictObject({
   competitions: z.array(YouthCompetitionDefinitionSchema),
   people: z.array(PersonArchetypeSchema),
   events: z.array(EventDefinitionSchema),
+  clubs: z.array(ClubProfileSchema).default([]),
+  agents: z.array(AgentArchetypeSchema).default([]),
 });
 export type YouthContentBundle = z.infer<typeof YouthContentBundleSchema>;

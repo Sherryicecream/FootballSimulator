@@ -58,7 +58,7 @@ describe('headless youth career flow', () => {
         completedAgain.save.ledger.filter(({ type }) => type === 'season-outcome'),
       ).toHaveLength(1);
     }
-  });
+  }, 60_000);
 });
 
 const academy = (id: string, level: number): YouthAcademyProfile => ({

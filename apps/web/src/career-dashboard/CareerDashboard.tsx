@@ -1,4 +1,5 @@
 import type { CareerSaveV3, MonthlyReport, TrainingPlan } from '@football/contracts';
+import { ContractCard } from './ContractCard';
 import type { YouthSeasonOutcome } from '@football/application';
 import { buildPlayerProfile, buildRecentRecords, labelAttribute } from './career-presentation';
 
@@ -65,6 +66,7 @@ export function CareerDashboard({
           <p>后续方向：{outcome.nextPath}</p>
         </section>
       )}
+      {save.contract && <ContractCard contract={save.contract} />}
       {report && !outcome && (
         <section className="report-card" aria-label="月报">
           <h3>{report.monthKey} 月报</h3>

@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react';
-import type { CareerSave, CareerSaveV3, MonthlyReport, TrainingPlan } from '@football/contracts';
+import type {
+  AgentPreferences,
+  CareerSave,
+  CareerSaveV3,
+  MonthlyReport,
+  TrainingPlan,
+} from '@football/contracts';
 import { getYouthContent } from '@football/content';
 import {
   advanceCareerMonth,
@@ -8,8 +14,12 @@ import {
   createSubmitYouthChoice,
   createYouthCareerV2,
   enterOffseason,
+  generateContractOffers,
   loadCareer,
+  rejectOffers,
+  signContract,
   startNextYouthSeason,
+  submitAgentPreferences,
   submitCareerDecision,
   updateTrainingPlan,
   type YouthSeasonOutcome,
@@ -19,11 +29,13 @@ import { YouthOpportunityPanel } from '../event-choice/YouthOpportunityPanel';
 import { EventChoicePanel } from '../event-choice/EventChoicePanel';
 import { CareerDashboard } from '../career-dashboard/CareerDashboard';
 import { OffseasonBriefing } from '../career-dashboard/OffseasonBriefing';
+import { AgentPreferencesForm } from '../career-dashboard/AgentPreferencesForm';
+import { OfferComparisonPanel } from '../career-dashboard/OfferComparisonPanel';
 import { createBootstrapContent } from './bootstrap-dependencies';
 import { createLocalStorageCareerV2Port } from '../persistence/local-storage-save';
 import './app.css';
 
-type Step = 'creation' | 'opportunity' | 'dashboard' | 'event' | 'offseason';
+type Step = 'creation' | 'opportunity' | 'dashboard' | 'event' | 'offseason' | 'agent' | 'offers';
 const bootstrapContent = createBootstrapContent();
 const youthContent = getYouthContent();
 const advanceToDecision = createAdvanceToDecision(bootstrapContent);
@@ -51,6 +63,12 @@ export function App() {
           if (restored.careerPhase === 'offseason') {
             setSave(restored);
             setStep('offseason');
+          } else if (restored.careerPhase === 'agent-preferences') {
+            setSave(restored);
+            setStep('agent');
+          } else if (restored.careerPhase === 'offer-review') {
+            setSave(restored);
+            setStep('offers');
           } else if (restored.season.completed && !restored.story.pendingEvent) {
             const completed = completeYouthSeason(restored);
             setSave(completed.save);
@@ -156,6 +174,44 @@ export function App() {
       setError(message(caught));
     }
   };
+  const handleSeekOffers = () => {
+    if (!save) return;
+    setError(null);
+    setStep('agent');
+  };
+  const handleAgentPreferences = (preferences: AgentPreferences) => {
+    if (!save) return;
+    setError(null);
+    try {
+      const withPrefs = submitAgentPreferences(save, preferences);
+      const withOffers = generateContractOffers(withPrefs, youthContent);
+      persist(withOffers);
+      setStep('offers');
+    } catch (caught) {
+      setError(message(caught));
+    }
+  };
+  const handleSignContract = (offerId: string) => {
+    if (!save) return;
+    setError(null);
+    try {
+      persist(signContract(save, offerId));
+      setOutcome(null);
+      setStep('dashboard');
+    } catch (caught) {
+      setError(message(caught));
+    }
+  };
+  const handleRejectOffers = () => {
+    if (!save) return;
+    setError(null);
+    try {
+      persist(rejectOffers(save));
+      setStep('offseason');
+    } catch (caught) {
+      setError(message(caught));
+    }
+  };
   const newCareer = () => {
     if (save) void savePort.delete(save.careerId);
     setSave(null);
@@ -222,6 +278,15 @@ export function App() {
           outcome={outcome}
           academies={youthContent.academies}
           onStartNextSeason={handleStartNextSeason}
+          onSeekOffers={handleSeekOffers}
+        />
+      )}
+      {step === 'agent' && save && <AgentPreferencesForm onSubmit={handleAgentPreferences} />}
+      {step === 'offers' && save && save.pendingOffers.length > 0 && (
+        <OfferComparisonPanel
+          offers={save.pendingOffers}
+          onSign={handleSignContract}
+          onRejectAll={handleRejectOffers}
         />
       )}
       {step === 'event' && save?.story.pendingEvent && (

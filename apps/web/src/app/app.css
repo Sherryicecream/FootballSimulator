@@ -236,3 +236,92 @@ textarea {
     padding: var(--space-lg) var(--space-md);
   }
 }
+
+/* 休赛期与合同流程 */
+.offseason,
+.agent-form,
+.offer-panel,
+.contract-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-top: 16px;
+}
+.offseason-list,
+.eligibility-list,
+.contract-card ul,
+.offer-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+  display: grid;
+  gap: 6px;
+}
+.eligibility-list .met {
+  color: #166534;
+}
+.eligibility-list .unmet {
+  color: #991b1b;
+}
+.graduation-hint {
+  color: #92400e;
+  background: #fef9c3;
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+}
+.offseason-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+.offseason-entry {
+  margin-top: 16px;
+  width: 100%;
+}
+.offer-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+.offer-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+}
+.offer-card.selected {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px #2563eb33;
+}
+.offer-card h3 {
+  margin-top: 0;
+}
+.sign-confirm {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid #92400e;
+  border-radius: var(--radius-md);
+  background: #fffbeb;
+  display: grid;
+  gap: 8px;
+}
+.sign-confirm .confirm {
+  font-weight: 600;
+}
+.choice-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+}
+fieldset {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin: 10px 0;
+}
+@media (max-width: 720px) {
+  .offer-list {
+    grid-template-columns: 1fr;
+  }
+}
