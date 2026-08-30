@@ -7,10 +7,10 @@ import { applyRelationshipEffects } from '@football/simulation';
 
 export const resolveCareerEvent = (save: CareerSaveV2, choiceId: string): CareerSaveV2 => {
   const event = save.story.pendingEvent;
-  if (!event) throw new Error('Ã»ÓÐ´ý´¦ÀíµÄÉúÑÄÊÂ¼þ');
-  if (event.resolvedChoiceId !== null) throw new Error('¸ÃÊÂ¼þÒÑ¾­´¦Àí£¬²»ÄÜÖØ¸´Ìá½»');
+  if (!event) throw new Error('æ²¡æœ‰å¾…å¤„ç†çš„ç”Ÿæ¶¯äº‹ä»¶');
+  if (event.resolvedChoiceId !== null) throw new Error('è¯¥äº‹ä»¶å·²ç»å¤„ç†ï¼Œä¸èƒ½é‡å¤æäº¤');
   const choice = event.choices.find(({ id }) => id === choiceId);
-  if (!choice) throw new Error(`ÎÞÐ§µÄÑ¡Ôñ ID£º${choiceId}`);
+  if (!choice) throw new Error(`æ— æ•ˆçš„é€‰æ‹© IDï¼š${choiceId}`);
 
   const effects = choice.effects;
   const currentState = {
