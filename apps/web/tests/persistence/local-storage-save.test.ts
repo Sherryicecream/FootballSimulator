@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
-  createLocalStorageCareerV2Port,
+  createLocalStorageCareerV4Port,
   createLocalStorageSavePort,
 } from '../../src/persistence/local-storage-save';
-import { migrateCareerSaveV3, type CareerSave } from '@football/contracts';
+import { migrateCareerSaveV4, type CareerSave } from '@football/contracts';
 
 const mockSave: CareerSave = {
   schemaVersion: 1,
@@ -125,15 +125,15 @@ describe('createLocalStorageSavePort', () => {
   });
 
   it('validates v2 saves before writing and loads them with a typed result', async () => {
-    const port = createLocalStorageCareerV2Port();
-    const v2 = migrateCareerSaveV3(mockSave);
+    const port = createLocalStorageCareerV4Port();
+    const v4 = migrateCareerSaveV4(mockSave);
 
-    await port.save(v2.careerId, v2);
-    const loaded = await port.load(v2.careerId);
+    await port.save(v4.careerId, v4);
+    const loaded = await port.load(v4.careerId);
 
     expect(loaded.status).toBe('loaded');
     if (loaded.status === 'loaded') {
-      expect(loaded.save.schemaVersion).toBe(3);
+      expect(loaded.save.schemaVersion).toBe(4);
     }
   });
 
@@ -142,7 +142,7 @@ describe('createLocalStorageSavePort', () => {
     const raw = JSON.stringify({ version: 1, savedAt: '2024-09-01T00:00:00.000Z', data: mockSave });
     localStorage.setItem(key, raw);
 
-    const loaded = await createLocalStorageCareerV2Port().load('test-career');
+    const loaded = await createLocalStorageCareerV4Port().load('test-career');
 
     expect(loaded.status).toBe('loaded');
     expect(localStorage.getItem(key)).toBe(raw);
@@ -152,7 +152,7 @@ describe('createLocalStorageSavePort', () => {
     const key = 'football-save-damaged';
     localStorage.setItem(key, '{damaged');
 
-    const loaded = await createLocalStorageCareerV2Port().load('damaged');
+    const loaded = await createLocalStorageCareerV4Port().load('damaged');
 
     expect(loaded.status).toBe('invalid');
     if (loaded.status === 'invalid') {

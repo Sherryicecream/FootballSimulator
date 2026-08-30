@@ -15,7 +15,7 @@ import {
   submitCareerDecision,
 } from '@football/application';
 import { getYouthContent } from '@football/content';
-import type { CareerSaveV3, PlayerAttributes } from '@football/contracts';
+import type { CareerSaveV4, PlayerAttributes } from '@football/contracts';
 import { weightedAbility } from '@football/simulation';
 import {
   correlation,
@@ -225,10 +225,10 @@ export const runYouthSeasons = (runs: number, seedStart = 1): YouthBalanceReport
  * 否则签层级 ≤5 的最高薪要约；两者皆无则拒绝全部要约并继续青训。
  */
 const playLifecycle = (
-  completed: CareerSaveV3,
+  completed: CareerSaveV4,
   content: ReturnType<typeof getYouthContent>,
 ): LifecycleOutcome => {
-  let save: CareerSaveV3 = completed;
+  let save: CareerSaveV4 = completed;
   let seasonsPlayed = 1;
   let rejectedOfferSeasons = 0;
   const outcome: LifecycleOutcome = {
@@ -313,9 +313,9 @@ const playLifecycle = (
 
 /** 开启并完整模拟下个赛季，返回结算后的存档。 */
 const completeNextSeason = (
-  offseasonSave: CareerSaveV3,
+  offseasonSave: CareerSaveV4,
   content: ReturnType<typeof getYouthContent>,
-): CareerSaveV3 => {
+): CareerSaveV4 => {
   let save = advanceToNextSeason(offseasonSave, content);
   let guard = 0;
   while (!save.season.completed && guard < 100) {
@@ -331,9 +331,9 @@ const completeNextSeason = (
 };
 
 const advanceToNextSeason = (
-  save: CareerSaveV3,
+  save: CareerSaveV4,
   content: ReturnType<typeof getYouthContent>,
-): CareerSaveV3 => {
+): CareerSaveV4 => {
   const lastStatus = save.seasonHistory.at(-1)?.status;
   const pathwayByNextPath: Record<string, string> = {
     'school-football': 'school-elite',

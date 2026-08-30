@@ -1,5 +1,6 @@
 import type {
   CareerLedgerEntryV2,
+  MonthlyReport,
   CareerSaveV4,
   ClubProfile,
   EventDefinition,
@@ -140,8 +141,8 @@ export type AdvanceProMonthOutcome =
       save: CareerSaveV4;
       event: NonNullable<CareerSaveV4['story']['pendingEvent']>;
     }
-  | { status: 'month-complete'; save: CareerSaveV4 }
-  | { status: 'season-complete'; save: CareerSaveV4 };
+  | { status: 'month-complete'; save: CareerSaveV4; report: MonthlyReport }
+  | { status: 'season-complete'; save: CareerSaveV4; report: MonthlyReport };
 
 /** 职业月度推进：与青训月度共享事件系统与月末成长结算，比赛与登场走职业周转移。 */
 export const advanceProMonth = (
@@ -180,6 +181,8 @@ export const advanceProMonth = (
     },
   };
 
+  let matchIds: string[] = resuming ? initialSave.monthlyAdvance.matchIds : [];
+  const factsDuringMonth: string[] = resuming ? [] : [];
   let guard = 0;
   while (save.proSeason!.currentMonth === monthKey && !save.proSeason!.completed && guard < 10) {
     const transition = simulateProfessionalWeek(save, clubs);
@@ -198,6 +201,7 @@ export const advanceProMonth = (
       },
     };
     const canInterrupt = save.proSeason!.currentMonth === monthKey && !save.proSeason!.completed;
+    factsDuringMonth.push(...transition.facts.map(({ id }) => id));
     const eventPick = pickYouthEventForWeek(canInterrupt ? [...events] : [], save);
     save = eventPick.save;
     if (eventPick.event?.interaction === 'automatic') {
@@ -246,8 +250,24 @@ export const advanceProMonth = (
     },
     ledger: [...save.ledger, settlementFact],
   };
+  const monthFactIds = [...initialSave.monthlyAdvance.factIds, ...factsDuringMonth];
+  const report: MonthlyReport = {
+    monthKey,
+    facts: save.ledger.filter(({ id }) => monthFactIds.includes(id)),
+    attributeChanges: settlement.attributeChanges,
+    stateSummary: {
+      ...save.currentState,
+      fitness: save.health.fitness,
+      fatigue: save.health.fatigue,
+    },
+    matchIds,
+  };
   void mergeDevelopmentAccrual;
-  return { status: save.proSeason!.completed ? 'season-complete' : 'month-complete', save };
+  return {
+    status: save.proSeason!.completed ? 'season-complete' : 'month-complete',
+    save,
+    report,
+  };
 };
 
 /** 职业赛季结算：承诺对照、角色评估、合同年限递减、续约要约。 */
@@ -261,7 +281,6 @@ export const completeProfessionalSeason = (
   if (save.story.pendingEvent) throw new Error('请先处理待决事件');
 
   const outcome = reviewPromise(save);
-  const share = outcome?.review.share ?? 0;
 
   const contract = save.contract!;
   const expired = contract.seasonsCompleted + 1 >= contract.contractYears;

@@ -1,11 +1,12 @@
 import {
   CareerSaveV3Schema,
+  CareerSaveV4Schema,
   type CareerLedgerEntryV2,
-  type CareerSaveV3,
+  type CareerSaveV2Like,
 } from '@football/contracts';
 import { applyRelationshipEffects } from '@football/simulation';
 
-export const resolveCareerEvent = (save: CareerSaveV3, choiceId: string): CareerSaveV3 => {
+export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId: string): S => {
   const event = save.story.pendingEvent;
   if (!event) throw new Error('没有待处理的生涯事件');
   if (event.resolvedChoiceId !== null) throw new Error('该事件已经处理，不能重复提交');
@@ -55,9 +56,11 @@ export const resolveCareerEvent = (save: CareerSaveV3, choiceId: string): Career
   };
   const activeStorylines = save.story.activeStorylines.filter((id) => id !== event.eventId);
 
-  return CareerSaveV3Schema.parse({
+  // 按输入版本选择校验 Schema：v4 存档保留 v4 字段，v2/v3 走原路径
+  const isV4 = (save as { schemaVersion?: number }).schemaVersion === 4;
+  return (isV4 ? CareerSaveV4Schema : CareerSaveV3Schema).parse({
     ...save,
-    schemaVersion: 3,
+    schemaVersion: isV4 ? 4 : 3,
     currentState,
     health,
     clubContext,
@@ -89,7 +92,7 @@ export const resolveCareerEvent = (save: CareerSaveV3, choiceId: string): Career
       factIds: [...save.monthlyAdvance.factIds, fact.id],
     },
     ledger: [...save.ledger, fact],
-  });
+  }) as unknown as S;
 };
 
 const applyScore = (current: number, delta: number | undefined) =>

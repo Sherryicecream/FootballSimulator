@@ -413,3 +413,50 @@ fieldset {
   color: var(--color-muted, #6b7280);
   margin-left: 6px;
 }
+
+/* 职业仪表盘 */
+.depth-list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+}
+.depth-list .depth-self {
+  color: #1d4ed8;
+  font-weight: 600;
+}
+.standings {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.standings th,
+.standings td {
+  border-bottom: 1px solid var(--color-border);
+  padding: 4px 6px;
+  text-align: right;
+}
+.standings th:first-child,
+.standings td:first-child {
+  text-align: left;
+}
+.standings tr.self {
+  color: #1d4ed8;
+  font-weight: 600;
+}
+.promise {
+  border-radius: var(--radius-md);
+  padding: 12px;
+  margin: 10px 0;
+}
+.promise.kept {
+  background: #f0fdf4;
+  border: 1px solid #16653455;
+}
+.promise.broken {
+  background: #fef2f2;
+  border: 1px solid #991b1b55;
+}
+.promise h3 {
+  margin-top: 0;
+}

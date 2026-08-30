@@ -1,6 +1,7 @@
 import type {
   CareerLedgerEntryV2,
-  CareerSaveV3,
+  CareerSaveV2Like,
+  CareerSaveV3Like,
   MonthlyReport,
   YouthAcademyProfile,
   YouthMatchResultV2,
@@ -16,20 +17,22 @@ import {
 } from '@football/simulation';
 import { resolveCareerEvent } from './resolve-career-event';
 
-export type AdvanceMonthOutcome =
+export type AdvanceMonthOutcome<S = CareerSaveV2Like> =
   | {
       status: 'awaiting-decision';
-      save: CareerSaveV3;
-      event: NonNullable<CareerSaveV3['story']['pendingEvent']>;
+      save: S;
+      event: NonNullable<CareerSaveV2Like['story']['pendingEvent']>;
     }
-  | { status: 'month-complete'; save: CareerSaveV3; report: MonthlyReport }
-  | { status: 'season-complete'; save: CareerSaveV3; report: MonthlyReport };
+  | { status: 'month-complete'; save: S; report: MonthlyReport }
+  | { status: 'season-complete'; save: S; report: MonthlyReport };
 
-export const advanceCareerMonth = (
-  initialSave: CareerSaveV3,
+export const advanceCareerMonth = <
+  S extends CareerSaveV2Like & { seasonStats?: CareerSaveV3Like['seasonStats'] },
+>(
+  initialSave: S,
   academies: readonly YouthAcademyProfile[],
   events: readonly EventDefinition[] = [],
-): AdvanceMonthOutcome => {
+): AdvanceMonthOutcome<S> => {
   if (initialSave.story.pendingEvent) {
     return {
       status: 'awaiting-decision',
@@ -43,7 +46,7 @@ export const advanceCareerMonth = (
   const resuming =
     initialSave.monthlyAdvance.monthKey === monthKey &&
     ['advancing', 'awaiting-decision'].includes(initialSave.monthlyAdvance.status);
-  let save: CareerSaveV3 = {
+  let save: S = {
     ...initialSave,
     monthlyAdvance: {
       ...initialSave.monthlyAdvance,
@@ -60,7 +63,11 @@ export const advanceCareerMonth = (
     const transition = simulateYouthWeek(save, academies);
     save = {
       ...transition.save,
-      seasonStats: accumulateSeasonStats(transition.save.seasonStats, transition.matchResult),
+      ...(transition.save.seasonStats
+        ? {
+            seasonStats: accumulateSeasonStats(transition.save.seasonStats, transition.matchResult),
+          }
+        : {}),
       monthlyAdvance: {
         ...transition.save.monthlyAdvance,
         nextWeekIndex: transition.save.monthlyAdvance.nextWeekIndex + 1,
@@ -139,14 +146,14 @@ export const advanceCareerMonth = (
   return { status: save.season.completed ? 'season-complete' : 'month-complete', save, report };
 };
 
-const roleFromEvaluation = (evaluation: number): CareerSaveV3['clubContext']['playerRole'] => {
+const roleFromEvaluation = (evaluation: number): CareerSaveV2Like['clubContext']['playerRole'] => {
   if (evaluation >= 72) return 'starter';
   if (evaluation >= 60) return 'regular';
   if (evaluation >= 46) return 'rotation';
   return 'fringe';
 };
 
-const emptySeasonStats = (): CareerSaveV3['seasonStats'] => ({
+const emptySeasonStats = (): NonNullable<CareerSaveV3Like['seasonStats']> => ({
   appearances: 0,
   goals: 0,
   assists: 0,
@@ -155,9 +162,9 @@ const emptySeasonStats = (): CareerSaveV3['seasonStats'] => ({
 });
 
 const accumulateSeasonStats = (
-  stats: CareerSaveV3['seasonStats'] | undefined,
+  stats: CareerSaveV3Like['seasonStats'] | undefined,
   match: YouthMatchResultV2 | null,
-): CareerSaveV3['seasonStats'] => {
+): NonNullable<CareerSaveV3Like['seasonStats']> => {
   if (!match) return stats ?? emptySeasonStats();
   const base = stats ?? emptySeasonStats();
   return {

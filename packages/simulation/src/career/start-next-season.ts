@@ -1,5 +1,5 @@
 import type {
-  CareerSaveV3,
+  CareerSaveV3Like,
   ScheduledYouthFixture,
   YouthAcademyProfile,
   YouthCompetitionDefinition,
@@ -40,11 +40,11 @@ export const createYouthFixtures = (
  * 赛季统计、清空事件冷却；关系、人物记忆与一线队阶段保留。
  * 被放弃球员通过传入新机构实现补救路线重入。
  */
-export const startNextSeason = (
-  save: CareerSaveV3,
+export const startNextSeason = <S extends CareerSaveV3Like>(
+  save: S,
   academy: YouthAcademyProfile,
   competition: YouthCompetitionDefinition,
-): CareerSaveV3 => {
+): S => {
   if (save.careerPhase !== 'offseason') {
     throw new Error(`非法阶段转移：当前阶段 ${save.careerPhase} 不能开启下个赛季`);
   }

@@ -1,5 +1,5 @@
 import type {
-  CareerSaveV3,
+  CareerSaveV3Like,
   EligibilityCriterion,
   OffseasonBriefing,
   YouthAcademyProfile,
@@ -8,8 +8,8 @@ import { deriveAge } from './simulate-youth-week';
 import { evaluateGraduationEligibility } from './graduation';
 import type { SeededRandomSource } from '../randomness';
 
-export interface OffseasonSettlement {
-  save: CareerSaveV3;
+export interface OffseasonSettlement<S = CareerSaveV3Like> {
+  save: S;
   briefing: OffseasonBriefing;
   graduationEligible: boolean;
   eligibilityReport: EligibilityCriterion[];
@@ -21,12 +21,12 @@ const clampScore = (value: number) => Math.min(100, Math.max(0, value));
  * 休赛期一次性结算：健康清算、体能重置、身体属性沉淀、年龄更新、
  * 声望雏形调整与毕业资格评估。纯确定性；结算顺序固定。
  */
-export const evaluateOffseason = (
-  save: CareerSaveV3,
+export const evaluateOffseason = <S extends CareerSaveV3Like>(
+  save: S,
   academy: YouthAcademyProfile,
   nextSeasonStart: string,
   rng: SeededRandomSource,
-): OffseasonSettlement => {
+): OffseasonSettlement<S> => {
   const health = settleHealth(save, rng);
   const age = deriveAge(save.player.identity.dateOfBirth, nextSeasonStart);
   const ageUpdate = { from: save.player.age, to: age };
@@ -41,7 +41,7 @@ export const evaluateOffseason = (
     ageUpdate,
   };
 
-  const nextSave: CareerSaveV3 = {
+  const nextSave: S = {
     ...save,
     careerPhase: 'offseason',
     player: {
@@ -67,9 +67,9 @@ export const evaluateOffseason = (
 };
 
 const settleHealth = (
-  save: CareerSaveV3,
+  save: CareerSaveV3Like,
   rng: SeededRandomSource,
-): { state: CareerSaveV3['health']; clearance: string } => {
+): { state: CareerSaveV3Like['health']; clearance: string } => {
   const injury = save.health.activeInjury;
   let nextInjury = injury;
   let clearance = '伤病全部痊愈，可以完整参加季前训练';
@@ -114,11 +114,11 @@ const settleHealth = (
 };
 
 const settlePhysicalDrift = (
-  save: CareerSaveV3,
+  save: CareerSaveV3Like,
   newAge: number,
   rng: SeededRandomSource,
 ): {
-  attributes: CareerSaveV3['player']['attributes'];
+  attributes: CareerSaveV3Like['player']['attributes'];
   changes: OffseasonBriefing['attributeDrift'];
 } => {
   const driftChance = 0.6 + (save.player.development.maturationPace === 'early' ? 0.1 : 0);
@@ -137,7 +137,7 @@ const settlePhysicalDrift = (
   return { attributes: { ...save.player.attributes, physical }, changes };
 };
 
-const reputationDelta = (save: CareerSaveV3): number => {
+const reputationDelta = (save: CareerSaveV3Like): number => {
   let delta = 0;
   const { ratingSum, ratingCount, goals, assists } = save.seasonStats;
   if (ratingCount > 0) {

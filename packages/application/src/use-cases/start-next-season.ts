@@ -1,11 +1,15 @@
-import type { CareerLedgerEntryV2, CareerSaveV3, YouthContentBundle } from '@football/contracts';
+import type {
+  CareerLedgerEntryV2,
+  CareerSaveV3Like,
+  YouthContentBundle,
+} from '@football/contracts';
 import { startNextSeason } from '@football/simulation';
 
-export const startNextYouthSeason = (
-  save: CareerSaveV3,
+export const startNextYouthSeason = <S extends CareerSaveV3Like>(
+  save: S,
   content: YouthContentBundle,
   requestedAcademyId?: string,
-): CareerSaveV3 => {
+): S => {
   const academyId = requestedAcademyId ?? save.season.academyId;
   const academy = content.academies.find(({ id }) => id === academyId);
   if (!academy) throw new Error(`青训机构 ${academyId} 不在内容包中`);

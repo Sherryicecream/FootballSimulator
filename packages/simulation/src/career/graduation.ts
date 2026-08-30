@@ -1,5 +1,5 @@
 import type {
-  CareerSaveV3,
+  CareerSaveV3Like,
   EligibilityCriterion,
   FirstTeamStage,
   PlayerAttributes,
@@ -102,7 +102,7 @@ export interface GraduationEvaluation {
 }
 
 export const evaluateGraduationEligibility = (
-  save: CareerSaveV3,
+  save: CareerSaveV3Like,
   academy: YouthAcademyProfile,
 ): GraduationEvaluation => {
   const age = save.player.age;

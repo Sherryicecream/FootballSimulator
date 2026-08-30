@@ -1,8 +1,8 @@
 import {
-  CareerSaveV3Schema,
+  CareerSaveV4Schema,
   YouthContentBundleSchema,
-  migrateCareerSaveV3,
-  type CareerSaveV3,
+  migrateCareerSaveV4,
+  type CareerSaveV4,
   type Position,
   type YouthContentBundle,
 } from '@football/contracts';
@@ -15,8 +15,8 @@ import {
 export const createYouthCareerV2 = (
   rawSave: unknown,
   rawContent: YouthContentBundle,
-): CareerSaveV3 => {
-  const migrated = migrateCareerSaveV3(rawSave);
+): CareerSaveV4 => {
+  const migrated = migrateCareerSaveV4(rawSave);
   const content = YouthContentBundleSchema.parse(rawContent);
   const academyId = resolveAcademyId(migrated, content);
   const competition = content.competitions.find(({ participatingAcademyIds }) =>
@@ -26,7 +26,7 @@ export const createYouthCareerV2 = (
     throw new Error(`青训机构 ${academyId} 没有可用赛事`);
   }
 
-  return CareerSaveV3Schema.parse({
+  return CareerSaveV4Schema.parse({
     ...migrated,
     relationships:
       migrated.relationships.persons.length > 0
@@ -52,7 +52,7 @@ export const createYouthCareerV2 = (
   });
 };
 
-const resolveAcademyId = (save: CareerSaveV3, content: YouthContentBundle): string => {
+const resolveAcademyId = (save: CareerSaveV4, content: YouthContentBundle): string => {
   if (content.academies.some(({ id }) => id === save.season.academyId)) {
     return save.season.academyId;
   }

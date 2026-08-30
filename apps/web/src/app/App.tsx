@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type {
   AgentPreferences,
   CareerSave,
-  CareerSaveV3,
+  CareerSaveV4,
   MonthlyReport,
   TrainingPlan,
 } from '@football/contracts';
@@ -15,10 +15,15 @@ import {
   createYouthCareerV2,
   enterOffseason,
   generateContractOffers,
+  acceptRenewal,
+  advanceProMonth,
+  completeProfessionalSeason,
+  declineRenewal,
   loadCareer,
   rejectOffers,
   signContract,
   startNextYouthSeason,
+  startProfessionalSeason,
   submitAgentPreferences,
   submitCareerDecision,
   updateTrainingPlan,
@@ -29,23 +34,35 @@ import { YouthOpportunityPanel } from '../event-choice/YouthOpportunityPanel';
 import { EventChoicePanel } from '../event-choice/EventChoicePanel';
 import { CareerDashboard } from '../career-dashboard/CareerDashboard';
 import { OffseasonBriefing } from '../career-dashboard/OffseasonBriefing';
+import { ProDashboard } from '../career-dashboard/ProDashboard';
+import { ProOffseasonPanel } from '../career-dashboard/ProOffseasonPanel';
 import { AgentPreferencesForm } from '../career-dashboard/AgentPreferencesForm';
 import { OfferComparisonPanel } from '../career-dashboard/OfferComparisonPanel';
 import { createBootstrapContent } from './bootstrap-dependencies';
-import { createLocalStorageCareerV2Port } from '../persistence/local-storage-save';
+import { createLocalStorageCareerV4Port } from '../persistence/local-storage-save';
 import './app.css';
 
-type Step = 'creation' | 'opportunity' | 'dashboard' | 'event' | 'offseason' | 'agent' | 'offers';
+type Step =
+  | 'creation'
+  | 'opportunity'
+  | 'dashboard'
+  | 'event'
+  | 'offseason'
+  | 'agent'
+  | 'offers'
+  | 'pro'
+  | 'pro-offseason'
+  | 'free-agent';
 const bootstrapContent = createBootstrapContent();
 const youthContent = getYouthContent();
 const advanceToDecision = createAdvanceToDecision(bootstrapContent);
 const chooseYouthOpportunity = createSubmitYouthChoice();
-const savePort = createLocalStorageCareerV2Port();
+const savePort = createLocalStorageCareerV4Port();
 
 export function App() {
   const [step, setStep] = useState<Step>('creation');
   const [bootstrapSave, setBootstrapSave] = useState<CareerSave | null>(null);
-  const [save, setSave] = useState<CareerSaveV3 | null>(null);
+  const [save, setSave] = useState<CareerSaveV4 | null>(null);
   const [report, setReport] = useState<MonthlyReport | null>(null);
   const [outcome, setOutcome] = useState<YouthSeasonOutcome | null>(null);
   const [advancing, setAdvancing] = useState(false);
@@ -63,6 +80,15 @@ export function App() {
           if (restored.careerPhase === 'offseason') {
             setSave(restored);
             setStep('offseason');
+          } else if (restored.careerPhase === 'pro-season') {
+            setSave(restored);
+            setStep('pro');
+          } else if (restored.careerPhase === 'pro-offseason') {
+            setSave(restored);
+            setStep('pro-offseason');
+          } else if (restored.careerPhase === 'free-agent') {
+            setSave(restored);
+            setStep('free-agent');
           } else if (restored.careerPhase === 'agent-preferences') {
             setSave(restored);
             setStep('agent');
@@ -87,7 +113,7 @@ export function App() {
     })();
   }, []);
 
-  const persist = (next: CareerSaveV3) => {
+  const persist = (next: CareerSaveV4) => {
     setSave(next);
     void savePort.save(next.careerId, next);
   };
@@ -112,7 +138,7 @@ export function App() {
       setError(message(caught));
     }
   };
-  const progress = (current: CareerSaveV3) => {
+  const progress = (current: CareerSaveV4) => {
     const result = advanceCareerMonth(current, youthContent.academies, youthContent.events);
     persist(result.save);
     if (result.status === 'awaiting-decision') {
@@ -132,17 +158,43 @@ export function App() {
     setAdvancing(true);
     setError(null);
     try {
-      progress(save);
+      if (save.careerPhase === 'pro-season') {
+        advancePro(save);
+      } else {
+        progress(save);
+      }
     } catch (caught) {
       setError(message(caught));
     } finally {
       setAdvancing(false);
     }
   };
+  const advancePro = (current: CareerSaveV4) => {
+    const result = advanceProMonth(current, youthContent.clubs, youthContent.events);
+    persist(result.save);
+    if (result.status === 'awaiting-decision') {
+      setStep('event');
+      return;
+    }
+    setReport(result.report);
+    if (result.status === 'season-complete') {
+      const settled = completeProfessionalSeason(result.save);
+      persist(settled.save);
+      setStep('pro-offseason');
+      return;
+    }
+    setStep('pro');
+  };
   const decide = (choiceId: string) => {
     if (!save?.story.pendingEvent) return;
     try {
-      progress(submitCareerDecision(save, save.story.pendingEvent.eventId, choiceId));
+      const submitted = submitCareerDecision(save, save.story.pendingEvent.eventId, choiceId);
+      // 职业赛季中的事件提交后继续职业月度；其余走青训推进
+      if (submitted.careerPhase === 'pro-season') {
+        advancePro(submitted);
+      } else {
+        progress(submitted);
+      }
     } catch (caught) {
       setError(message(caught));
     }
@@ -212,6 +264,37 @@ export function App() {
       setError(message(caught));
     }
   };
+  const handleStartProSeason = () => {
+    if (!save) return;
+    setError(null);
+    try {
+      const next = startProfessionalSeason(save, youthContent.clubs);
+      persist(next);
+      setReport(null);
+      setStep('pro');
+    } catch (caught) {
+      setError(message(caught));
+    }
+  };
+  const handleAcceptRenewal = () => {
+    if (!save) return;
+    setError(null);
+    try {
+      persist(acceptRenewal(save));
+    } catch (caught) {
+      setError(message(caught));
+    }
+  };
+  const handleDeclineRenewal = () => {
+    if (!save) return;
+    setError(null);
+    try {
+      persist(declineRenewal(save));
+      setStep('free-agent');
+    } catch (caught) {
+      setError(message(caught));
+    }
+  };
   const newCareer = () => {
     if (save) void savePort.delete(save.careerId);
     setSave(null);
@@ -271,6 +354,11 @@ export function App() {
               进入休赛期
             </button>
           )}
+          {save.careerPhase === 'professional-contract' && (
+            <button className="offseason-entry" onClick={handleStartProSeason}>
+              开启职业赛季
+            </button>
+          )}
         </>
       )}
       {step === 'offseason' && save && (
@@ -289,6 +377,30 @@ export function App() {
           onSign={handleSignContract}
           onRejectAll={handleRejectOffers}
         />
+      )}
+      {step === 'pro' && save && (
+        <ProDashboard
+          save={save}
+          report={report}
+          advancing={advancing}
+          onAdvance={advance}
+          onNewCareer={newCareer}
+        />
+      )}
+      {step === 'pro-offseason' && save && (
+        <ProOffseasonPanel
+          save={save}
+          onStartNextSeason={handleStartProSeason}
+          onAcceptRenewal={handleAcceptRenewal}
+          onDeclineRenewal={handleDeclineRenewal}
+        />
+      )}
+      {step === 'free-agent' && save && (
+        <section className="offseason" aria-label="自由球员">
+          <h2>生涯进入自由球员阶段</h2>
+          <p>你拒绝了续约，现在是自由球员。转会市场将在下一阶段开放（M7）。</p>
+          <button onClick={newCareer}>开始新生涯</button>
+        </section>
       )}
       {step === 'event' && save?.story.pendingEvent && (
         <EventChoicePanel

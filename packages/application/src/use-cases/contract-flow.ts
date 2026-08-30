@@ -2,15 +2,15 @@ import {
   AgentPreferencesSchema,
   type AgentPreferences,
   type CareerLedgerEntryV2,
-  type CareerSaveV3,
+  type CareerSaveV3Like,
   type YouthContentBundle,
 } from '@football/contracts';
 import { createSeededRandomSource, generateOffers } from '@football/simulation';
 
-export const submitAgentPreferences = (
-  save: CareerSaveV3,
+export const submitAgentPreferences = <S extends CareerSaveV3Like>(
+  save: S,
   preferences: AgentPreferences,
-): CareerSaveV3 => {
+): S => {
   if (save.careerPhase !== 'offseason') {
     throw new Error(`非法阶段转移：当前阶段 ${save.careerPhase} 不能设定经纪人倾向`);
   }
@@ -25,10 +25,10 @@ export const submitAgentPreferences = (
   };
 };
 
-export const generateContractOffers = (
-  save: CareerSaveV3,
+export const generateContractOffers = <S extends CareerSaveV3Like>(
+  save: S,
   content: YouthContentBundle,
-): CareerSaveV3 => {
+): S => {
   if (save.careerPhase !== 'agent-preferences' || !save.agentPreferences) {
     throw new Error('非法阶段转移：请先设定经纪人倾向');
   }
@@ -45,7 +45,7 @@ export const generateContractOffers = (
   };
 };
 
-export const signContract = (save: CareerSaveV3, offerId: string): CareerSaveV3 => {
+export const signContract = <S extends CareerSaveV3Like>(save: S, offerId: string): S => {
   if (save.careerPhase !== 'offer-review') {
     throw new Error(`非法阶段转移：当前阶段 ${save.careerPhase} 不能签署合同`);
   }
@@ -74,7 +74,7 @@ export const signContract = (save: CareerSaveV3, offerId: string): CareerSaveV3 
   };
 };
 
-export const rejectOffers = (save: CareerSaveV3): CareerSaveV3 => {
+export const rejectOffers = <S extends CareerSaveV3Like>(save: S): S => {
   if (save.careerPhase !== 'offer-review') {
     throw new Error(`非法阶段转移：当前阶段 ${save.careerPhase} 不能拒绝要约`);
   }

@@ -1,11 +1,11 @@
 import {
-  CareerSaveV3Schema,
+  CareerSaveV4Schema,
   TrainingPlanSchema,
-  type CareerSaveV3,
+  type CareerSaveV4,
   type TrainingPlan,
 } from '@football/contracts';
 
-export const updateTrainingPlan = (save: CareerSaveV3, plan: TrainingPlan): CareerSaveV3 => {
+export const updateTrainingPlan = (save: CareerSaveV4, plan: TrainingPlan): CareerSaveV4 => {
   if (save.story.pendingEvent) throw new Error('请先处理当前事件');
-  return CareerSaveV3Schema.parse({ ...save, trainingPlan: TrainingPlanSchema.parse(plan) });
+  return CareerSaveV4Schema.parse({ ...save, trainingPlan: TrainingPlanSchema.parse(plan) });
 };

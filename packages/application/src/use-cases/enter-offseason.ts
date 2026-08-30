@@ -1,15 +1,15 @@
 import type {
   CareerLedgerEntryV2,
-  CareerSaveV3,
+  CareerSaveV3Like,
   OffseasonBriefing,
   YouthAcademyProfile,
 } from '@football/contracts';
 import { createSeededRandomSource, evaluateOffseason } from '@football/simulation';
 
-export const enterOffseason = (
-  save: CareerSaveV3,
+export const enterOffseason = <S extends CareerSaveV3Like>(
+  save: S,
   academies: readonly YouthAcademyProfile[],
-): { save: CareerSaveV3; briefing: OffseasonBriefing } => {
+): { save: S; briefing: OffseasonBriefing } => {
   if (save.careerPhase !== 'youth-season') {
     throw new Error(`非法阶段转移：当前阶段 ${save.careerPhase} 不能进入休赛期`);
   }

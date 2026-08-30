@@ -1,5 +1,5 @@
 import type {
-  CareerSaveV3,
+  CareerSaveV3Like,
   ClubProfile,
   ContractOfferV3,
   AgentPreferences,
@@ -13,7 +13,7 @@ import type { SeededRandomSource } from '../randomness';
  * 全部输入确定性可复现。
  */
 export const generateOffers = (
-  save: CareerSaveV3,
+  save: CareerSaveV3Like,
   clubs: readonly ClubProfile[],
   agentPreferences: AgentPreferences,
   rng: SeededRandomSource,
@@ -151,7 +151,7 @@ const tierPreference = (tier: number, bias: AgentPreferences['leagueTierBias']):
   return 0.6;
 };
 
-const averagePotential = (save: CareerSaveV3): number => {
+const averagePotential = (save: CareerSaveV3Like): number => {
   const groups = Object.values(save.player.development.attributePotential);
   const values = groups.flatMap((group) => Object.values(group));
   return values.reduce((sum, value) => sum + value, 0) / Math.max(1, values.length);

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type {
-  CareerSaveV3,
+  CareerSaveV4,
   EventDefinition,
   MonthlyReport,
   TrainingPlan,
@@ -11,7 +11,7 @@ import { buildPlayerProfile, buildRecentRecords, labelAttribute } from './career
 import { StoryCodex } from './StoryCodex';
 
 interface CareerDashboardProps {
-  save: CareerSaveV3;
+  save: CareerSaveV4;
   events: EventDefinition[];
   academyName: string;
   report: MonthlyReport | null;
@@ -29,7 +29,7 @@ const focusLabels: Record<TrainingPlan['focus'], string> = {
   tactical: '战术',
   recovery: '恢复',
 };
-const stageLabels: Record<CareerSaveV3['clubContext']['firstTeamStage'], string> = {
+const stageLabels: Record<CareerSaveV4['clubContext']['firstTeamStage'], string> = {
   none: '尚未进入视野',
   watchlist: '一线队观察名单',
   'training-invite': '一线队跟训',

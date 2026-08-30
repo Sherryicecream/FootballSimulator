@@ -1,11 +1,11 @@
-import type { CareerSaveV3 } from '@football/contracts';
+import type { CareerSaveV2Like } from '@football/contracts';
 import { resolveCareerEvent } from './resolve-career-event';
 
-export const submitCareerDecision = (
-  save: CareerSaveV3,
+export const submitCareerDecision = <S extends CareerSaveV2Like>(
+  save: S,
   eventId: string,
   choiceId: string,
-): CareerSaveV3 => {
+): S => {
   const event = save.story.pendingEvent;
   if (!event) throw new Error('没有待处理的生涯事件');
   if (event.eventId !== eventId) throw new Error('事件 ID 与当前待处理事件不一致');

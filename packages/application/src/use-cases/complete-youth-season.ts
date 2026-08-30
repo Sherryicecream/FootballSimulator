@@ -1,4 +1,8 @@
-import type { CareerLedgerEntryV2, CareerSaveV3, SeasonHistorySummary } from '@football/contracts';
+import type {
+  CareerLedgerEntryV2,
+  CareerSaveV3Like,
+  SeasonHistorySummary,
+} from '@football/contracts';
 import { deriveDevelopmentSignals, type DevelopmentSignal } from '@football/simulation';
 
 export interface YouthSeasonOutcome {
@@ -8,9 +12,9 @@ export interface YouthSeasonOutcome {
   summary: string;
 }
 
-export const completeYouthSeason = (
-  save: CareerSaveV3,
-): { save: CareerSaveV3; outcome: YouthSeasonOutcome } => {
+export const completeYouthSeason = <S extends CareerSaveV3Like>(
+  save: S,
+): { save: S; outcome: YouthSeasonOutcome } => {
   if (!save.season.completed) throw new Error('赛季尚未结束，不能结算');
   if (save.story.pendingEvent) throw new Error('请先处理待决事件');
   if (save.careerPhase !== 'youth-season') {
@@ -62,7 +66,7 @@ export const completeYouthSeason = (
 };
 
 const buildSeasonSummary = (
-  save: CareerSaveV3,
+  save: CareerSaveV3Like,
   status: SeasonHistorySummary['status'],
   signals: DevelopmentSignal[],
 ): SeasonHistorySummary => {

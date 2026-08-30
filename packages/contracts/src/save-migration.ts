@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { CareerSaveSchema } from './career';
 import { HealthStateSchema } from './health';
+import type { CareerSaveV3 } from './graduation';
 import { PlayerCareerV2Schema, type PlayerAttributes } from './player';
 import { RandomStateSchema } from './random';
 import { RelationshipGraphSchema } from './person';
@@ -35,6 +36,20 @@ export type CareerSaveV2 = z.infer<typeof CareerSaveV2Schema>;
 
 /** 版本无关的 v2 结构切片：v3 等后续版本同样满足，供模拟层只读函数使用。 */
 export type CareerSaveV2Like = Omit<CareerSaveV2, 'schemaVersion'> & { schemaVersion: number };
+
+/** 版本无关的 v3 结构切片：v4 等后续版本同样满足。 */
+export type CareerSaveV3Like = CareerSaveV2Like &
+  Pick<
+    CareerSaveV3,
+    | 'careerPhase'
+    | 'seasonStats'
+    | 'contract'
+    | 'pendingOffers'
+    | 'agentPreferences'
+    | 'offseason'
+    | 'seasonHistory'
+    | 'graduationPressure'
+  >;
 
 export const migrateCareerSave = (raw: unknown): CareerSaveV2 => {
   const existingV2 = CareerSaveV2Schema.safeParse(raw);
