@@ -209,3 +209,17 @@ describe('俱乐部与经纪人内容', () => {
     expect(() => validateYouthContent(branded)).toThrow();
   });
 });
+
+describe('文案编码完整性', () => {
+  it('全部事件文案不含损坏的替换字符', () => {
+    const content = getYouthContent();
+    const validated = validateYouthContent(content);
+    for (const event of validated.events) {
+      expect(event.title).not.toContain('\uFFFD');
+      expect(event.description).not.toContain('\uFFFD');
+      for (const choice of event.choices) {
+        expect(choice.text).not.toContain('\uFFFD');
+      }
+    }
+  });
+});

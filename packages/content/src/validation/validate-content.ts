@@ -71,6 +71,16 @@ export const validateYouthContent = (raw: YouthContentBundle): YouthContentBundl
       throw new Error(`未知地区：${academy.regionId}`);
     }
     assertNoRealClubBrand(academy.name);
+    assertNoReplacementChar(academy.name);
+  }
+
+  // 事件文案必须可读：拒绝编码损坏产生的 U+FFFD 替换符。
+  for (const event of content.events) {
+    assertNoReplacementChar(event.title);
+    assertNoReplacementChar(event.description);
+    for (const choice of event.choices) {
+      assertNoReplacementChar(choice.text);
+    }
   }
 
   const competitionByAcademy = new Map<string, string>();
@@ -161,6 +171,14 @@ const assertUniqueIds = (label: string, ids: string[]): void => {
       throw new Error(`${label}存在重复 ID：${id}`);
     }
     seen.add(id);
+  }
+};
+
+const REPLACEMENT_CHAR = String.fromCharCode(0xfffd);
+
+const assertNoReplacementChar = (text: string): void => {
+  if (text.includes(REPLACEMENT_CHAR)) {
+    throw new Error(`文案包含损坏的替换字符：${text.slice(0, 30)}`);
   }
 };
 

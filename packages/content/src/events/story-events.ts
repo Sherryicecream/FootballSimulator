@@ -9,8 +9,8 @@ export const shortStoryEvents: EventDefinition[] = [
     theme: 'relationships',
     interaction: 'decision',
     baseWeight: 18,
-    title: 'λ�þ�����ʼ',
-    description: 'ͬλ�õľ�����������ó���ʱ�䣬����ϣ������ȷ��������Ӧ�Է�ʽ��',
+    title: '位置竞争的开始',
+    description: '同位置的竞争者抢走了不少出场时间，你希望用更明确的方式做出回应。',
     condition: { requirePersonRole: 'rival', playerRoles: ['fringe', 'rotation', 'regular'] },
     participantRoles: ['rival', 'youth-coach'],
     storyId: 'position-race-opened',
@@ -19,13 +19,13 @@ export const shortStoryEvents: EventDefinition[] = [
     choices: [
       {
         id: 'compete',
-        text: '���澺��ͬһ��λ��',
+        text: '正面竞争同一位置',
         riskLabel: 'medium',
         effects: { confidence: 3, fatigue: 4, respect: 2 },
       },
       {
         id: 'observe',
-        text: '�ȹ۲���ֺͽ���Ҫ��',
+        text: '先观察他的优点和要领',
         riskLabel: 'low',
         effects: { confidence: 1, coachTrust: 2 },
       },
@@ -39,8 +39,8 @@ export const shortStoryEvents: EventDefinition[] = [
     theme: 'relationships',
     interaction: 'decision',
     baseWeight: 26,
-    title: 'λ�þ�������',
-    description: '��������ѵ���ͱ��������������뾺���߽е�һ���̸��Եı��֡�',
+    title: '位置竞争的进展',
+    description: '你在训练和比赛里的表现被拿来与竞争者比较，教练分别找你们谈了话。',
     condition: {
       requireStoryId: 'position-race-opened',
       requireFactType: 'match',
@@ -53,13 +53,13 @@ export const shortStoryEvents: EventDefinition[] = [
     choices: [
       {
         id: 'details',
-        text: '���ϲ��㲢����ϸ��',
+        text: '认真听取点评并改进细节',
         riskLabel: 'low',
         effects: { coachTrust: 3, respect: 2 },
       },
       {
         id: 'intensity',
-        text: '�ø���ѵ��ǿ�Ȼ�Ӧ',
+        text: '用加倍的训练强度去回应',
         riskLabel: 'medium',
         effects: { confidence: 3, fatigue: 5 },
       },
@@ -73,8 +73,8 @@ export const shortStoryEvents: EventDefinition[] = [
     theme: 'relationships',
     interaction: 'decision',
     baseWeight: 30,
-    title: 'λ�þ�����ѡ��',
-    description: '�������ȶ�����������Լ��ԭλ�á�����תλ�����뾺�����γɻ�����',
+    title: '位置竞争的抉择',
+    description: '轮换顺序逐渐稳定，是守住原位置还是尝试改打新位置，竞争者的动向也影响着你的选择。',
     condition: { requireStoryId: 'position-race-reviewed', requirePersonRole: 'rival' },
     participantRoles: ['rival', 'youth-coach'],
     storyId: 'position-race-resolved',
@@ -82,19 +82,19 @@ export const shortStoryEvents: EventDefinition[] = [
     choices: [
       {
         id: 'same-role',
-        text: '������ȡԭλ��',
+        text: '继续竞争原位置',
         riskLabel: 'medium',
         effects: { confidence: 4, fatigue: 3 },
       },
       {
         id: 'position-focus',
-        text: '���ܽ������鳢��תλ',
+        text: '接受教练组的转型提议',
         riskLabel: 'medium',
         effects: { coachTrust: 4, confidence: 1 },
       },
       {
         id: 'cooperate',
-        text: '�뾺�����о������߷�',
+        text: '与竞争者形成轮换分工',
         riskLabel: 'low',
         effects: { respect: 4, closeness: 2 },
       },
@@ -108,8 +108,8 @@ export const shortStoryEvents: EventDefinition[] = [
     theme: 'relationships',
     interaction: 'decision',
     baseWeight: 17,
-    title: '����ָ��',
-    description: '�����Ͽ�����ڵ�̬�ȣ�����ڳ���ѵ��������һ�������ָ����',
+    title: '教练的特别指导',
+    description: '教练认可你近期的态度，准备在训练之外给你一些专门的指点。',
     condition: { minCoachEvaluation: 50, requirePersonRole: 'youth-coach' },
     participantRoles: ['youth-coach'],
     storyId: 'coach-trust-opened',
@@ -118,13 +118,13 @@ export const shortStoryEvents: EventDefinition[] = [
     choices: [
       {
         id: 'accept',
-        text: '���ܶ���ָ��',
+        text: '接受更多的指导',
         riskLabel: 'low',
         effects: { coachTrust: 3, fatigue: 2, confidence: 2 },
       },
       {
         id: 'ask-goal',
-        text: '��ѯ�ʽ����ĳ���Ҫ��',
+        text: '询问专项训练的具体要求',
         riskLabel: 'low',
         effects: { coachTrust: 2, confidence: 1 },
       },
@@ -138,8 +138,8 @@ export const shortStoryEvents: EventDefinition[] = [
     theme: 'training',
     interaction: 'decision',
     baseWeight: 25,
-    title: '�������õĿ���',
-    description: '������һ������ӵ�ѵ�����񽻸��㣬ϣ�����ڸ�ѹ�±���ִ��������',
+    title: '带着信任的考验',
+    description: '教练把一组额外的训练任务交给你，希望你能在压力下坚决执行。',
     condition: {
       requireStoryId: 'coach-trust-opened',
       requireFactType: 'training',
@@ -152,13 +152,13 @@ export const shortStoryEvents: EventDefinition[] = [
     choices: [
       {
         id: 'steady',
-        text: '��Ҫ���������',
+        text: '按要求完成任务',
         riskLabel: 'low',
         effects: { coachTrust: 3, confidence: 2, fatigue: 3 },
       },
       {
         id: 'improvise',
-        text: '�����������������Ѷ�',
+        text: '自行加大任务的难度',
         riskLabel: 'high',
         effects: { coachTrust: 1, confidence: 4, fatigue: 6 },
       },
@@ -172,8 +172,8 @@ export const shortStoryEvents: EventDefinition[] = [
     theme: 'trajectory',
     interaction: 'decision',
     baseWeight: 28,
-    title: '���κ����һ��',
-    description: '����׼�����������������ʽ������Ҫ�����Լ�ϣ���е��Ľ�������Ρ�',
+    title: '信任之后的下一步',
+    description: '考核接近尾声，教练准备正式把更重要的任务托付给你，交代得郑重其事。',
     condition: {
       requireStoryId: 'coach-trust-tested',
       requireFactType: 'training',
@@ -185,19 +185,19 @@ export const shortStoryEvents: EventDefinition[] = [
     choices: [
       {
         id: 'guidance',
-        text: '��������ϸ��ָ��',
+        text: '请求教练更细致的指导',
         riskLabel: 'low',
         effects: { coachTrust: 4, confidence: 2 },
       },
       {
         id: 'responsibility',
-        text: '��ȡ�е����ѵ�����',
+        text: '争取承担更多的训练责任',
         riskLabel: 'medium',
         effects: { coachTrust: 2, confidence: 4, fatigue: 3 },
       },
       {
         id: 'reset',
-        text: '�Ȼص��ȶ�ѵ������',
+        text: '先回到稳定的训练节奏',
         riskLabel: 'low',
         effects: { fatigue: -3, morale: 2 },
       },
