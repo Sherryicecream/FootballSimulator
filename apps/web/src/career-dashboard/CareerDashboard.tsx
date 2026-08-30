@@ -191,9 +191,11 @@ export function CareerDashboard({
           {recentRecords.map((record) => (
             <article key={record.monthKey}>
               <h4>{record.monthKey}</h4>
-              {record.lines.map((line) => (
-                <p key={line}>{line}</p>
-              ))}
+              <ul className="highlight-list">
+                {record.lines.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
             </article>
           ))}
         </section>

@@ -88,7 +88,7 @@ describe('CareerDashboard v2', () => {
     expect(screen.queryByText('关键人物')).toBeNull();
     expect(screen.queryByText(/信任|尊重|亲近/)).toBeNull();
     expect(screen.queryByText('training')).toBeNull();
-    expect(screen.getByText(/本月持续完成训练与能力积累/)).toBeVisible();
+    expect(screen.getByText('本月按计划完成日常训练。')).toBeVisible();
   });
 
   it('shows the generated profile without hidden development or relationship values', () => {

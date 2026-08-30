@@ -160,6 +160,17 @@ textarea {
   border-radius: 8px;
   overflow: hidden;
 }
+.highlight-list {
+  display: grid;
+  gap: 5px;
+  margin: 6px 0 12px;
+  padding-left: 20px;
+}
+.highlight-list li {
+  padding-left: 2px;
+  color: var(--color-text-secondary);
+}
+
 .state-row i {
   display: block;
   height: 100%;

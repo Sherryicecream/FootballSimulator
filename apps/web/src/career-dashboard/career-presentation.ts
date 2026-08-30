@@ -110,27 +110,125 @@ const weekKeyToMonth = (startDate: string, weekKey: string): string => {
   return date.toISOString().slice(0, 7);
 };
 
-const summarizeFacts = (facts: CareerLedgerEntryV2[]): string[] => {
-  const count = (type: CareerLedgerEntryV2['type']) =>
-    facts.filter((fact) => fact.type === type).length;
-  const matchCount = count('match');
-  const trainingCount = count('training');
-  const settlementCount = count('monthly-settlement');
-  const healthCount = count('health');
-  const firstTeamCount = count('first-team');
-  const eventCount = count('event');
-  const decisionCount = count('decision');
-  const relationshipCount = count('relationship');
-  const lines: string[] = [];
+interface HighlightCandidate {
+  line: string;
+  priority: number;
+  order: number;
+}
 
-  if (matchCount > 0) lines.push(`本月参加 ${matchCount} 场比赛。`);
-  if (trainingCount + settlementCount > 0) lines.push('本月持续完成训练与能力积累。');
-  if (healthCount > 0) lines.push('本月出现健康状态变化，恢复情况需要关注。');
-  if (firstTeamCount > 0) lines.push('本月获得一线队相关关注与机会。');
-  const offFieldCount = eventCount + relationshipCount;
-  if (offFieldCount > 0 || decisionCount > 0) {
-    lines.push(`本月经历 ${offFieldCount} 次重要事件，并完成 ${decisionCount} 次关键选择。`);
+const FIRST_TEAM_STAGE_LABELS: Record<string, string> = {
+  watchlist: '进入一线队观察名单。',
+  'training-invite': '获得一线队跟训机会。',
+  'bench-list': '进入一线队比赛名单。',
+  'substitute-appearance': '完成一线队替补出场。',
+  'starting-appearance': '获得一线队首发机会。',
+};
+
+const summarizeFacts = (facts: CareerLedgerEntryV2[]): string[] => {
+  const candidates = facts.flatMap((fact, order) => formatHighlight(fact, order));
+  const matchCount = facts.filter(({ type }) => type === 'match').length;
+  const trainingCount = facts.filter(({ type }) => type === 'training').length;
+
+  if (
+    matchCount > 0 &&
+    !candidates.some(({ line }) => line.includes('比赛') || line.includes('爆冷'))
+  ) {
+    candidates.push({ line: `本月参加 ${matchCount} 场比赛。`, priority: 50, order: facts.length });
+  }
+  if (trainingCount > 0) {
+    candidates.push({
+      line: '本月按计划完成日常训练。',
+      priority: 20,
+      order: facts.length + 1,
+    });
   }
 
-  return lines;
+  const seen = new Set<string>();
+  return candidates
+    .sort((left, right) => right.priority - left.priority || left.order - right.order)
+    .filter(({ line }) => {
+      const normalized = line.replace(/[\s，。！？]/g, '');
+      if (seen.has(normalized)) return false;
+      seen.add(normalized);
+      return true;
+    })
+    .slice(0, 3)
+    .map(({ line }) => limitHighlight(line));
+};
+
+const formatHighlight = (fact: CareerLedgerEntryV2, order: number): HighlightCandidate[] => {
+  const candidate = (line: string, priority: number): HighlightCandidate[] => [
+    { line, priority, order },
+  ];
+  switch (fact.type) {
+    case 'decision': {
+      const titled = parseTitledSummary(fact.summary);
+      return candidate(
+        titled ? `在${titled.title}中，你选择${titled.detail}。` : '本月完成了一次关键选择。',
+        titled ? 100 : 75,
+      );
+    }
+    case 'first-team': {
+      const stage = /推进至\s+([\w-]+)/.exec(fact.summary)?.[1];
+      return candidate(
+        (stage && FIRST_TEAM_STAGE_LABELS[stage]) ?? '获得一线队相关关注与机会。',
+        90,
+      );
+    }
+    case 'health': {
+      const injury = /^(.+?)(轻伤|中伤|重伤)，预计恢复\s*(\d+)\s*周/.exec(fact.summary);
+      return candidate(
+        injury
+          ? `${injury[1]}出现${injury[2]}，预计恢复 ${injury[3]} 周。`
+          : '健康状态出现变化，需要关注恢复。',
+        80,
+      );
+    }
+    case 'match':
+      if (/突出表现|爆冷/.test(fact.summary)) {
+        return candidate(
+          fact.summary.includes('爆冷') ? '本月随队完成了一场爆冷胜利。' : '本月比赛中有突出表现。',
+          70,
+        );
+      }
+      return [];
+    case 'event': {
+      const titled = parseTitledSummary(fact.summary);
+      return candidate(
+        titled ? `${titled.title}：${titled.detail}。` : '本月经历了一次场外变化。',
+        titled ? 65 : 30,
+      );
+    }
+    case 'monthly-settlement':
+      return candidate('本月完成成长结算。', 40);
+    case 'relationship':
+      return candidate('与身边人的相处出现了新变化。', 35);
+    case 'season-outcome':
+      return candidate('本阶段青训生涯迎来赛季结论。', 95);
+    default:
+      return [];
+  }
+};
+
+const parseTitledSummary = (summary: string): { title: string; detail: string } | null => {
+  const match = /^\[([^\]]{1,30})\]\s*(.{1,60})$/.exec(summary.trim());
+  if (!match?.[1] || !match[2]) return null;
+  return { title: cleanText(match[1]), detail: cleanText(match[2]) };
+};
+
+const cleanText = (text: string): string =>
+  text
+    .replace(/[\[\]/]/g, ' ')
+    .replace(
+      /\b(?:decision|event|person|relationship|trust|respect|closeness|technical|physical|intense|normal)-?[\w-]*\b/gi,
+      '',
+    )
+    .replace(/\s+/g, ' ')
+    .replace(/[。！？]+$/g, '')
+    .trim();
+
+const limitHighlight = (line: string): string => {
+  const clean = cleanText(line);
+  const limited = clean.slice(0, 79);
+  return `${limited.replace(/[，、：；]$/g, '')}。`;
 };
