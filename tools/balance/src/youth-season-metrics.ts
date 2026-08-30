@@ -25,6 +25,14 @@ export interface YouthSeasonMetrics {
   contractPromiseKind: string | null;
   rejectedOfferSeasons: number;
   weightedAbility: number;
+  proSeasonsPlayed: number;
+  promiseKept: boolean;
+  promiseCause: string;
+  starterReached: boolean;
+  proMinutes: number;
+  proLeagueAppearances: number;
+  proSevereInjuries: number;
+  freeAgent: boolean;
 }
 
 export interface YouthBalanceReport {
@@ -49,6 +57,12 @@ export interface YouthBalanceReport {
     uniqueEventCombinations: number;
     graduationRate: number;
     underageGraduationRate: number;
+    proPromiseKeptRate: number;
+    proClubCauseBrokenRate: number;
+    proStarterRate: number;
+    proMinutesMedian: number;
+    proSevereInjuryRate: number;
+    proFreeAgentRate: number;
     contractTierCorrelation: number;
     rejectRate: number;
     promiseShares: Record<string, number>;

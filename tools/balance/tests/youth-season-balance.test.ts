@@ -37,5 +37,15 @@ describe('youth balance runner', () => {
     for (const share of Object.values(report.summary.promiseShares)) {
       expect(share).toBeGreaterThanOrEqual(0.1);
     }
+
+    // M6 职业期三连季校准范围（首轮工程校准）
+    expect(report.summary.proPromiseKeptRate).toBeGreaterThanOrEqual(0.7);
+    expect(report.summary.proPromiseKeptRate).toBeLessThanOrEqual(0.95);
+    expect(report.summary.proStarterRate).toBeGreaterThanOrEqual(0.15);
+    expect(report.summary.proStarterRate).toBeLessThanOrEqual(0.45);
+    expect(report.summary.proMinutesMedian).toBeGreaterThanOrEqual(55);
+    expect(report.summary.proMinutesMedian).toBeLessThanOrEqual(85);
+    // 3 个职业季内至少一次重伤的球员占比；约合每季 <4%（设计上限）
+    expect(report.summary.proSevereInjuryRate).toBeLessThan(0.12);
   }, 300_000);
 });

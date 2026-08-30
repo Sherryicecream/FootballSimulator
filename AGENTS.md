@@ -9,3 +9,5 @@
 - Add a failing regression test before changing behavior. Before completion run `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm build`, `pnpm test:e2e`, and the 1,000-season balance command documented in the roadmap.
 - The career uses the v3 phase machine (`youth-season → offseason → agent-preferences → offer-review → professional-contract`). Phase transitions happen only through application use cases; never mutate `careerPhase` in the web layer. Signing a contract is terminal for the current milestone and requires a one-step confirmation.
 - Offer eligibility combines an interest score with an ability-based tier ceiling; keep the ladder monotone when tuning balance constants, and update the design doc alongside any change.
+
+- Professional phase uses the v4 save (`proSeason`, `proSeasonStats`, `promiseReviews`). Pro season state is fixed at creation (fixtures, standings, squad); `proSeason.fixtures` holds the whole league schedule, so per-club stats must filter by `clubId`. Promise reviews attribute causes (`injury`/`club`/`player`) and must stay explainable from the ledger.
