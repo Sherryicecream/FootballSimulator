@@ -1,9 +1,9 @@
-import type { CareerSaveV2, MonthlyReport, TrainingPlan } from '@football/contracts';
+import type { CareerSaveV3, MonthlyReport, TrainingPlan } from '@football/contracts';
 import type { YouthSeasonOutcome } from '@football/application';
 import { buildPlayerProfile, buildRecentRecords, labelAttribute } from './career-presentation';
 
 interface CareerDashboardProps {
-  save: CareerSaveV2;
+  save: CareerSaveV3;
   academyName: string;
   report: MonthlyReport | null;
   outcome: YouthSeasonOutcome | null;
@@ -20,7 +20,7 @@ const focusLabels: Record<TrainingPlan['focus'], string> = {
   tactical: '战术',
   recovery: '恢复',
 };
-const stageLabels: Record<CareerSaveV2['clubContext']['firstTeamStage'], string> = {
+const stageLabels: Record<CareerSaveV3['clubContext']['firstTeamStage'], string> = {
   none: '尚未进入视野',
   watchlist: '一线队观察名单',
   'training-invite': '一线队跟训',

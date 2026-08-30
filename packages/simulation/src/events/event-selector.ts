@@ -1,4 +1,8 @@
-import type { CareerSaveV2, EventDefinition, StoryState } from '@football/contracts';
+import type {
+  CareerSaveV2Like,
+  EventDefinition,
+  StoryState,
+} from '@football/contracts';
 import type { SeededRandomSource } from '../randomness/seeded-random-source';
 
 export interface PlayerContext {
@@ -11,7 +15,7 @@ export interface PlayerContext {
 
 export function filterEligibleYouthEvents(
   events: EventDefinition[],
-  save: CareerSaveV2,
+  save: CareerSaveV2Like,
 ): EventDefinition[] {
   const legacyEligible = filterEligibleEvents(events, {
     age: save.player.age,
@@ -165,7 +169,10 @@ const PERSONALITY_THEME_BONUS: Record<string, Partial<Record<string, number>>> =
   expressive: { relationships: 1.2, 'off-pitch': 1.15 },
 };
 
-export const calculateYouthEventWeight = (event: EventDefinition, save: CareerSaveV2): number => {
+export const calculateYouthEventWeight = (
+  event: EventDefinition,
+  save: CareerSaveV2Like,
+): number => {
   const theme = event.theme ?? 'off-pitch';
   let weight = event.baseWeight ?? 20;
   weight *= BACKGROUND_THEME_BONUS[save.player.identity.growthBackground]?.[theme] ?? 1;
@@ -184,7 +191,7 @@ export const calculateYouthEventWeight = (event: EventDefinition, save: CareerSa
 
 export const selectYouthEvent = (
   eligibleEvents: EventDefinition[],
-  save: CareerSaveV2,
+  save: CareerSaveV2Like,
   rng: SeededRandomSource,
 ): EventDefinition | undefined => {
   if (eligibleEvents.length === 0) return undefined;

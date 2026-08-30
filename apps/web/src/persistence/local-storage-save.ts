@@ -1,21 +1,21 @@
 import {
   type CareerSave,
-  type CareerSaveV2,
+  type CareerSaveV3,
   CareerSaveSchema,
-  CareerSaveV2Schema,
-  migrateCareerSave,
+  CareerSaveV3Schema,
+  migrateCareerSaveV3,
 } from '@football/contracts';
 import type { SavePort } from '@football/application';
 
 const STORAGE_PREFIX = 'football-save-';
 
 export type CareerV2LoadResult =
-  | { status: 'loaded'; save: CareerSaveV2 }
+  | { status: 'loaded'; save: CareerSaveV3 }
   | { status: 'empty' }
   | { status: 'invalid'; reason: string; raw: string };
 
 export interface LocalStorageCareerV2Port {
-  save(slotId: string, data: CareerSaveV2): Promise<void>;
+  save(slotId: string, data: CareerSaveV3): Promise<void>;
   load(slotId: string): Promise<CareerV2LoadResult>;
   list(): Promise<string[]>;
   delete(slotId: string): Promise<void>;
@@ -23,10 +23,10 @@ export interface LocalStorageCareerV2Port {
 
 export const createLocalStorageCareerV2Port = (): LocalStorageCareerV2Port => ({
   async save(slotId, data) {
-    const validated = CareerSaveV2Schema.parse(data);
+    const validated = CareerSaveV3Schema.parse(data);
     localStorage.setItem(
       STORAGE_PREFIX + slotId,
-      JSON.stringify({ version: 2, savedAt: new Date().toISOString(), data: validated }),
+      JSON.stringify({ version: 3, savedAt: new Date().toISOString(), data: validated }),
     );
   },
   async load(slotId) {
@@ -47,7 +47,7 @@ export const createLocalStorageCareerV2Port = (): LocalStorageCareerV2Port => ({
     }
 
     try {
-      return { status: 'loaded', save: migrateCareerSave(parsed.data) };
+      return { status: 'loaded', save: migrateCareerSaveV3(parsed.data) };
     } catch (error) {
       return {
         status: 'invalid',

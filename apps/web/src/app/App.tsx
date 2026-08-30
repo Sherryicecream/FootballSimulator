@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { CareerSave, CareerSaveV2, MonthlyReport, TrainingPlan } from '@football/contracts';
+import type { CareerSave, CareerSaveV3, MonthlyReport, TrainingPlan } from '@football/contracts';
 import { getYouthContent } from '@football/content';
 import {
   advanceCareerMonth,
@@ -7,7 +7,9 @@ import {
   createAdvanceToDecision,
   createSubmitYouthChoice,
   createYouthCareerV2,
+  enterOffseason,
   loadCareer,
+  startNextYouthSeason,
   submitCareerDecision,
   updateTrainingPlan,
   type YouthSeasonOutcome,
@@ -16,11 +18,12 @@ import { CareerCreationForm } from '../career-creation/CareerCreationForm';
 import { YouthOpportunityPanel } from '../event-choice/YouthOpportunityPanel';
 import { EventChoicePanel } from '../event-choice/EventChoicePanel';
 import { CareerDashboard } from '../career-dashboard/CareerDashboard';
+import { OffseasonBriefing } from '../career-dashboard/OffseasonBriefing';
 import { createBootstrapContent } from './bootstrap-dependencies';
 import { createLocalStorageCareerV2Port } from '../persistence/local-storage-save';
 import './app.css';
 
-type Step = 'creation' | 'opportunity' | 'dashboard' | 'event';
+type Step = 'creation' | 'opportunity' | 'dashboard' | 'event' | 'offseason';
 const bootstrapContent = createBootstrapContent();
 const youthContent = getYouthContent();
 const advanceToDecision = createAdvanceToDecision(bootstrapContent);
@@ -30,7 +33,7 @@ const savePort = createLocalStorageCareerV2Port();
 export function App() {
   const [step, setStep] = useState<Step>('creation');
   const [bootstrapSave, setBootstrapSave] = useState<CareerSave | null>(null);
-  const [save, setSave] = useState<CareerSaveV2 | null>(null);
+  const [save, setSave] = useState<CareerSaveV3 | null>(null);
   const [report, setReport] = useState<MonthlyReport | null>(null);
   const [outcome, setOutcome] = useState<YouthSeasonOutcome | null>(null);
   const [advancing, setAdvancing] = useState(false);
@@ -45,7 +48,10 @@ export function App() {
         const result = await savePort.load(slot);
         if (result.status === 'loaded') {
           const restored = loadCareer(result.save, youthContent);
-          if (restored.season.completed && !restored.story.pendingEvent) {
+          if (restored.careerPhase === 'offseason') {
+            setSave(restored);
+            setStep('offseason');
+          } else if (restored.season.completed && !restored.story.pendingEvent) {
             const completed = completeYouthSeason(restored);
             setSave(completed.save);
             setOutcome(completed.outcome);
@@ -63,7 +69,7 @@ export function App() {
     })();
   }, []);
 
-  const persist = (next: CareerSaveV2) => {
+  const persist = (next: CareerSaveV3) => {
     setSave(next);
     void savePort.save(next.careerId, next);
   };
@@ -88,7 +94,7 @@ export function App() {
       setError(message(caught));
     }
   };
-  const progress = (current: CareerSaveV2) => {
+  const progress = (current: CareerSaveV3) => {
     const result = advanceCareerMonth(current, youthContent.academies, youthContent.events);
     persist(result.save);
     if (result.status === 'awaiting-decision') {
@@ -125,6 +131,30 @@ export function App() {
   };
   const changePlan = (plan: TrainingPlan) => {
     if (save) persist(updateTrainingPlan(save, plan));
+  };
+  const handleEnterOffseason = () => {
+    if (!save) return;
+    setError(null);
+    try {
+      const result = enterOffseason(save, youthContent.academies);
+      persist(result.save);
+      setStep('offseason');
+    } catch (caught) {
+      setError(message(caught));
+    }
+  };
+  const handleStartNextSeason = (academyId?: string) => {
+    if (!save) return;
+    setError(null);
+    try {
+      const next = startNextYouthSeason(save, youthContent, academyId);
+      persist(next);
+      setReport(null);
+      setOutcome(null);
+      setStep('dashboard');
+    } catch (caught) {
+      setError(message(caught));
+    }
   };
   const newCareer = () => {
     if (save) void savePort.delete(save.careerId);
@@ -168,15 +198,30 @@ export function App() {
         />
       )}
       {step === 'dashboard' && save && (
-        <CareerDashboard
+        <>
+          <CareerDashboard
+            save={save}
+            academyName={academyName}
+            report={report}
+            outcome={outcome}
+            advancing={advancing}
+            onAdvance={advance}
+            onTrainingPlanChange={changePlan}
+            onNewCareer={newCareer}
+          />
+          {outcome && save.careerPhase === 'youth-season' && (
+            <button className="offseason-entry" onClick={handleEnterOffseason}>
+              进入休赛期
+            </button>
+          )}
+        </>
+      )}
+      {step === 'offseason' && save && (
+        <OffseasonBriefing
           save={save}
-          academyName={academyName}
-          report={report}
           outcome={outcome}
-          advancing={advancing}
-          onAdvance={advance}
-          onTrainingPlanChange={changePlan}
-          onNewCareer={newCareer}
+          academies={youthContent.academies}
+          onStartNextSeason={handleStartNextSeason}
         />
       )}
       {step === 'event' && save?.story.pendingEvent && (

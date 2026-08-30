@@ -1,11 +1,11 @@
 import {
-  CareerSaveV2Schema,
+  CareerSaveV3Schema,
   type CareerLedgerEntryV2,
-  type CareerSaveV2,
+  type CareerSaveV3,
 } from '@football/contracts';
 import { applyRelationshipEffects } from '@football/simulation';
 
-export const resolveCareerEvent = (save: CareerSaveV2, choiceId: string): CareerSaveV2 => {
+export const resolveCareerEvent = (save: CareerSaveV3, choiceId: string): CareerSaveV3 => {
   const event = save.story.pendingEvent;
   if (!event) throw new Error('没有待处理的生涯事件');
   if (event.resolvedChoiceId !== null) throw new Error('该事件已经处理，不能重复提交');
@@ -55,8 +55,9 @@ export const resolveCareerEvent = (save: CareerSaveV2, choiceId: string): Career
   };
   const activeStorylines = save.story.activeStorylines.filter((id) => id !== event.eventId);
 
-  return CareerSaveV2Schema.parse({
+  return CareerSaveV3Schema.parse({
     ...save,
+    schemaVersion: 3,
     currentState,
     health,
     clubContext,

@@ -33,6 +33,9 @@ export const CareerSaveV2Schema = z.strictObject({
 
 export type CareerSaveV2 = z.infer<typeof CareerSaveV2Schema>;
 
+/** 版本无关的 v2 结构切片：v3 等后续版本同样满足，供模拟层只读函数使用。 */
+export type CareerSaveV2Like = Omit<CareerSaveV2, 'schemaVersion'> & { schemaVersion: number };
+
 export const migrateCareerSave = (raw: unknown): CareerSaveV2 => {
   const existingV2 = CareerSaveV2Schema.safeParse(raw);
   if (existingV2.success) {

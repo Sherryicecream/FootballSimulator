@@ -1,5 +1,6 @@
 import type {
   CareerSaveV2,
+  CareerSaveV2Like,
   ScheduledYouthFixture,
   YouthAcademyProfile,
   YouthMatchResultV2,
@@ -8,7 +9,7 @@ import type { SeededRandomSource } from '../randomness';
 import { simulateMatch } from './match-engine';
 
 export const simulateScheduledYouthMatch = (
-  save: CareerSaveV2,
+  save: CareerSaveV2Like,
   fixture: ScheduledYouthFixture,
   academies: readonly YouthAcademyProfile[],
   rng: SeededRandomSource,
@@ -102,7 +103,7 @@ const academyStrength = (academy: YouthAcademyProfile, playerAbility = 50) => {
   };
 };
 
-const playerOverall = (save: CareerSaveV2): number => {
+const playerOverall = (save: CareerSaveV2Like): number => {
   const values = Object.values(save.player.attributes).flatMap((group) => Object.values(group));
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 };

@@ -1,8 +1,9 @@
 import type {
   CareerLedgerEntryV2,
-  CareerSaveV2,
+  CareerSaveV3,
   MonthlyReport,
   YouthAcademyProfile,
+  YouthMatchResultV2,
   EventDefinition,
 } from '@football/contracts';
 import {
@@ -18,14 +19,14 @@ import { resolveCareerEvent } from './resolve-career-event';
 export type AdvanceMonthOutcome =
   | {
       status: 'awaiting-decision';
-      save: CareerSaveV2;
-      event: NonNullable<CareerSaveV2['story']['pendingEvent']>;
+      save: CareerSaveV3;
+      event: NonNullable<CareerSaveV3['story']['pendingEvent']>;
     }
-  | { status: 'month-complete'; save: CareerSaveV2; report: MonthlyReport }
-  | { status: 'season-complete'; save: CareerSaveV2; report: MonthlyReport };
+  | { status: 'month-complete'; save: CareerSaveV3; report: MonthlyReport }
+  | { status: 'season-complete'; save: CareerSaveV3; report: MonthlyReport };
 
 export const advanceCareerMonth = (
-  initialSave: CareerSaveV2,
+  initialSave: CareerSaveV3,
   academies: readonly YouthAcademyProfile[],
   events: readonly EventDefinition[] = [],
 ): AdvanceMonthOutcome => {
@@ -42,7 +43,7 @@ export const advanceCareerMonth = (
   const resuming =
     initialSave.monthlyAdvance.monthKey === monthKey &&
     ['advancing', 'awaiting-decision'].includes(initialSave.monthlyAdvance.status);
-  let save: CareerSaveV2 = {
+  let save: CareerSaveV3 = {
     ...initialSave,
     monthlyAdvance: {
       ...initialSave.monthlyAdvance,
@@ -59,6 +60,7 @@ export const advanceCareerMonth = (
     const transition = simulateYouthWeek(save, academies);
     save = {
       ...transition.save,
+      seasonStats: accumulateSeasonStats(transition.save.seasonStats, transition.matchResult),
       monthlyAdvance: {
         ...transition.save.monthlyAdvance,
         nextWeekIndex: transition.save.monthlyAdvance.nextWeekIndex + 1,
@@ -137,9 +139,32 @@ export const advanceCareerMonth = (
   return { status: save.season.completed ? 'season-complete' : 'month-complete', save, report };
 };
 
-const roleFromEvaluation = (evaluation: number): CareerSaveV2['clubContext']['playerRole'] => {
+const roleFromEvaluation = (evaluation: number): CareerSaveV3['clubContext']['playerRole'] => {
   if (evaluation >= 72) return 'starter';
   if (evaluation >= 60) return 'regular';
   if (evaluation >= 46) return 'rotation';
   return 'fringe';
+};
+
+const emptySeasonStats = (): CareerSaveV3['seasonStats'] => ({
+  appearances: 0,
+  goals: 0,
+  assists: 0,
+  ratingSum: 0,
+  ratingCount: 0,
+});
+
+const accumulateSeasonStats = (
+  stats: CareerSaveV3['seasonStats'] | undefined,
+  match: YouthMatchResultV2 | null,
+): CareerSaveV3['seasonStats'] => {
+  if (!match) return stats ?? emptySeasonStats();
+  const base = stats ?? emptySeasonStats();
+  return {
+    appearances: base.appearances + (match.played ? 1 : 0),
+    goals: base.goals + match.goals,
+    assists: base.assists + match.assists,
+    ratingSum: base.ratingSum + (match.rating ?? 0),
+    ratingCount: base.ratingCount + (match.rating == null ? 0 : 1),
+  };
 };

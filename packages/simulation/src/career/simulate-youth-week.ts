@@ -1,6 +1,7 @@
 import type {
   CareerLedgerEntryV2,
   CareerSaveV2,
+  CareerSaveV2Like,
   YouthAcademyProfile,
   YouthMatchResultV2,
 } from '@football/contracts';
@@ -13,18 +14,20 @@ import { simulateInjuryRisk } from '../health/injury-model';
 import { createSeededRandomSource } from '../randomness';
 import { simulateScheduledYouthMatch } from '../match/scheduled-youth-match';
 
-export interface YouthWeekTransition {
-  save: CareerSaveV2;
+export type YouthWeekInputShape = CareerSaveV2Like;
+
+export interface YouthWeekTransition<S = CareerSaveV2> {
+  save: S;
   weekKey: string;
   matchResult: YouthMatchResultV2 | null;
   facts: CareerLedgerEntryV2[];
   developmentAccrual: DevelopmentAccrual;
 }
 
-export const simulateYouthWeek = (
-  save: CareerSaveV2,
+export const simulateYouthWeek = <S extends YouthWeekInputShape>(
+  save: S,
   academies: readonly YouthAcademyProfile[],
-): YouthWeekTransition => {
+): YouthWeekTransition<S> => {
   if (save.season.completed) throw new Error('青训赛季已经结束');
   if (save.story.pendingEvent) throw new Error('有待处理事件，不能继续推进');
 
@@ -76,7 +79,7 @@ export const simulateYouthWeek = (
       ? { ...candidate, status: 'played' as const, resultId: matchResult!.id }
       : candidate,
   );
-  const nextSave: CareerSaveV2 = {
+  const nextSave: S = {
     ...save,
     player: { ...save.player, age: deriveAge(save.player.identity.dateOfBirth, nextDate) },
     season: {
@@ -136,7 +139,7 @@ const advanceInjury = (injury: CareerSaveV2['health']['activeInjury']) => {
 };
 
 const createFacts = (
-  save: CareerSaveV2,
+  save: CareerSaveV2Like,
   weekKey: string,
   load: number,
   match: YouthMatchResultV2 | null,
@@ -172,7 +175,7 @@ const createFacts = (
 };
 
 const matchTags = (
-  save: CareerSaveV2,
+  save: CareerSaveV2Like,
   match: YouthMatchResultV2 | null,
   academies: readonly YouthAcademyProfile[],
 ): string[] => {

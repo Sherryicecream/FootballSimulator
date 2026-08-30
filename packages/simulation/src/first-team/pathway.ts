@@ -1,4 +1,8 @@
-import type { CareerLedgerEntryV2, CareerSaveV2, FirstTeamStage } from '@football/contracts';
+import type {
+  CareerLedgerEntryV2,
+  CareerSaveV2Like,
+  FirstTeamStage,
+} from '@football/contracts';
 import type { SeededRandomSource } from '../randomness';
 
 export interface FirstTeamPathwayResult {
@@ -17,7 +21,7 @@ const stages: FirstTeamStage[] = [
 ];
 
 export const advanceFirstTeamPathway = (
-  save: CareerSaveV2,
+  save: CareerSaveV2Like,
   rng: SeededRandomSource,
 ): FirstTeamPathwayResult => {
   const previousStage = save.clubContext.firstTeamStage;
@@ -46,7 +50,7 @@ export const advanceFirstTeamPathway = (
   };
 };
 
-const qualifies = (save: CareerSaveV2, stageIndex: number): boolean => {
+const qualifies = (save: CareerSaveV2Like, stageIndex: number): boolean => {
   const evaluationThreshold = [50, 57, 64, 72, 82][stageIndex] ?? 100;
   const formThreshold = [55, 58, 62, 68, 75][stageIndex] ?? 100;
   return (
@@ -59,5 +63,5 @@ const qualifies = (save: CareerSaveV2, stageIndex: number): boolean => {
 };
 
 const chance = (stageIndex: number): number => [0.03, 0.55, 0.45, 0.28, 0.05][stageIndex] ?? 0;
-const coachIds = (save: CareerSaveV2) =>
+const coachIds = (save: CareerSaveV2Like) =>
   save.relationships.persons.filter(({ role }) => role.includes('coach')).map(({ id }) => id);

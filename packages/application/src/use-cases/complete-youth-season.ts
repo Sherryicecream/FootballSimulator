@@ -1,4 +1,4 @@
-import type { CareerLedgerEntryV2, CareerSaveV2 } from '@football/contracts';
+import type { CareerLedgerEntryV2, CareerSaveV3, SeasonHistorySummary } from '@football/contracts';
 import { deriveDevelopmentSignals, type DevelopmentSignal } from '@football/simulation';
 
 export interface YouthSeasonOutcome {
@@ -9,10 +9,13 @@ export interface YouthSeasonOutcome {
 }
 
 export const completeYouthSeason = (
-  save: CareerSaveV2,
-): { save: CareerSaveV2; outcome: YouthSeasonOutcome } => {
+  save: CareerSaveV3,
+): { save: CareerSaveV3; outcome: YouthSeasonOutcome } => {
   if (!save.season.completed) throw new Error('赛季尚未结束，不能结算');
   if (save.story.pendingEvent) throw new Error('请先处理待决事件');
+  if (save.careerPhase !== 'youth-season') {
+    throw new Error(`非法阶段转移：当前阶段 ${save.careerPhase} 不能结算赛季`);
+  }
   const signals = deriveDevelopmentSignals(save);
   const sustainedRisks = [
     signals.includes('release-risk'),
@@ -43,10 +46,37 @@ export const completeYouthSeason = (
       .filter(({ role }) => role === 'youth-coach')
       .map(({ id }) => id),
   };
+  const seasonSummary = buildSeasonSummary(save, outcome.status, signals);
   const hasOutcomeFact = save.ledger.some(({ id }) => id === fact.id);
+  const hasSummary = save.seasonHistory.some(({ seasonId }) => seasonId === save.season.id);
   return {
-    save: hasOutcomeFact ? save : { ...save, ledger: [...save.ledger, fact] },
+    save: hasOutcomeFact
+      ? save
+      : {
+          ...save,
+          ledger: [...save.ledger, fact],
+          seasonHistory: hasSummary ? save.seasonHistory : [...save.seasonHistory, seasonSummary],
+        },
     outcome,
+  };
+};
+
+const buildSeasonSummary = (
+  save: CareerSaveV3,
+  status: SeasonHistorySummary['status'],
+  signals: DevelopmentSignal[],
+): SeasonHistorySummary => {
+  const { appearances, goals, assists, ratingSum, ratingCount } = save.seasonStats;
+  return {
+    seasonId: save.season.id,
+    age: save.player.age,
+    status,
+    appearances,
+    goals,
+    assists,
+    avgRating: ratingCount > 0 ? Math.round((ratingSum / ratingCount) * 10) / 10 : null,
+    signals,
+    endedOn: save.season.endDate,
   };
 };
 

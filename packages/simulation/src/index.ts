@@ -51,3 +51,10 @@ export { initializeYouthRelationships } from './relationships/youth-relationship
 export { applyRelationshipEffects } from './relationships/relationship-effects';
 export type { RelationshipEffects } from './relationships/relationship-effects';
 export { renderTemplate, generateEventNarrative } from './events/narrative';
+export { evaluateOffseason } from './career/evaluate-offseason';
+export {
+  evaluateGraduationEligibility,
+  weightedAbility,
+  graduationAbilityThreshold,
+} from './career/graduation';
+export { startNextSeason, createYouthFixtures } from './career/start-next-season';

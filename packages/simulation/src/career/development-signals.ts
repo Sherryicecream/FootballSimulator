@@ -10,7 +10,13 @@ export type DevelopmentSignal =
   | 'competition-pressure'
   | 'release-risk';
 
-export const deriveDevelopmentSignals = (save: CareerSaveV2): DevelopmentSignal[] => {
+/** 派生发展信号所需的最小存档切片；v2/v3 存档均满足该结构。 */
+export type DevelopmentSignalInput = Pick<
+  CareerSaveV2,
+  'ledger' | 'currentState' | 'clubContext' | 'health' | 'relationships'
+>;
+
+export const deriveDevelopmentSignals = (save: DevelopmentSignalInput): DevelopmentSignal[] => {
   const signals: DevelopmentSignal[] = [];
   const recentFacts = save.ledger.slice(-8);
   const negativeFacts = recentFacts.filter(({ summary }) =>

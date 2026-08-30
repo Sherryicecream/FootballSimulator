@@ -1,11 +1,13 @@
 import type {
   CareerSaveV2,
+  CareerSaveV2Like,
   EventDefinition,
   EventInstance,
   CareerSave,
   YouthEventInstance,
 } from '@football/contracts';
 import type { SeededRandomSource } from '../randomness/seeded-random-source';
+import type { YouthWeekInputShape } from './simulate-youth-week';
 import {
   filterEligibleEvents,
   filterEligibleYouthEvents,
@@ -32,8 +34,8 @@ export const decrementEventCooldowns = (
   return decremented;
 };
 
-export interface YouthEventPickResult {
-  save: CareerSaveV2;
+export interface YouthEventPickResult<S = CareerSaveV2> {
+  save: S;
   event: YouthEventInstance | null;
 }
 
@@ -45,15 +47,15 @@ const decrementThemeCooldowns = (cooldowns: Record<string, number>): Record<stri
   return decremented;
 };
 
-export const pickYouthEventForWeek = (
+export const pickYouthEventForWeek = <S extends YouthWeekInputShape>(
   events: readonly EventDefinition[],
-  save: CareerSaveV2,
-): YouthEventPickResult => {
+  save: S,
+): YouthEventPickResult<S> => {
   const cooldownsByEventId = decrementEventCooldowns(save.story.cooldownsByEventId);
   const themeCooldownsByTheme = decrementThemeCooldowns(save.story.themeCooldownsByTheme ?? {});
   const rng = createSeededRandomSource(save.randomState.seed);
   for (let index = 0; index < save.randomState.sequencePosition; index += 1) rng.next();
-  const selectionSave: CareerSaveV2 = {
+  const selectionSave: S = {
     ...save,
     story: { ...save.story, cooldownsByEventId, themeCooldownsByTheme },
   };
@@ -102,7 +104,7 @@ export const pickYouthEventForWeek = (
 
 const instantiateYouthEvent = (
   definition: EventDefinition,
-  save: CareerSaveV2,
+  save: CareerSaveV2Like,
 ): YouthEventInstance => {
   const participantIds = (definition.participantRoles ?? []).flatMap((role) => {
     const matches = save.relationships.persons.filter((person) => person.role === role);
