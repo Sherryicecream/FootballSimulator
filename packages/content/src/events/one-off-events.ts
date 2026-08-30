@@ -167,7 +167,7 @@ export const balancedOneOffEvents: EventDefinition[] = [
     rarity: 'common',
     theme: 'relationships',
     interaction: 'decision',
-    baseWeight: 26,
+    baseWeight: 14,
     title: '������¼���',
     description: '������������ѵ�������£�һ����һ�������ļ����ؼ��غϡ�',
     condition: { requireFactType: 'match', requirePersonRole: 'youth-coach' },

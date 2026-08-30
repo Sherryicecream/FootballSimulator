@@ -19,6 +19,14 @@ import {
 export const runYouthSeasons = (runs: number, seedStart = 1): YouthBalanceReport => {
   const content = getYouthContent();
   const metrics: YouthSeasonMetrics[] = [];
+  const eventIdsByLength = content.events
+    .map(({ id }) => id)
+    .sort((left, right) => right.length - left.length);
+  const eventThemeById = new Map(
+    content.events.map((event) => [event.id, event.theme ?? 'off-pitch']),
+  );
+  const knownThemeCount = new Set(eventThemeById.values()).size;
+
   for (let seed = seedStart; seed < seedStart + runs; seed += 1) {
     let save = createYouthCareerV2(
       createCareerSave({
@@ -53,6 +61,24 @@ export const runYouthSeasons = (runs: number, seedStart = 1): YouthBalanceReport
       return sum + (score ? Number(score[1]) + Number(score[2]) : 0);
     }, 0);
     const decisionFacts = final.save.ledger.filter(({ type }) => type === 'decision');
+    const decisionEventIds = decisionFacts
+      .map(({ id }) => eventIdsByLength.find((eventId) => id.startsWith(`decision-${eventId}-`)))
+      .filter((eventId): eventId is string => Boolean(eventId));
+    const eventThemes = [
+      ...new Set(
+        decisionEventIds.flatMap((eventId) => {
+          const theme = eventThemeById.get(eventId);
+          return theme ? [theme] : [];
+        }),
+      ),
+    ];
+    const decisionsByMonth = new Map<string, number>();
+    for (const fact of decisionFacts) {
+      const month = weekKeyToMonth(final.save.season.startDate, fact.weekKey);
+      decisionsByMonth.set(month, (decisionsByMonth.get(month) ?? 0) + 1);
+    }
+    const maxDecisionsInMonth = Math.max(0, ...decisionsByMonth.values());
+
     metrics.push({
       seed,
       fixtures: final.save.season.fixtures.length,
@@ -68,9 +94,10 @@ export const runYouthSeasons = (runs: number, seedStart = 1): YouthBalanceReport
       firstTeamStage: final.save.clubContext.firstTeamStage,
       released: final.outcome.status === 'released',
       goalsPerMatch: matchFacts.length ? totalGoals / matchFacts.length : 0,
-      uniqueDecisionEvents: new Set(
-        decisionFacts.map(({ id }) => id.split('-').slice(1, -1).join('-')),
-      ).size,
+      uniqueDecisionEvents: new Set(decisionEventIds).size,
+      decisionEventIds,
+      eventThemes,
+      maxDecisionsInMonth,
       coachEvaluation: final.save.clubContext.coachEvaluation,
       form: final.save.currentState.form,
       confidence: final.save.currentState.confidence,
@@ -99,6 +126,12 @@ export const runYouthSeasons = (runs: number, seedStart = 1): YouthBalanceReport
         metrics.map(({ decisions }) => decisions),
         0.5,
       ),
+      decisionP90: percentile(
+        metrics.map(({ decisions }) => decisions),
+        0.9,
+      ),
+      maxDecisionsInMonth: Math.max(0, ...metrics.map((metric) => metric.maxDecisionsInMonth)),
+
       attributeGrowthMedian: percentile(
         metrics.map(({ totalAttributeGrowth }) => totalAttributeGrowth),
         0.5,
@@ -119,6 +152,12 @@ export const runYouthSeasons = (runs: number, seedStart = 1): YouthBalanceReport
           ({ decisions, uniqueDecisionEvents }) => `${decisions}:${uniqueDecisionEvents}`,
         ),
       ).size,
+      themeCoverageRate:
+        new Set(metrics.flatMap(({ eventThemes }) => eventThemes)).size /
+        Math.max(1, knownThemeCount),
+      uniqueEventCombinations: new Set(
+        metrics.map(({ decisionEventIds }) => [...new Set(decisionEventIds)].sort().join('|')),
+      ).size,
     },
   };
 };
@@ -128,11 +167,20 @@ const flatten = (attributes: PlayerAttributes): Record<string, number> => ({
   ...attributes.physical,
   ...attributes.mental,
 });
+const weekKeyToMonth = (startDate: string, weekKey: string): string => {
+  const weekNumber = Number(/-W(\d{1,2})$/.exec(weekKey)?.[1] ?? 1);
+  const date = new Date(`${startDate}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + (Math.max(1, weekNumber) - 1) * 7);
+  return date.toISOString().slice(0, 7);
+};
 
 const isMain = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isMain) {
-  const readArg = (name: string, fallback: string) =>
-    process.argv[process.argv.indexOf(name) + 1] ?? fallback;
+  const readArg = (name: string, fallback: string) => {
+    const index = process.argv.indexOf(name);
+    if (index < 0) return fallback;
+    return process.argv[index + 1] ?? fallback;
+  };
   const runs = Number(readArg('--runs', '1000'));
   const seedStart = Number(readArg('--seed-start', '1'));
   const output = resolve(readArg('--output', 'artifacts/youth-balance.json'));

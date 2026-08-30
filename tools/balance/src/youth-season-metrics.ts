@@ -10,6 +10,9 @@ export interface YouthSeasonMetrics {
   released: boolean;
   goalsPerMatch: number;
   uniqueDecisionEvents: number;
+  decisionEventIds: string[];
+  eventThemes: string[];
+  maxDecisionsInMonth: number;
   coachEvaluation: number;
   form: number;
   confidence: number;
@@ -24,6 +27,8 @@ export interface YouthBalanceReport {
     completionRate: number;
     fixtureMedian: number;
     decisionMedian: number;
+    decisionP90: number;
+    maxDecisionsInMonth: number;
     attributeGrowthMedian: number;
     maxAttributeGrowthP90: number;
     severeInjuryRate: number;
@@ -32,6 +37,8 @@ export interface YouthBalanceReport {
     releaseRate: number;
     goalsPerMatch: number;
     uniqueStoryCombinations: number;
+    themeCoverageRate: number;
+    uniqueEventCombinations: number;
   };
 }
 

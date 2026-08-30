@@ -11,6 +11,12 @@ describe('youth balance runner', () => {
     expect(report.summary.decisionMedian).toBeGreaterThanOrEqual(6);
     expect(report.summary.decisionMedian).toBeLessThanOrEqual(12);
     expect(report.summary.maxAttributeGrowthP90).toBeLessThanOrEqual(3);
+    expect(report.summary.maxDecisionsInMonth).toBeLessThanOrEqual(2);
+    expect(report.summary.decisionMedian).toBeGreaterThanOrEqual(4);
+    expect(report.summary.decisionP90).toBeLessThanOrEqual(18);
+    expect(report.summary.themeCoverageRate).toBeGreaterThanOrEqual(0.65);
+    expect(report.summary.uniqueEventCombinations).toBeGreaterThanOrEqual(80);
+
     expect(report.summary.severeInjuryRate).toBeLessThan(0.03);
     expect(report.summary.firstTeamWatchlistRate).toBeGreaterThanOrEqual(0.1);
     expect(report.summary.firstTeamWatchlistRate).toBeLessThanOrEqual(0.35);
@@ -20,5 +26,5 @@ describe('youth balance runner', () => {
     expect(report.summary.releaseRate).toBeLessThanOrEqual(0.08);
     expect(report.summary.goalsPerMatch).toBeGreaterThanOrEqual(2);
     expect(report.summary.goalsPerMatch).toBeLessThanOrEqual(3.5);
-  });
+  }, 20_000);
 });
