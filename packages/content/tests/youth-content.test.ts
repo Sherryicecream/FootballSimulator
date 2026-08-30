@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { getYouthContent, validateYouthContent } from '../src';
 import { balancedOneOffEvents } from '../src';
+import { shortStoryEvents, trajectoryEvents } from '../src';
 
 describe('validateYouthContent', () => {
   it('accepts the bundled fictional youth content', () => {
@@ -130,5 +131,51 @@ describe('balanced youth one-off events', () => {
         ],
       }),
     ).toThrow('自动事件只能有一个选项');
+  });
+});
+
+describe('youth stories and trajectory signals', () => {
+  it('contains two exact three-stage chains with valid prerequisite memories', () => {
+    expect(shortStoryEvents).toHaveLength(6);
+    expect(shortStoryEvents.map(({ id }) => id)).toEqual([
+      'position-race-opening',
+      'position-race-review',
+      'position-race-resolution',
+      'coach-trust-opening',
+      'coach-trust-test',
+      'coach-trust-resolution',
+    ]);
+
+    const byId = new Map(shortStoryEvents.map((event) => [event.id, event]));
+    expect(byId.get('position-race-opening')?.nextEvents).toEqual(['position-race-review']);
+    expect(byId.get('position-race-review')?.condition.requireStoryId).toBe('position-race-opened');
+    expect(byId.get('position-race-review')?.nextEvents).toEqual(['position-race-resolution']);
+    expect(byId.get('position-race-resolution')?.condition.requireStoryId).toBe(
+      'position-race-reviewed',
+    );
+    expect(byId.get('coach-trust-opening')?.nextEvents).toEqual(['coach-trust-test']);
+    expect(byId.get('coach-trust-test')?.condition.requireStoryId).toBe('coach-trust-opened');
+    expect(byId.get('coach-trust-test')?.nextEvents).toEqual(['coach-trust-resolution']);
+    expect(byId.get('coach-trust-resolution')?.condition.requireStoryId).toBe('coach-trust-tested');
+  });
+
+  it('contains conditional early-prodigy and late-bloomer signals without fixed outcomes', () => {
+    expect(trajectoryEvents.map(({ id }) => id)).toEqual([
+      'early-prodigy-signal',
+      'late-bloomer-window',
+    ]);
+    const early = trajectoryEvents[0]!;
+    const late = trajectoryEvents[1]!;
+    expect(early.theme).toBe('trajectory');
+    expect(early.condition.maturationPaces).toEqual(['early']);
+    expect(early.condition.minCoachEvaluation).toBeGreaterThanOrEqual(60);
+    expect(late.condition.maturationPaces).toEqual(['late']);
+    expect(late.condition.growthBackgrounds).toContain('late-bloomer');
+    expect(late.condition.minWeek).toBeGreaterThanOrEqual(18);
+    expect(late.condition.minProfessionalism).toBeGreaterThanOrEqual(55);
+    expect(late.condition.minStability).toBeGreaterThanOrEqual(45);
+    expect([...shortStoryEvents, ...trajectoryEvents].every((event) => event.baseWeight)).toBe(
+      true,
+    );
   });
 });

@@ -277,6 +277,32 @@ describe('weekly youth event flow controls', () => {
     expect(blocked.event?.eventId).toBe('unrelated');
   });
 
+  it('defers a decision follow-up until a later month after its story opens', () => {
+    const unrelated = event('quiet-background', 'automatic', { theme: 'off-pitch' });
+    const followUp = event('position-review', 'decision', {
+      condition: { requireStoryId: 'position-race-opened' },
+    });
+    const storyState = (base: ReturnType<typeof createYouthSave>) => ({
+      story: {
+        ...base.story,
+        activeStorylines: ['position-review'],
+        completedStoryIds: ['position-race-opened'],
+      },
+    });
+
+    const sameMonth = firstPicked([unrelated, followUp], (base) => ({
+      ...storyState(base),
+      monthlyAdvance: { ...base.monthlyAdvance, interactiveEventCount: 1 },
+    }));
+    expect(sameMonth.event?.eventId).toBe('quiet-background');
+
+    const nextMonth = firstPicked([unrelated, followUp], (base) => ({
+      ...storyState(base),
+      monthlyAdvance: { ...base.monthlyAdvance, interactiveEventCount: 0 },
+    }));
+    expect(nextMonth.event?.eventId).toBe('position-review');
+  });
+
   const firstPicked = (
     events: EventDefinition[],
     overrides: (

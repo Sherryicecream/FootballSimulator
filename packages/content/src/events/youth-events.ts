@@ -1,5 +1,7 @@
 import type { EventDefinition } from '@football/contracts';
 import { balancedOneOffEvents } from './one-off-events';
+import { shortStoryEvents } from './story-events';
+import { trajectoryEvents } from './trajectory-events';
 
 const legacyYouthEvents: EventDefinition[] = [
   {
@@ -522,7 +524,12 @@ const legacyYouthEvents: EventDefinition[] = [
   },
 ];
 
-export const youthEvents: EventDefinition[] = [...legacyYouthEvents, ...balancedOneOffEvents];
+export const youthEvents: EventDefinition[] = [
+  ...legacyYouthEvents,
+  ...balancedOneOffEvents,
+  ...shortStoryEvents,
+  ...trajectoryEvents,
+];
 
 export function getYouthEvents(): EventDefinition[] {
   return youthEvents;

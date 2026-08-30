@@ -57,11 +57,13 @@ export const pickYouthEventForWeek = (
     ...save,
     story: { ...save.story, cooldownsByEventId, themeCooldownsByTheme },
   };
-  const eligible = filterEligibleYouthEvents([...events], selectionSave).filter(
-    (definition) =>
-      (definition.interaction ?? 'decision') === 'automatic' ||
-      save.monthlyAdvance.interactiveEventCount < 2,
-  );
+  const eligible = filterEligibleYouthEvents([...events], selectionSave).filter((definition) => {
+    const interaction = definition.interaction ?? 'decision';
+    const isActiveDecisionFollowUp =
+      interaction === 'decision' && save.story.activeStorylines.includes(definition.id);
+    if (isActiveDecisionFollowUp && save.monthlyAdvance.interactiveEventCount > 0) return false;
+    return interaction === 'automatic' || save.monthlyAdvance.interactiveEventCount < 2;
+  });
   const activeFollowUps = eligible.filter((definition) =>
     save.story.activeStorylines.includes(definition.id),
   );
