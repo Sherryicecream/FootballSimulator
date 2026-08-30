@@ -22,6 +22,62 @@ export const ATTRIBUTE_LABELS = {
 export const labelAttribute = (attribute: string): string =>
   ATTRIBUTE_LABELS[attribute as keyof typeof ATTRIBUTE_LABELS] ?? '其他能力';
 
+const BACKGROUND_LABELS: Record<string, string> = {
+  academy: '青训营',
+  school: '校园足球',
+  community: '社区足球',
+  'late-bloomer': '大器晚成',
+};
+
+const PERSONALITY_LABELS: Record<string, string> = {
+  ambitious: '雄心勃勃',
+  composed: '沉稳',
+  disciplined: '自律',
+  expressive: '张扬',
+};
+
+const FOOT_LABELS: Record<CareerSaveV2['player']['identity']['preferredFoot'], string> = {
+  LEFT: '左脚',
+  RIGHT: '右脚',
+  BOTH: '双足',
+};
+
+const WEAK_FOOT_LABELS = ['极弱', '极弱', '较弱', '中等', '较好', '出色'] as const;
+
+export interface PlayerProfileView {
+  background: string;
+  personality: string;
+  preferredFoot: string;
+  weakFoot: string;
+  strengths: Array<{ label: string; value: number }>;
+}
+
+export const buildPlayerProfile = (player: CareerSaveV2['player']): PlayerProfileView => {
+  const visibleValues = {
+    ...player.attributes.technical,
+    ...player.attributes.physical,
+    ...player.attributes.mental,
+  };
+  const strengths = Object.keys(ATTRIBUTE_LABELS)
+    .map((key, order) => ({
+      label: labelAttribute(key),
+      value: visibleValues[key as keyof typeof visibleValues],
+      order,
+    }))
+    .sort((left, right) => right.value - left.value || left.order - right.order)
+    .slice(0, 3)
+    .map(({ label, value }) => ({ label, value }));
+  const weakFootLevel = Math.max(1, Math.min(5, Math.round(player.identity.weakFootLevel)));
+
+  return {
+    background: BACKGROUND_LABELS[player.identity.growthBackground] ?? '其他经历',
+    personality: PERSONALITY_LABELS[player.identity.personalityTendency] ?? '尚待观察',
+    preferredFoot: FOOT_LABELS[player.identity.preferredFoot] ?? '尚待观察',
+    weakFoot: WEAK_FOOT_LABELS[weakFootLevel] ?? '尚待观察',
+    strengths,
+  };
+};
+
 export interface RecentRecord {
   monthKey: string;
   lines: string[];

@@ -1,6 +1,38 @@
 import { describe, expect, it } from 'vitest';
 import type { CareerLedgerEntryV2, CareerSaveV2 } from '@football/contracts';
-import { buildRecentRecords, labelAttribute } from '../../src/career-dashboard/career-presentation';
+import {
+  buildPlayerProfile,
+  buildRecentRecords,
+  labelAttribute,
+} from '../../src/career-dashboard/career-presentation';
+
+const baseProfilePlayer = {
+  identity: {
+    growthBackground: 'academy',
+    personalityTendency: 'composed',
+    preferredFoot: 'LEFT',
+    weakFootLevel: 3,
+  },
+  attributes: {
+    technical: {
+      firstTouch: 50,
+      dribbling: 50,
+      passing: 50,
+      shooting: 50,
+      defending: 50,
+      aerialAbility: 50,
+    },
+    physical: { pace: 50, strength: 50, stamina: 50, agility: 50 },
+    mental: {
+      offTheBall: 50,
+      vision: 50,
+      decision: 50,
+      composure: 50,
+      determination: 50,
+      discipline: 50,
+    },
+  },
+};
 
 describe('career presentation', () => {
   it('maps every player-facing attribute to Chinese', () => {
@@ -38,6 +70,62 @@ describe('career presentation', () => {
     expect(copy).toContain('比赛');
     expect(copy).toContain('关键选择');
     expect(copy).toContain('一线队');
+  });
+
+  it('projects a Chinese player profile with stable top-three strengths', () => {
+    const profile = buildPlayerProfile({
+      identity: {
+        growthBackground: 'school',
+        personalityTendency: 'disciplined',
+        preferredFoot: 'RIGHT',
+        weakFootLevel: 4,
+      },
+      attributes: {
+        technical: {
+          firstTouch: 40,
+          dribbling: 69,
+          passing: 45,
+          shooting: 43,
+          defending: 42,
+          aerialAbility: 41,
+        },
+        physical: { pace: 72, strength: 44, stamina: 46, agility: 48 },
+        mental: {
+          offTheBall: 67,
+          vision: 50,
+          decision: 49,
+          composure: 47,
+          determination: 45,
+          discipline: 44,
+        },
+      },
+    } as CareerSaveV2['player']);
+
+    expect(profile.background).toBe('校园足球');
+    expect(profile.personality).toBe('自律');
+    expect(profile.preferredFoot).toBe('右脚');
+    expect(profile.weakFoot).toBe('较好');
+    expect(profile.strengths).toEqual([
+      { label: '速度', value: 72 },
+      { label: '盘带', value: 69 },
+      { label: '无球跑动', value: 67 },
+    ]);
+  });
+
+  it('uses safe legacy fallbacks and stable attribute order for ties', () => {
+    const player = {
+      ...baseProfilePlayer,
+      identity: {
+        ...baseProfilePlayer.identity,
+        growthBackground: 'internal-old-background',
+        personalityTendency: 'internal-old-personality',
+      },
+    } as CareerSaveV2['player'];
+    const profile = buildPlayerProfile(player);
+
+    expect(profile.background).toBe('其他经历');
+    expect(profile.personality).toBe('尚待观察');
+    expect(profile.strengths.map(({ label }) => label)).toEqual(['停球', '盘带', '传球']);
   });
 
   it('returns no summaries for an empty ledger', () => {

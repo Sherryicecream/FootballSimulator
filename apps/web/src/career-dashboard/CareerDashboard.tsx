@@ -1,6 +1,6 @@
 import type { CareerSaveV2, MonthlyReport, TrainingPlan } from '@football/contracts';
 import type { YouthSeasonOutcome } from '@football/application';
-import { buildRecentRecords, labelAttribute } from './career-presentation';
+import { buildPlayerProfile, buildRecentRecords, labelAttribute } from './career-presentation';
 
 interface CareerDashboardProps {
   save: CareerSaveV2;
@@ -43,6 +43,7 @@ export function CareerDashboard({
     Object.entries(values).map(([key, value]) => ({ group, key, value })),
   );
   const recentRecords = buildRecentRecords(save);
+  const playerProfile = buildPlayerProfile(save.player);
   return (
     <section className="career-shell" aria-label="青训生涯仪表盘">
       <header className="career-hero">
@@ -99,6 +100,36 @@ export function CareerDashboard({
               {save.health.activeInjury.expectedRecoveryWeeks} 周
             </p>
           )}
+        </section>
+
+        <section className="dashboard-card player-profile">
+          <h3>球员档案</h3>
+          <dl className="profile-facts">
+            <div>
+              <dt>成长背景</dt>
+              <dd>{playerProfile.background}</dd>
+            </div>
+            <div>
+              <dt>性格倾向</dt>
+              <dd>{playerProfile.personality}</dd>
+            </div>
+            <div>
+              <dt>惯用脚</dt>
+              <dd>{playerProfile.preferredFoot}</dd>
+            </div>
+            <div>
+              <dt>逆足评价</dt>
+              <dd>{playerProfile.weakFoot}</dd>
+            </div>
+          </dl>
+          <h4>主要能力</h4>
+          <div className="strength-chips">
+            {playerProfile.strengths.map(({ label, value }) => (
+              <span key={label}>
+                {label} <strong>{value}</strong>
+              </span>
+            ))}
+          </div>
         </section>
 
         <section className="dashboard-card">

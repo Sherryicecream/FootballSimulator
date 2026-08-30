@@ -91,6 +91,30 @@ describe('CareerDashboard v2', () => {
     expect(screen.getByText(/本月持续完成训练与能力积累/)).toBeVisible();
   });
 
+  it('shows the generated profile without hidden development or relationship values', () => {
+    render(
+      <CareerDashboard
+        save={save}
+        academyName="浦江青训中心"
+        report={null}
+        outcome={null}
+        advancing={false}
+        onAdvance={() => {}}
+        onTrainingPlanChange={() => {}}
+        onNewCareer={() => {}}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: '球员档案' })).toBeVisible();
+    expect(screen.getByText('成长背景')).toBeVisible();
+    expect(screen.getByText('大器晚成')).toBeVisible();
+    expect(screen.getByText('性格倾向')).toBeVisible();
+    expect(screen.getByText('沉稳')).toBeVisible();
+    expect(screen.getByText('逆足评价')).toBeVisible();
+    expect(screen.getByText('主要能力')).toBeVisible();
+    expect(screen.queryByText(/潜力|职业素养|稳定性|抗压|适应力|伤病倾向/)).toBeNull();
+  });
+
   it('uses Chinese attribute labels in the monthly report', () => {
     const report: MonthlyReport = {
       monthKey: '2024-09',
