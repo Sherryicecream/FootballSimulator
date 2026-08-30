@@ -1,10 +1,18 @@
-import type { CareerSaveV3, MonthlyReport, TrainingPlan } from '@football/contracts';
+import { useState } from 'react';
+import type {
+  CareerSaveV3,
+  EventDefinition,
+  MonthlyReport,
+  TrainingPlan,
+} from '@football/contracts';
 import { ContractCard } from './ContractCard';
 import type { YouthSeasonOutcome } from '@football/application';
 import { buildPlayerProfile, buildRecentRecords, labelAttribute } from './career-presentation';
+import { StoryCodex } from './StoryCodex';
 
 interface CareerDashboardProps {
   save: CareerSaveV3;
+  events: EventDefinition[];
   academyName: string;
   report: MonthlyReport | null;
   outcome: YouthSeasonOutcome | null;
@@ -32,6 +40,7 @@ const stageLabels: Record<CareerSaveV3['clubContext']['firstTeamStage'], string>
 
 export function CareerDashboard({
   save,
+  events,
   academyName,
   report,
   outcome,
@@ -40,6 +49,12 @@ export function CareerDashboard({
   onTrainingPlanChange,
   onNewCareer,
 }: CareerDashboardProps) {
+  const [codexOpen, setCodexOpen] = useState(false);
+  const encounteredEventIds = new Set(
+    save.ledger
+      .filter(({ type }) => type === 'decision' || type === 'event')
+      .map(({ id }) => /^(:?decision|event)-(.+)-d+$/.exec(id)?.[2] ?? ''),
+  );
   const attributes = Object.entries(save.player.attributes).flatMap(([group, values]) =>
     Object.entries(values).map(([key, value]) => ({ group, key, value })),
   );
@@ -107,10 +122,12 @@ export function CareerDashboard({
         <section className="dashboard-card player-profile">
           <h3>球员档案</h3>
           <dl className="profile-facts">
-            <div>
-              <dt>成长背景</dt>
-              <dd>{playerProfile.background}</dd>
-            </div>
+            {playerProfile.background !== null && (
+              <div>
+                <dt>成长背景</dt>
+                <dd>{playerProfile.background}</dd>
+              </div>
+            )}
             <div>
               <dt>性格倾向</dt>
               <dd>{playerProfile.personality}</dd>
@@ -202,6 +219,13 @@ export function CareerDashboard({
           ))}
         </section>
       </div>
+
+      <div className="codex-toggle">
+        <button onClick={() => setCodexOpen((open) => !open)}>
+          {codexOpen ? '收起剧情图鉴' : '查看剧情图鉴'}
+        </button>
+      </div>
+      {codexOpen && <StoryCodex events={events} encounteredEventIds={encounteredEventIds} />}
 
       <footer className="career-actions">
         <button

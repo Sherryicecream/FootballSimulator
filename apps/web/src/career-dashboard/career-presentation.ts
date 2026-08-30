@@ -26,8 +26,10 @@ const BACKGROUND_LABELS: Record<string, string> = {
   academy: '青训营',
   school: '校园足球',
   community: '社区足球',
-  'late-bloomer': '大器晚成',
 };
+
+/** 成长背景中属于隐藏设定（如成长节奏）的值：不在档案中展示。 */
+const HIDDEN_BACKGROUNDS = new Set(['late-bloomer']);
 
 const PERSONALITY_LABELS: Record<string, string> = {
   ambitious: '雄心勃勃',
@@ -45,7 +47,8 @@ const FOOT_LABELS: Record<CareerSaveV2['player']['identity']['preferredFoot'], s
 const WEAK_FOOT_LABELS = ['极弱', '极弱', '较弱', '中等', '较好', '出色'] as const;
 
 export interface PlayerProfileView {
-  background: string;
+  /** 隐藏型背景（如 late-bloomer）返回 null，档案不渲染该行。 */
+  background: string | null;
   personality: string;
   preferredFoot: string;
   weakFoot: string;
@@ -70,7 +73,9 @@ export const buildPlayerProfile = (player: CareerSaveV2['player']): PlayerProfil
   const weakFootLevel = Math.max(1, Math.min(5, Math.round(player.identity.weakFootLevel)));
 
   return {
-    background: BACKGROUND_LABELS[player.identity.growthBackground] ?? '其他经历',
+    background: HIDDEN_BACKGROUNDS.has(player.identity.growthBackground)
+      ? null
+      : (BACKGROUND_LABELS[player.identity.growthBackground] ?? '其他经历'),
     personality: PERSONALITY_LABELS[player.identity.personalityTendency] ?? '尚待观察',
     preferredFoot: FOOT_LABELS[player.identity.preferredFoot] ?? '尚待观察',
     weakFoot: WEAK_FOOT_LABELS[weakFootLevel] ?? '尚待观察',

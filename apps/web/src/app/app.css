@@ -325,3 +325,91 @@ fieldset {
     grid-template-columns: 1fr;
   }
 }
+
+/* 剧情图鉴 */
+.codex-toggle {
+  margin-top: 16px;
+}
+.story-codex {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-top: 10px;
+}
+.codex-hint {
+  color: var(--color-muted, #6b7280);
+  font-size: 13px;
+}
+.codex-section {
+  margin: 14px 0 8px;
+}
+.codex-storyline {
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  margin: 10px 0;
+}
+.codex-storyline h5 {
+  margin: 0 0 6px;
+}
+.codex-chain {
+  margin: 0 0 10px;
+  padding-left: 18px;
+  color: var(--color-muted, #6b7280);
+  font-size: 13px;
+}
+.codex-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 12px;
+  font-weight: 400;
+}
+.codex-meta {
+  margin-left: 8px;
+  color: var(--color-muted, #6b7280);
+  font-size: 12px;
+  font-weight: 400;
+}
+.codex-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+.codex-event {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  margin: 8px 0;
+}
+.codex-grid .codex-event {
+  margin: 0;
+}
+.codex-event.met {
+  border-color: #16653455;
+  background: #f0fdf4;
+}
+.codex-event h4 {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+.codex-event p {
+  margin: 4px 0 8px;
+  font-size: 13px;
+}
+.codex-choices {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+}
+.codex-choices span {
+  color: var(--color-muted, #6b7280);
+  margin-left: 6px;
+}

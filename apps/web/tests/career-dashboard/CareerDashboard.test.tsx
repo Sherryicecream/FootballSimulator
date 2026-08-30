@@ -106,8 +106,9 @@ describe('CareerDashboard v2', () => {
     );
 
     expect(screen.getByRole('heading', { name: '球员档案' })).toBeVisible();
-    expect(screen.getByText('成长背景')).toBeVisible();
-    expect(screen.getByText('大器晚成')).toBeVisible();
+    // 隐藏型成长背景（late-bloomer）不展示，避免泄露成长节奏设定
+    expect(screen.queryByText('成长背景')).toBeNull();
+    expect(screen.queryByText('大器晚成')).toBeNull();
     expect(screen.getByText('性格倾向')).toBeVisible();
     expect(screen.getByText('沉稳')).toBeVisible();
     expect(screen.getByText('逆足评价')).toBeVisible();

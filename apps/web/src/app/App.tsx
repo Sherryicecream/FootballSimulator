@@ -257,6 +257,7 @@ export function App() {
         <>
           <CareerDashboard
             save={save}
+            events={youthContent.events}
             academyName={academyName}
             report={report}
             outcome={outcome}

@@ -82,7 +82,11 @@ async function createCareer(page: Page) {
   await page.locator('button[aria-pressed]').first().click();
   await expect(page.getByRole('button', { name: '推进到下个月' })).toBeVisible();
   await expect(page.getByRole('heading', { name: '球员档案' })).toBeVisible();
-  await expect(page.getByText(/青训营|校园足球|社区足球|大器晚成/)).toBeVisible();
+  // 隐藏型背景（late-bloomer）不显示成长背景行；其余背景展示真实出身
+  const origin = page.getByText(/青训营|校园足球|社区足球/);
+  if (!(await origin.isVisible().catch(() => false))) {
+    await expect(page.getByText('成长背景')).toHaveCount(0);
+  }
   await expect(page.locator('.strength-chips span')).toHaveCount(3);
 
   await expect(page.getByText('停球')).toBeVisible();
