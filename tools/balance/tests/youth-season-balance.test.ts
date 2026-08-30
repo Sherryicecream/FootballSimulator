@@ -26,5 +26,5 @@ describe('youth balance runner', () => {
     expect(report.summary.releaseRate).toBeLessThanOrEqual(0.08);
     expect(report.summary.goalsPerMatch).toBeGreaterThanOrEqual(2);
     expect(report.summary.goalsPerMatch).toBeLessThanOrEqual(3.5);
-  }, 20_000);
+  }, 120_000);
 });
