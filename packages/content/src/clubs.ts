@@ -1,12 +1,49 @@
 import type { ClubProfile } from '@football/contracts';
 
 /**
- * 虚构职业俱乐部内容：层级 1–10（本切面青训出身要约集中在 4–7 档），
+ * 虚构职业俱乐部内容：层级 1–10，每层级 12 家构成同层联赛（双循环 22 轮），
  * 位置需求标注当前阵容缺口，青训周期影响对年轻球员的兴趣。
  */
 export const youthClubs: ClubProfile[] = [
+  // 层级 8（顶级）
   club('shenhai-port', '申海港联', 8, 'shanghai', ['FORWARD', 'WINGER'], 'contending', 90),
   club('qilu-mountain', '泰岳山岳', 8, 'shandong', ['CENTER_BACK', 'MIDFIELDER'], 'contending', 88),
+  club('nanhu-crown', '南湖皇冠', 8, 'hubei-hunan', ['MIDFIELDER', 'FORWARD'], 'contending', 86),
+  club(
+    'yanhe-dynasty',
+    '沿河王朝',
+    8,
+    'beijing-tianjin',
+    ['FULL_BACK', 'CENTER_BACK'],
+    'stable',
+    84,
+  ),
+  club('linhai-gale', '临海疾风', 8, 'fujian', ['WINGER', 'FULL_BACK'], 'rebuilding', 80),
+  club('zhongzhou-lion', '中州雄狮', 8, 'henan', ['MIDFIELDER', 'CENTER_BACK'], 'stable', 79),
+  club('xijin-navy', '西津水师', 8, 'shaanxi-gansu', ['FORWARD', 'MIDFIELDER'], 'rebuilding', 76),
+  club('tianchi-snow', '天池雪鸮', 8, 'xinjiang', ['FULL_BACK', 'WINGER'], 'stable', 74),
+  club(
+    'hanjiang-tide',
+    '汉江潮声',
+    8,
+    'jiangsu-zhejiang',
+    ['CENTER_BACK', 'FORWARD'],
+    'contending',
+    73,
+  ),
+  club('basalt-wall', '玄武石壁', 8, 'dongbei', ['MIDFIELDER', 'FULL_BACK'], 'stable', 71),
+  club(
+    'lingque-tower',
+    '灵雀高台',
+    8,
+    'sichuan-chongqing',
+    ['WINGER', 'MIDFIELDER'],
+    'rebuilding',
+    70,
+  ),
+  club('hechuan-fire', '合川薪火', 8, 'guangdong', ['FORWARD', 'CENTER_BACK'], 'rebuilding', 69),
+
+  // 层级 7
   club(
     'jingyan-united',
     '京燕联合',
@@ -17,6 +54,26 @@ export const youthClubs: ClubProfile[] = [
     74,
   ),
   club('lingnan-city', '岭南城都', 7, 'guangdong', ['WINGER', 'FORWARD'], 'rebuilding', 70),
+  club('pujiang-steam', '浦江汽笛', 7, 'shanghai', ['MIDFIELDER', 'CENTER_BACK'], 'stable', 68),
+  club('daishan-rock', '岱山磐石', 7, 'shandong', ['CENTER_BACK', 'WINGER'], 'contending', 67),
+  club('yunling-crane', '云岭白鹤', 7, 'hubei-hunan', ['FORWARD', 'FULL_BACK'], 'rebuilding', 64),
+  club('yanzhou-iron', '兖州铁匠', 7, 'henan', ['MIDFIELDER', 'FORWARD'], 'stable', 63),
+  club('meilin-rain', '梅林细雨', 7, 'fujian', ['FULL_BACK', 'MIDFIELDER'], 'rebuilding', 61),
+  club('guanshan-hawk', '关山鹰隼', 7, 'shaanxi-gansu', ['WINGER', 'CENTER_BACK'], 'stable', 60),
+  club('tarin-horse', '塔里木马队', 7, 'xinjiang', ['FORWARD', 'MIDFIELDER'], 'rebuilding', 58),
+  club('songhua-mill', '松花磨坊', 7, 'dongbei', ['CENTER_BACK', 'FULL_BACK'], 'stable', 57),
+  club('emei-cloud', '峨眉云阶', 7, 'sichuan-chongqing', ['WINGER', 'FORWARD'], 'rebuilding', 56),
+  club(
+    'zhujian-craft',
+    '筑匠工坊',
+    7,
+    'jiangsu-zhejiang',
+    ['MIDFIELDER', 'FULL_BACK'],
+    'stable',
+    55,
+  ),
+
+  // 层级 6
   club(
     'jiangnan-boats',
     '江南舟竞',
@@ -35,10 +92,70 @@ export const youthClubs: ClubProfile[] = [
     'rebuilding',
     55,
   ),
+  club('haibin-anchor', '海滨铁锚', 6, 'shanghai', ['FORWARD', 'WINGER'], 'rebuilding', 54),
+  club('mengshan-bamboo', '蒙山翠竹', 6, 'shandong', ['MIDFIELDER', 'CENTER_BACK'], 'stable', 52),
+  club('xiangyuan-boat', '湘源乌篷', 6, 'hubei-hunan', ['FULL_BACK', 'WINGER'], 'rebuilding', 50),
+  club('guyuan-beacon', '固原烽台', 6, 'shaanxi-gansu', ['CENTER_BACK', 'FORWARD'], 'stable', 49),
+  club('wuyi-pine', '武夷松涛', 6, 'fujian', ['MIDFIELDER', 'FORWARD'], 'rebuilding', 48),
+  club('luanhe-wave', '滦河浪涌', 6, 'beijing-tianjin', ['WINGER', 'FULL_BACK'], 'stable', 47),
+  club('luoxi-ferry', '洛溪渡口', 6, 'henan', ['FORWARD', 'CENTER_BACK'], 'rebuilding', 46),
+  club('banan-orange', '巴南橙园', 6, 'sichuan-chongqing', ['MIDFIELDER', 'WINGER'], 'stable', 45),
+  club('heihe-frost', '黑河霜原', 6, 'dongbei', ['FULL_BACK', 'MIDFIELDER'], 'rebuilding', 44),
+  club('xiwan-sail', '西湾帆影', 6, 'guangdong', ['CENTER_BACK', 'WINGER'], 'stable', 43),
+
+  // 层级 5
   club('xuefeng-north', '雪峰北境', 5, 'dongbei', ['FORWARD', 'CENTER_BACK'], 'rebuilding', 46),
   club('minjiang-fisher', '闽江渔火', 5, 'fujian', ['WINGER', 'MIDFIELDER'], 'stable', 44),
+  club('sheshan-pine', '佘山松岭', 5, 'shanghai', ['MIDFIELDER', 'CENTER_BACK'], 'rebuilding', 42),
+  club('lanxi-stone', '澜溪叠石', 5, 'jiangsu-zhejiang', ['FORWARD', 'FULL_BACK'], 'stable', 41),
+  club('yanzi-valley', '雁子谷仓', 5, 'henan', ['CENTER_BACK', 'WINGER'], 'rebuilding', 40),
+  club('qingzhao-pond', '青沼池塘', 5, 'hubei-hunan', ['WINGER', 'MIDFIELDER'], 'stable', 39),
+  club('kunlun-gem', '昆仑玉矿', 5, 'xinjiang', ['FULL_BACK', 'FORWARD'], 'rebuilding', 38),
+  club(
+    'yanshan-forge',
+    '燕山炉匠',
+    5,
+    'beijing-tianjin',
+    ['MIDFIELDER', 'CENTER_BACK'],
+    'stable',
+    37,
+  ),
+  club('nanxi-reef', '南溪礁石', 5, 'guangdong', ['FORWARD', 'MIDFIELDER'], 'rebuilding', 36),
+  club('linzhou-cedar', '麟州雪杉', 5, 'shaanxi-gansu', ['WINGER', 'FULL_BACK'], 'stable', 35),
+  club('changbai-hunter', '长白猎户', 5, 'dongbei', ['CENTER_BACK', 'FORWARD'], 'rebuilding', 34),
+  club('tianfu-mist', '天府雾隐', 5, 'sichuan-chongqing', ['MIDFIELDER', 'WINGER'], 'stable', 33),
+
+  // 层级 4
   club('yunmeng-lake', '云梦泽畔', 4, 'hubei-hunan', ['MIDFIELDER', 'FULL_BACK'], 'rebuilding', 36),
   club('zhongyuan-plains', '中原牧野', 4, 'henan', ['CENTER_BACK', 'WINGER'], 'stable', 34),
+  club('huxi-reed', '浒西芦荡', 4, 'jiangsu-zhejiang', ['FORWARD', 'MIDFIELDER'], 'rebuilding', 32),
+  club('shibei-lantern', '石壁灯笼', 4, 'shandong', ['WINGER', 'CENTER_BACK'], 'stable', 31),
+  club('yangzijian-fog', '扬子江雾', 4, 'shanghai', ['FULL_BACK', 'FORWARD'], 'rebuilding', 30),
+  club('qinghai-gull', '青海鸥鸟', 4, 'shaanxi-gansu', ['MIDFIELDER', 'WINGER'], 'stable', 29),
+  club(
+    'lingchuan-bamboo',
+    '灵川竹筏',
+    4,
+    'guangdong',
+    ['CENTER_BACK', 'MIDFIELDER'],
+    'rebuilding',
+    28,
+  ),
+  club('hongshan-cave', '红山洞穴', 4, 'dongbei', ['FORWARD', 'FULL_BACK'], 'stable', 27),
+  club(
+    'wenchuan-bridge',
+    '汶川廊桥',
+    4,
+    'sichuan-chongqing',
+    ['WINGER', 'MIDFIELDER'],
+    'rebuilding',
+    26,
+  ),
+  club('tongshan-mine', '铜山矿灯', 4, 'henan', ['FULL_BACK', 'CENTER_BACK'], 'stable', 25),
+  club('nanhu-island', '南湖小岛', 4, 'fujian', ['FORWARD', 'WINGER'], 'rebuilding', 24),
+  club('yulong-snowfield', '玉龙雪原', 4, 'xinjiang', ['MIDFIELDER', 'FORWARD'], 'stable', 23),
+
+  // 层级 3
   club(
     'qinchuan-riders',
     '秦川铁骑',
@@ -57,6 +174,24 @@ export const youthClubs: ClubProfile[] = [
     'rebuilding',
     22,
   ),
+  club('haowan-tide', '浩湾潮汐', 3, 'guangdong', ['MIDFIELDER', 'WINGER'], 'rebuilding', 21),
+  club('jiangbei-oar', '江北木桨', 3, 'jiangsu-zhejiang', ['CENTER_BACK', 'FORWARD'], 'stable', 20),
+  club('lulin-wolf', '绿林狼堡', 3, 'hubei-hunan', ['WINGER', 'FULL_BACK'], 'rebuilding', 19),
+  club('shuangyashu-farm', '双杈树农场', 3, 'dongbei', ['FORWARD', 'MIDFIELDER'], 'stable', 18),
+  club(
+    'shimen-gorge',
+    '石门峡谷',
+    3,
+    'sichuan-chongqing',
+    ['MIDFIELDER', 'CENTER_BACK'],
+    'rebuilding',
+    17,
+  ),
+  club('yanzhuang-pottery', '闫庄陶窑', 3, 'henan', ['FULL_BACK', 'WINGER'], 'stable', 16),
+  club('pingsha-shell', '平沙贝壳', 3, 'fujian', ['CENTER_BACK', 'FORWARD'], 'rebuilding', 15),
+  club('luotuo-bell', '骆驼铃铛', 3, 'shaanxi-gansu', ['FORWARD', 'FULL_BACK'], 'stable', 14),
+  club('grassland-deer', '草原鹿群', 3, 'xinjiang', ['WINGER', 'MIDFIELDER'], 'rebuilding', 13),
+  club('laohutan-pier', '老虎滩码头', 3, 'dongbei', ['MIDFIELDER', 'FORWARD'], 'stable', 12),
 ];
 
 function club(

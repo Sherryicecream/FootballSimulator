@@ -11,6 +11,9 @@ export const CareerPhaseSchema = z.enum([
   'agent-preferences',
   'offer-review',
   'professional-contract',
+  'pro-season',
+  'pro-offseason',
+  'free-agent',
 ]);
 export type CareerPhase = z.infer<typeof CareerPhaseSchema>;
 

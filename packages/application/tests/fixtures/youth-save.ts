@@ -42,6 +42,10 @@ export const content: YouthContentBundle = {
       55,
     ),
     club('top-club', '申海港联', 8, 'shanghai', ['FORWARD', 'WINGER'], 'contending', 90),
+    club('tier5-a', '澜溪叠石', 5, 'jiangsu-zhejiang', ['WINGER', 'MIDFIELDER'], 'stable', 41),
+    club('tier5-b', '青沼池塘', 5, 'hubei-hunan', ['CENTER_BACK', 'WINGER'], 'rebuilding', 39),
+    club('tier5-c', '燕山炉匠', 5, 'beijing-tianjin', ['MIDFIELDER', 'FORWARD'], 'stable', 37),
+    club('tier5-d', '南溪礁石', 5, 'guangdong', ['FULL_BACK', 'FORWARD'], 'rebuilding', 36),
   ],
   agents: [
     agent('agent-shen', '沈志远', '务实稳健', 3, 6),

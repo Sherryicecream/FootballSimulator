@@ -185,13 +185,22 @@ describe('俱乐部与经纪人内容', () => {
     const content = getYouthContent();
     const validated = validateYouthContent(content);
 
-    expect(validated.clubs.length).toBeGreaterThanOrEqual(12);
+    expect(validated.clubs.length).toBeGreaterThanOrEqual(60);
     expect(validated.clubs.every(({ tier }) => tier >= 3 && tier <= 8)).toBe(true);
     expect(validated.clubs.every(({ name }) => name.length > 0)).toBe(true);
     expect(validated.agents.length).toBeGreaterThanOrEqual(2);
     expect(
       validated.agents.every(({ focusTierMin, focusTierMax }) => focusTierMin <= focusTierMax),
     ).toBe(true);
+  });
+
+  it('每个层级 3-8 拥有至少 8 家俱乐部', () => {
+    const content = getYouthContent();
+    for (let tier = 3; tier <= 8; tier += 1) {
+      expect(
+        content.clubs.filter(({ tier: clubTierValue }) => clubTierValue === tier).length,
+      ).toBeGreaterThanOrEqual(8);
+    }
   });
 
   it('拒绝重复俱乐部 ID、未知地区与真实品牌词', () => {

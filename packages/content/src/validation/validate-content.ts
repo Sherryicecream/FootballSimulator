@@ -126,6 +126,15 @@ export const validateYouthContent = (raw: YouthContentBundle): YouthContentBundl
       throw new Error(`俱乐部位置需求重复：${club.id}`);
     }
   }
+
+  // 每个层级 ≥8 家俱乐部，保证同层联赛规模
+  for (let tier = 3; tier <= 8; tier += 1) {
+    const count = content.clubs.filter(({ tier: clubTierValue }) => clubTierValue === tier).length;
+    if (count < 8) {
+      throw new Error(`层级 ${tier} 的俱乐部不足 8 家：${count}`);
+    }
+  }
+
   for (const agent of content.agents) {
     if (agent.focusTierMin > agent.focusTierMax) {
       throw new Error(`经纪人层级区间无效：${agent.id}`);
