@@ -1,6 +1,6 @@
 import type {
   CareerLedgerEntryV2,
-  CareerSaveV4,
+  CareerSaveV4Like,
   ClubProfile,
   LeagueStanding,
   YouthMatchResultV2,
@@ -17,8 +17,8 @@ import { createSeededRandomSource } from '../randomness';
 import { deriveAge } from './simulate-youth-week';
 import { depthRank } from './pro-squad';
 
-export interface ProWeekTransition {
-  save: CareerSaveV4;
+export interface ProWeekTransition<S = CareerSaveV4Like> {
+  save: S;
   weekKey: string;
   matchResult: YouthMatchResultV2 | null;
   facts: CareerLedgerEntryV2[];
@@ -32,9 +32,9 @@ const addDays = (isoDate: string, days: number): string => {
   return date.toISOString().slice(0, 10);
 };
 
-const trainingLoad = (intensity: CareerSaveV4['trainingPlan']['intensity']) =>
+const trainingLoad = (intensity: CareerSaveV4Like['trainingPlan']['intensity']) =>
   ({ light: 20, normal: 36, intense: 54 })[intensity];
-const recoveryBonus = (focus: CareerSaveV4['trainingPlan']['focus']) =>
+const recoveryBonus = (focus: CareerSaveV4Like['trainingPlan']['focus']) =>
   focus === 'recovery' ? 8 : 3;
 
 const clubStrength = (club: ClubProfile): TeamStrength => {
@@ -51,10 +51,10 @@ const clubStrength = (club: ClubProfile): TeamStrength => {
  * 职业周转移：负荷 → 登场决策 → 比赛（本队 + 同轮其他场次并更新积分榜）→ 健康 → 发展积累。
  * 与青训周共享训练、伤病与比赛引擎；同种子同输入结果完全一致。
  */
-export const simulateProfessionalWeek = (
-  save: CareerSaveV4,
+export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
+  save: S,
   clubs: readonly ClubProfile[],
-): ProWeekTransition => {
+): ProWeekTransition<S> => {
   const pro = save.proSeason;
   if (!pro) throw new Error('尚未开启职业赛季');
   if (pro.completed) throw new Error('职业赛季已经结束');
@@ -166,7 +166,7 @@ export const simulateProfessionalWeek = (
       }
     : save.proSeasonStats;
 
-  const nextSave: CareerSaveV4 = {
+  const nextSave: S = {
     ...save,
     player: {
       ...save.player,
@@ -209,8 +209,8 @@ export interface ProAppearanceDecision {
 
 /** 登场决策（设计 §5.3）：承诺修正、竞争压制、伤病疲劳硬门槛。 */
 export const decideAppearance = (
-  save: CareerSaveV4,
-  health: CareerSaveV4['health'],
+  save: CareerSaveV4Like,
+  health: CareerSaveV4Like['health'],
   rng: ReturnType<typeof createSeededRandomSource>,
   hasFixture: boolean,
 ): ProAppearanceDecision => {
@@ -275,9 +275,9 @@ export const decideAppearance = (
   };
 };
 
-const weightedPlayerAbility = (save: CareerSaveV4): number => {
+const weightedPlayerAbility = (save: CareerSaveV4Like): number => {
   const { technical, physical, mental } = save.player.attributes;
-  const values = [
+  const values: number[] = [
     ...Object.values(technical),
     ...Object.values(physical),
     ...Object.values(mental),
@@ -332,12 +332,12 @@ const confidenceDelta = (match: YouthMatchResultV2 | null) =>
   match?.played ? (match.goals + match.assists > 0 ? 2 : 0) : -1;
 
 const createProFacts = (
-  save: CareerSaveV4,
+  save: CareerSaveV4Like,
   weekKey: string,
   load: number,
   match: YouthMatchResultV2 | null,
   selection: ProAppearanceDecision,
-  injury: CareerSaveV4['health']['activeInjury'],
+  injury: CareerSaveV4Like['health']['activeInjury'],
 ): CareerLedgerEntryV2[] => {
   const facts: CareerLedgerEntryV2[] = [
     {
@@ -375,7 +375,7 @@ const createProFacts = (
   return facts;
 };
 
-const advanceInjury = (injury: CareerSaveV4['health']['activeInjury']) => {
+const advanceInjury = (injury: CareerSaveV4Like['health']['activeInjury']) => {
   if (!injury) return { active: null, recovered: null };
   const advanced = { ...injury, recoveredWeeks: injury.recoveredWeeks + 1 };
   return advanced.recoveredWeeks >= advanced.expectedRecoveryWeeks

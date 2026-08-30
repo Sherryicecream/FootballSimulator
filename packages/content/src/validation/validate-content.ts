@@ -135,6 +135,19 @@ export const validateYouthContent = (raw: YouthContentBundle): YouthContentBundl
     }
   }
 
+  assertUniqueIds(
+    '海外俱乐部',
+    content.overseasClubs.map(({ id }) => id),
+  );
+  for (const club of content.overseasClubs) {
+    if (!club.overseas) {
+      throw new Error(`海外俱乐部缺少标记：${club.id}`);
+    }
+    if (club.tier < 4 || club.tier > 8) {
+      throw new Error(`海外俱乐部层级无效：${club.id}`);
+    }
+    assertNoRealClubBrand(club.name);
+  }
   for (const agent of content.agents) {
     if (agent.focusTierMin > agent.focusTierMax) {
       throw new Error(`经纪人层级区间无效：${agent.id}`);

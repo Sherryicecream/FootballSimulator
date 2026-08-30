@@ -1,8 +1,8 @@
-import type { CareerSaveV4, YouthAcademyProfile } from '@football/contracts';
+import type { CareerSaveV4Like, YouthAcademyProfile } from '@football/contracts';
 import type { YouthSeasonOutcome } from '@football/application';
 
 interface OffseasonBriefingProps {
-  save: CareerSaveV4;
+  save: CareerSaveV4Like;
   outcome: YouthSeasonOutcome | null;
   academies: readonly YouthAcademyProfile[];
   onStartNextSeason: (academyId?: string) => void;

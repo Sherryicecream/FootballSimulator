@@ -15,3 +15,4 @@ export * from './save-migration';
 export * from './graduation';
 export * from './clubs';
 export * from './professional';
+export * from './career-expansion';

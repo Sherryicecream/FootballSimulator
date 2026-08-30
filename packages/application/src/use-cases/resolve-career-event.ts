@@ -1,6 +1,6 @@
 import {
   CareerSaveV3Schema,
-  CareerSaveV4Schema,
+  CareerSaveV5Schema,
   type CareerLedgerEntryV2,
   type CareerSaveV2Like,
 } from '@football/contracts';
@@ -57,10 +57,11 @@ export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId
   const activeStorylines = save.story.activeStorylines.filter((id) => id !== event.eventId);
 
   // 按输入版本选择校验 Schema：v4 存档保留 v4 字段，v2/v3 走原路径
-  const isV4 = (save as { schemaVersion?: number }).schemaVersion === 4;
-  return (isV4 ? CareerSaveV4Schema : CareerSaveV3Schema).parse({
+  // v3 走原 Schema；v4/v5 归一化为 v5（补默认字段且保留新字段）
+  const isV3 = (save as { schemaVersion?: number }).schemaVersion === 3;
+  return (isV3 ? CareerSaveV3Schema : CareerSaveV5Schema).parse({
     ...save,
-    schemaVersion: isV4 ? 4 : 3,
+    schemaVersion: isV3 ? 3 : 5,
     currentState,
     health,
     clubContext,

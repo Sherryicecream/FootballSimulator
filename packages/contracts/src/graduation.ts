@@ -14,6 +14,7 @@ export const CareerPhaseSchema = z.enum([
   'pro-season',
   'pro-offseason',
   'free-agent',
+  'retired',
 ]);
 export type CareerPhase = z.infer<typeof CareerPhaseSchema>;
 
@@ -32,6 +33,7 @@ export const ContractOfferV3Schema = z.strictObject({
   salaryPerYear: z.number().int().min(0),
   contractYears: z.number().int().min(1).max(3),
   squadRole: z.enum(['youth-team', 'rotation', 'first-team-rotation', 'highlighted-prospect']),
+  overseas: z.boolean().default(false),
   promise: ContractPromiseSchema,
   releaseClauseNote: z.string().max(200),
 });

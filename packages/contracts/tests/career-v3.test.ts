@@ -62,7 +62,7 @@ describe('CareerSaveV3 边界', () => {
   });
 
   it('拒绝非法阶段值', () => {
-    const raw = { ...buildYouthSaveV2Fixture(), schemaVersion: 3, careerPhase: 'retired' };
+    const raw = { ...buildYouthSaveV2Fixture(), schemaVersion: 3, careerPhase: 'unknown-phase' };
     expect(CareerSaveV3Schema.safeParse(raw).success).toBe(false);
   });
 

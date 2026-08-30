@@ -175,6 +175,9 @@ export const CareerLedgerEntryV2Schema = z.strictObject({
     'pro-match',
     'renewal-offer',
     'renewal-signed',
+    'transfer-signed',
+    'national-debut',
+    'retirement',
   ]),
   summary: z.string().min(1).max(500),
   participantIds: z.array(IdSchema),
@@ -221,6 +224,7 @@ export const YouthContentBundleSchema = z.strictObject({
   people: z.array(PersonArchetypeSchema),
   events: z.array(EventDefinitionSchema),
   clubs: z.array(ClubProfileSchema).default([]),
+  overseasClubs: z.array(ClubProfileSchema).default([]),
   agents: z.array(AgentArchetypeSchema).default([]),
 });
 export type YouthContentBundle = z.infer<typeof YouthContentBundleSchema>;

@@ -21,7 +21,11 @@ import {
   completeProfessionalSeason,
   startProfessionalSeason,
 } from '@football/application';
-import type { CareerSaveV4, PlayerAttributes } from '@football/contracts';
+import {
+  migrateCareerSaveV5,
+  type CareerSaveV5Like,
+  type PlayerAttributes,
+} from '@football/contracts';
 import { weightedAbility } from '@football/simulation';
 import {
   correlation,
@@ -60,16 +64,18 @@ export const runYouthSeasons = (runs: number, seedStart = 1): YouthBalanceReport
   const knownThemeCount = new Set(eventThemeById.values()).size;
 
   for (let seed = seedStart; seed < seedStart + runs; seed += 1) {
-    let save = createYouthCareerV2(
-      createCareerSave({
-        playerName: `球员${seed}`,
-        hometown: '上海',
-        primaryPosition: 'FORWARD',
-        preferredFoot: 'RIGHT',
-        regionId: 'shanghai',
-        seed,
-      }),
-      content,
+    let save = migrateCareerSaveV5(
+      createYouthCareerV2(
+        createCareerSave({
+          playerName: `球员${seed}`,
+          hometown: '上海',
+          primaryPosition: 'FORWARD',
+          preferredFoot: 'RIGHT',
+          regionId: 'shanghai',
+          seed,
+        }),
+        content,
+      ),
     );
     const initialAttributes = flatten(save.player.attributes);
     let guard = 0;
@@ -270,10 +276,10 @@ export const runYouthSeasons = (runs: number, seedStart = 1): YouthBalanceReport
  * 否则签层级 ≤5 的最高薪要约；两者皆无则拒绝全部要约并继续青训。
  */
 const playLifecycle = (
-  completed: CareerSaveV4,
+  completed: CareerSaveV5Like,
   content: ReturnType<typeof getYouthContent>,
 ): LifecycleOutcome => {
-  let save: CareerSaveV4 = completed;
+  let save: CareerSaveV5Like = completed;
   let seasonsPlayed = 1;
   let rejectedOfferSeasons = 0;
   const outcome: LifecycleOutcome = {
@@ -375,9 +381,9 @@ const playLifecycle = (
 
 /** 开启并完整模拟下个赛季，返回结算后的存档。 */
 const completeNextSeason = (
-  offseasonSave: CareerSaveV4,
+  offseasonSave: CareerSaveV5Like,
   content: ReturnType<typeof getYouthContent>,
-): CareerSaveV4 => {
+): CareerSaveV5Like => {
   let save = advanceToNextSeason(offseasonSave, content);
   let guard = 0;
   while (!save.season.completed && guard < 100) {
@@ -393,9 +399,9 @@ const completeNextSeason = (
 };
 
 const advanceToNextSeason = (
-  save: CareerSaveV4,
+  save: CareerSaveV5Like,
   content: ReturnType<typeof getYouthContent>,
-): CareerSaveV4 => {
+): CareerSaveV5Like => {
   const lastStatus = save.seasonHistory.at(-1)?.status;
   const pathwayByNextPath: Record<string, string> = {
     'school-football': 'school-elite',
@@ -434,7 +440,7 @@ const weekKeyToMonth = (startDate: string, weekKey: string): string => {
  * 持续接受续约、推进赛季并记录承诺兑现与出场数据，最多 proSeasons 季。
  */
 const playProfessionalLife = (
-  signed: CareerSaveV4,
+  signed: CareerSaveV5Like,
   content: ReturnType<typeof getYouthContent>,
   proSeasons: number,
 ): {

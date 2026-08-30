@@ -1,10 +1,10 @@
-import type { CareerSaveV4 } from '@football/contracts';
+import type { CareerSaveV4Like } from '@football/contracts';
 import { labelAttribute } from './career-presentation';
 import { ContractCard } from './ContractCard';
 import type { MonthlyReport } from '@football/contracts';
 
 interface ProDashboardProps {
-  save: CareerSaveV4;
+  save: CareerSaveV4Like;
   report: MonthlyReport | null;
   advancing: boolean;
   onAdvance: () => void;
@@ -180,10 +180,10 @@ export function ProDashboard({
   );
 }
 
-const memberName = (pro: NonNullable<CareerSaveV4['proSeason']>, personId: string): string =>
+const memberName = (pro: NonNullable<CareerSaveV4Like['proSeason']>, personId: string): string =>
   pro.squad.find(({ personId: id }) => id === personId)?.name ?? personId;
 
-const clubName = (save: CareerSaveV4, clubId: string): string => {
+const clubName = (save: CareerSaveV4Like, clubId: string): string => {
   if (clubId === save.proSeason?.clubId) return save.contract?.clubName ?? clubId;
   // 其他俱乐部名称从内容包渲染由调用方保证；此处退化为 ID
   return clubDisplayName(clubId);

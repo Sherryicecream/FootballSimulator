@@ -63,3 +63,5 @@ export { createLeagueFixtures } from './career/league-fixtures';
 export { generateProSquad, buildDepthChart, depthRank } from './career/pro-squad';
 export { simulateProfessionalWeek, decideAppearance } from './career/professional-week';
 export { reviewPromise, evaluateProRole, buildRenewalOffer } from './career/promise-review';
+export { growthAgeFactor, applyAgeDecline } from './career/age-curve';
+export { generateTransferOffers } from './career/transfer-offers';

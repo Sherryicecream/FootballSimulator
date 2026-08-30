@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import type {
-  AgentPreferences,
-  CareerSave,
-  CareerSaveV4,
-  MonthlyReport,
-  TrainingPlan,
+import {
+  migrateCareerSaveV5,
+  type AgentPreferences,
+  type CareerSave,
+  type CareerSaveV4Like,
+  type CareerSaveV5,
+  type MonthlyReport,
+  type TrainingPlan,
 } from '@football/contracts';
 import { getYouthContent } from '@football/content';
 import {
@@ -62,7 +64,7 @@ const savePort = createLocalStorageCareerV4Port();
 export function App() {
   const [step, setStep] = useState<Step>('creation');
   const [bootstrapSave, setBootstrapSave] = useState<CareerSave | null>(null);
-  const [save, setSave] = useState<CareerSaveV4 | null>(null);
+  const [save, setSave] = useState<CareerSaveV5 | null>(null);
   const [report, setReport] = useState<MonthlyReport | null>(null);
   const [outcome, setOutcome] = useState<YouthSeasonOutcome | null>(null);
   const [advancing, setAdvancing] = useState(false);
@@ -113,9 +115,11 @@ export function App() {
     })();
   }, []);
 
-  const persist = (next: CareerSaveV4) => {
-    setSave(next);
-    void savePort.save(next.careerId, next);
+  // 任意版本存档统一归一化为 v5 后持久化
+  const persist = (next: CareerSaveV4Like) => {
+    const normalized = migrateCareerSaveV5(next);
+    setSave(normalized);
+    void savePort.save(normalized.careerId, normalized);
   };
   const start = (created: CareerSave) => {
     try {
@@ -138,7 +142,7 @@ export function App() {
       setError(message(caught));
     }
   };
-  const progress = (current: CareerSaveV4) => {
+  const progress = (current: CareerSaveV5) => {
     const result = advanceCareerMonth(current, youthContent.academies, youthContent.events);
     persist(result.save);
     if (result.status === 'awaiting-decision') {
@@ -169,7 +173,7 @@ export function App() {
       setAdvancing(false);
     }
   };
-  const advancePro = (current: CareerSaveV4) => {
+  const advancePro = (current: CareerSaveV5) => {
     const result = advanceProMonth(current, youthContent.clubs, youthContent.events);
     persist(result.save);
     if (result.status === 'awaiting-decision') {

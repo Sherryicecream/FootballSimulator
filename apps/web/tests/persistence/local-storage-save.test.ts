@@ -3,7 +3,7 @@ import {
   createLocalStorageCareerV4Port,
   createLocalStorageSavePort,
 } from '../../src/persistence/local-storage-save';
-import { migrateCareerSaveV4, type CareerSave } from '@football/contracts';
+import { migrateCareerSaveV5, type CareerSave } from '@football/contracts';
 
 const mockSave: CareerSave = {
   schemaVersion: 1,
@@ -126,14 +126,14 @@ describe('createLocalStorageSavePort', () => {
 
   it('validates v2 saves before writing and loads them with a typed result', async () => {
     const port = createLocalStorageCareerV4Port();
-    const v4 = migrateCareerSaveV4(mockSave);
+    const v5 = migrateCareerSaveV5(mockSave);
 
-    await port.save(v4.careerId, v4);
-    const loaded = await port.load(v4.careerId);
+    await port.save(v5.careerId, v5);
+    const loaded = await port.load(v5.careerId);
 
     expect(loaded.status).toBe('loaded');
     if (loaded.status === 'loaded') {
-      expect(loaded.save.schemaVersion).toBe(4);
+      expect(loaded.save.schemaVersion).toBe(5);
     }
   });
 

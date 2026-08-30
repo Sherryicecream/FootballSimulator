@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { migrateCareerSaveV4 } from '@football/contracts';
+import { migrateCareerSaveV5 } from '@football/contracts';
 import type { CareerSaveV4 } from '@football/contracts';
 import {
   acceptRenewal,
@@ -51,7 +51,7 @@ function signedProSave(overrides: Partial<CareerSaveV4> = {}): CareerSaveV4 {
   const target =
     save.pendingOffers.find(({ clubId }) => clubId === 'river-club') ?? save.pendingOffers[0]!;
   save = signContract(save, target.id);
-  const v4 = migrateCareerSaveV4({ ...save, contract: { ...save.contract!, contractYears: 1 } });
+  const v4 = migrateCareerSaveV5({ ...save, contract: { ...save.contract!, contractYears: 1 } });
   return { ...v4, ...overrides };
 }
 
@@ -77,7 +77,7 @@ describe('职业赛季流程', () => {
     expect(a).toEqual(b);
     expect(() =>
       startProfessionalSeason(
-        migrateCareerSaveV4({ ...signedProSave(), careerPhase: 'pro-season' }),
+        migrateCareerSaveV5({ ...signedProSave(), careerPhase: 'pro-season' }),
         content.clubs,
       ),
     ).toThrow(/阶段/);

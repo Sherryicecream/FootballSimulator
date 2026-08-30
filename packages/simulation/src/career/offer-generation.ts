@@ -12,11 +12,19 @@ import type { SeededRandomSource } from '../randomness';
  * 按 interest 排序取 2–4 份；不足 2 份时补充低层级保底要约。
  * 全部输入确定性可复现。
  */
+export interface GenerateOffersOptions {
+  /** 自由球员转会无保底要约 */
+  allowFallback?: boolean;
+  /** 市场降温：能力天花板调整（负值） */
+  ceilingAdjustment?: number;
+}
+
 export const generateOffers = (
   save: CareerSaveV3Like,
   clubs: readonly ClubProfile[],
   agentPreferences: AgentPreferences,
   rng: SeededRandomSource,
+  options: GenerateOffersOptions = {},
 ): ContractOfferV3[] => {
   const position = save.player.identity.primaryPosition;
   const ability = weightedAbility(position, save.player.attributes);
@@ -42,7 +50,10 @@ export const generateOffers = (
       noise;
     // 能力 → 可签层级天花板：每 10 点能力 +1 档（能力 63 → 5 档）；
     // 位置高度契合时俱乐部愿意冒险上调一档。
-    const ceiling = Math.floor((ability - 10) / 10) + (fit >= 0.8 && rng.next() < 0.5 ? 1 : 0);
+    const ceiling =
+      Math.floor((ability - 10) / 10) +
+      (options.ceilingAdjustment ?? 0) +
+      (fit >= 0.8 && rng.next() < 0.5 ? 1 : 0);
     return { club, interest, ability, ceiling };
   });
 
@@ -53,7 +64,7 @@ export const generateOffers = (
 
   const targetCount = 2 + Math.floor(rng.next() * 3);
   let pool = ranked.slice(0, Math.min(targetCount, ranked.length));
-  if (pool.length < 2) {
+  if (pool.length < 2 && options.allowFallback !== false) {
     // 保底要约优先取层级 ≤4 的俱乐部（低层级保底）；内容包没有低层级俱乐部时取层级最低者。
     const remaining = [...clubs]
       .filter((club) => !pool.some(({ club: picked }) => picked.id === club.id))
@@ -88,8 +99,9 @@ const buildOffer = (
   const contractYears = interest >= 0.75 ? 3 : interest >= 0.6 ? 2 : 1;
   // 小幅表现浮动（±2%），不会翻转相邻层级之间的薪资单调性。
   const performanceCoefficient = 0.98 + rng.next() * 0.04;
+  const overseasBoost = club.overseas ? 1.4 : 1;
   const salaryPerYear = Math.round(
-    club.tier * club.tier * 40 + ability * 120 * performanceCoefficient,
+    (club.tier * club.tier * 40 + ability * 120 * performanceCoefficient) * overseasBoost,
   );
   const squadRole = pickSquadRole(interest, age, club);
   const promise = pickPromise(club, preferences, rng);
@@ -101,6 +113,7 @@ const buildOffer = (
     salaryPerYear,
     contractYears,
     squadRole,
+    overseas: club.overseas,
     promise,
     releaseClauseNote: club.tier >= 6 ? '附带降级解约条款：球队降级时可按约定条件解约' : '',
   };

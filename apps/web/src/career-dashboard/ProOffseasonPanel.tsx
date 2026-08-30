@@ -1,8 +1,8 @@
-import type { CareerSaveV4 } from '@football/contracts';
+import type { CareerSaveV4Like } from '@football/contracts';
 import type { PromiseReview } from '@football/contracts';
 
 interface ProOffseasonPanelProps {
-  save: CareerSaveV4;
+  save: CareerSaveV4Like;
   onStartNextSeason: () => void;
   onAcceptRenewal: () => void;
   onDeclineRenewal: () => void;

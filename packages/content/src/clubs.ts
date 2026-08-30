@@ -203,5 +203,77 @@ function club(
   youthCycle: ClubProfile['youthCycle'],
   wageBudget: number,
 ): ClubProfile {
-  return { id, name, tier, regionId, positionalNeeds, youthCycle, wageBudget };
+  return { id, name, tier, regionId, positionalNeeds, youthCycle, overseas: false, wageBudget };
 }
+
+/** 海外虚构俱乐部（欧陆次级集团，层级 4–8）：留洋目标，不参与国内同层联赛。 */
+export const overseasClubs: ClubProfile[] = [
+  club(
+    'ov-albion-rovers',
+    '阿尔比恩流浪者',
+    8,
+    'shanghai',
+    ['FORWARD', 'WINGER'],
+    'contending',
+    92,
+  ),
+  club(
+    'ov-borussia-nord',
+    '北境硼业',
+    8,
+    'dongbei',
+    ['CENTER_BACK', 'MIDFIELDER'],
+    'contending',
+    89,
+  ),
+  club('ov-valley-united', '山谷联', 7, 'henan', ['FULL_BACK', 'MIDFIELDER'], 'stable', 72),
+  club('ov-athletic-costa', '海岸竞技', 7, 'guangdong', ['WINGER', 'FORWARD'], 'rebuilding', 68),
+  club(
+    'ov-fortuna-rhein',
+    '莱茵幸福',
+    6,
+    'jiangsu-zhejiang',
+    ['MIDFIELDER', 'FULL_BACK'],
+    'stable',
+    60,
+  ),
+  club(
+    'ov-dynamo-vostok',
+    '东方迪纳摩',
+    6,
+    'xinjiang',
+    ['CENTER_BACK', 'FORWARD'],
+    'rebuilding',
+    54,
+  ),
+  club(
+    'ov-real-solaria',
+    '索拉里亚皇家',
+    5,
+    'beijing-tianjin',
+    ['FORWARD', 'CENTER_BACK'],
+    'rebuilding',
+    47,
+  ),
+  club('ov-citta-laguna', '环礁之城', 5, 'fujian', ['WINGER', 'MIDFIELDER'], 'stable', 45),
+  club(
+    'ov-sc-borderland',
+    '边境足球会',
+    4,
+    'shaanxi-gansu',
+    ['MIDFIELDER', 'FULL_BACK'],
+    'rebuilding',
+    37,
+  ),
+  club('ov-union-lakeside', '湖畔联', 4, 'hubei-hunan', ['CENTER_BACK', 'WINGER'], 'stable', 35),
+  club(
+    'ov-sporting-alvor',
+    '阿尔沃尔体育',
+    4,
+    'guangdong',
+    ['FORWARD', 'MIDFIELDER'],
+    'rebuilding',
+    33,
+  ),
+  club('ov-fk-granit', '花岗岩足球会', 4, 'dongbei', ['FULL_BACK', 'CENTER_BACK'], 'stable', 31),
+].map((entry) => ({ ...entry, overseas: true }));

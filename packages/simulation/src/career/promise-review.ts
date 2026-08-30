@@ -1,4 +1,4 @@
-import type { CareerSaveV4, PromiseReview } from '@football/contracts';
+import type { CareerSaveV4Like, PromiseReview } from '@football/contracts';
 
 export interface PromiseReviewOutcome {
   review: PromiseReview;
@@ -13,7 +13,7 @@ export interface PromiseReviewOutcome {
  * 归因：伤病缺席多 → 球员原因；健康且训练尚可但没机会 → 俱乐部原因；
  * 训练不达标 → 球员原因；份额达标 → kept。
  */
-export const reviewPromise = (save: CareerSaveV4): PromiseReviewOutcome | null => {
+export const reviewPromise = (save: CareerSaveV4Like): PromiseReviewOutcome | null => {
   const pro = save.proSeason;
   const contract = save.contract;
   if (!pro || !contract) throw new Error('缺少职业赛季或合同，无法对照承诺');
@@ -87,7 +87,7 @@ export const evaluateProRole = (share: number): 'reserve' | 'bench' | 'rotation'
 
 /** 续约要约：期限 2–3 年，薪资按上季表现与层级重算（±15%），承诺按新角色生成。 */
 export const buildRenewalOffer = (
-  save: CareerSaveV4,
+  save: CareerSaveV4Like,
   rng: () => number,
 ): {
   clubTier: number;

@@ -4,6 +4,7 @@ import type {
   PlayerCareerV2,
   TrainingPlan,
 } from '@football/contracts';
+import { growthAgeFactor } from '../career/age-curve';
 
 export type AttributeKey =
   | keyof PlayerCareerV2['attributes']['technical']
@@ -46,7 +47,14 @@ export const accrueWeeklyDevelopment = (
   const maturation = { early: 1.15, normal: 1, late: 0.88 }[player.development.maturationPace];
   const healthFactor = Math.max(0.2, (health.fitness - health.fatigue * 0.45) / 100);
   const matchFactor = 1 + Math.min(90, playedMinutes) / 600;
-  const base = 0.035 * intensity * professionalism * maturation * healthFactor * matchFactor;
+  const base =
+    0.035 *
+    intensity *
+    professionalism *
+    maturation *
+    growthAgeFactor(player.age) *
+    healthFactor *
+    matchFactor;
   const focusedKeys = keysForPlan(plan);
 
   return Object.fromEntries(

@@ -1,7 +1,8 @@
 import type {
   CareerLedgerEntryV2,
   MonthlyReport,
-  CareerSaveV4,
+  CareerSaveV4Like,
+  CareerSaveV5Like,
   ClubProfile,
   EventDefinition,
   Position,
@@ -23,16 +24,16 @@ import {
 import type { DevelopmentAccrual } from '@football/simulation';
 import { resolveCareerEvent } from './resolve-career-event';
 
-const ensureContract = (save: CareerSaveV4) => {
+const ensureContract = (save: CareerSaveV4Like) => {
   if (!save.contract) throw new Error('没有生效的职业合同');
   return save.contract;
 };
 
 /** 开启职业赛季（设计 §5）：阵容、双循环赛程与积分榜生成后立即固化。 */
-export const startProfessionalSeason = (
-  save: CareerSaveV4,
+export const startProfessionalSeason = <S extends CareerSaveV4Like>(
+  save: S,
   clubs: readonly ClubProfile[],
-): CareerSaveV4 => {
+): S => {
   if (save.careerPhase !== 'professional-contract' && save.careerPhase !== 'pro-offseason') {
     throw new Error(`非法阶段转移：当前阶段 ${save.careerPhase} 不能开启职业赛季`);
   }
@@ -135,21 +136,21 @@ export const startProfessionalSeason = (
   };
 };
 
-export type AdvanceProMonthOutcome =
+export type AdvanceProMonthOutcome<S = CareerSaveV4Like> =
   | {
       status: 'awaiting-decision';
-      save: CareerSaveV4;
-      event: NonNullable<CareerSaveV4['story']['pendingEvent']>;
+      save: S;
+      event: NonNullable<CareerSaveV4Like['story']['pendingEvent']>;
     }
-  | { status: 'month-complete'; save: CareerSaveV4; report: MonthlyReport }
-  | { status: 'season-complete'; save: CareerSaveV4; report: MonthlyReport };
+  | { status: 'month-complete'; save: S; report: MonthlyReport }
+  | { status: 'season-complete'; save: S; report: MonthlyReport };
 
 /** 职业月度推进：与青训月度共享事件系统与月末成长结算，比赛与登场走职业周转移。 */
-export const advanceProMonth = (
-  initialSave: CareerSaveV4,
+export const advanceProMonth = <S extends CareerSaveV4Like>(
+  initialSave: S,
   clubs: readonly ClubProfile[],
   events: readonly EventDefinition[] = [],
-): AdvanceProMonthOutcome => {
+): AdvanceProMonthOutcome<S> => {
   if (initialSave.careerPhase !== 'pro-season') {
     throw new Error(`非法阶段转移：当前阶段 ${initialSave.careerPhase} 不能推进职业月度`);
   }
@@ -168,7 +169,7 @@ export const advanceProMonth = (
   const resuming =
     initialSave.monthlyAdvance.monthKey === monthKey &&
     ['advancing', 'awaiting-decision'].includes(initialSave.monthlyAdvance.status);
-  let save: CareerSaveV4 = {
+  let save: S = {
     ...initialSave,
     monthlyAdvance: {
       ...initialSave.monthlyAdvance,
@@ -208,7 +209,7 @@ export const advanceProMonth = (
       save = resolveCareerEvent(
         save as unknown as never,
         eventPick.event.choices[0]!.id,
-      ) as unknown as CareerSaveV4;
+      ) as unknown as S;
       guard += 1;
       continue;
     }
@@ -271,9 +272,9 @@ export const advanceProMonth = (
 };
 
 /** 职业赛季结算：承诺对照、角色评估、合同年限递减、续约要约。 */
-export const completeProfessionalSeason = (
-  save: CareerSaveV4,
-): { save: CareerSaveV4; review: ReturnType<typeof reviewPromise> } => {
+export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
+  save: S,
+): { save: S; review: ReturnType<typeof reviewPromise> } => {
   if (save.careerPhase !== 'pro-season') {
     throw new Error(`非法阶段转移：当前阶段 ${save.careerPhase} 不能结算职业赛季`);
   }
@@ -300,10 +301,46 @@ export const completeProfessionalSeason = (
     });
   }
 
-  let next: CareerSaveV4 = {
+  const totals = {
+    appearances:
+      save.totals.appearances +
+      save.proSeasonStats.leagueAppearances +
+      save.proSeasonStats.reserveAppearances,
+    goals: save.totals.goals + save.proSeasonStats.goals,
+    assists: save.totals.assists + save.proSeasonStats.assists,
+    minutes: save.totals.minutes + save.proSeasonStats.minutes,
+  };
+  const seasonApps = save.proSeasonStats.leagueAppearances;
+  const seasonGoals = save.proSeasonStats.goals;
+  const existingClubIndex = save.clubHistory.findIndex(
+    ({ clubId, to }) => clubId === contract.clubId && to === null,
+  );
+  const clubHistory = [...save.clubHistory];
+  if (existingClubIndex >= 0) {
+    const entry = clubHistory[existingClubIndex]!;
+    clubHistory[existingClubIndex] = {
+      ...entry,
+      seasons: entry.seasons + 1,
+      appearances: entry.appearances + seasonApps,
+      goals: entry.goals + seasonGoals,
+    };
+  } else {
+    clubHistory.push({
+      clubId: contract.clubId,
+      clubName: contract.clubName,
+      from: contract.signedOn,
+      to: null,
+      seasons: 1,
+      appearances: seasonApps,
+      goals: seasonGoals,
+    });
+  }
+  let next: S = {
     ...save,
     careerPhase: 'pro-offseason',
     proPhase: 'settled',
+    totals,
+    clubHistory,
     contract: contractAfter,
     promiseReviews: outcome ? [...save.promiseReviews, outcome.review] : save.promiseReviews,
     player: {
@@ -356,7 +393,7 @@ export const completeProfessionalSeason = (
 };
 
 /** 接受续约：新合同写入存档。 */
-export const acceptRenewal = (save: CareerSaveV4): CareerSaveV4 => {
+export const acceptRenewal = <S extends CareerSaveV5Like>(save: S): S => {
   if (save.careerPhase !== 'pro-offseason') {
     throw new Error(`非法阶段转移：当前阶段 ${save.careerPhase} 不能接受续约`);
   }
@@ -383,7 +420,7 @@ export const acceptRenewal = (save: CareerSaveV4): CareerSaveV4 => {
 };
 
 /** 拒绝续约：成为自由球员（M7 起点）。 */
-export const declineRenewal = (save: CareerSaveV4): CareerSaveV4 => {
+export const declineRenewal = <S extends CareerSaveV5Like>(save: S): S => {
   if (save.careerPhase !== 'pro-offseason') {
     throw new Error(`非法阶段转移：当前阶段 ${save.careerPhase} 不能拒绝续约`);
   }
