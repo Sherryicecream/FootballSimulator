@@ -26,5 +26,16 @@ describe('youth balance runner', () => {
     expect(report.summary.releaseRate).toBeLessThanOrEqual(0.08);
     expect(report.summary.goalsPerMatch).toBeGreaterThanOrEqual(2);
     expect(report.summary.goalsPerMatch).toBeLessThanOrEqual(3.5);
-  }, 120_000);
+
+    // M5 三连季生命周期校准范围（首轮工程校准）
+    expect(report.summary.graduationRate).toBeGreaterThanOrEqual(0.3);
+    expect(report.summary.graduationRate).toBeLessThanOrEqual(0.6);
+    expect(report.summary.underageGraduationRate).toBeLessThan(0.15);
+    expect(report.summary.contractTierCorrelation).toBeGreaterThan(0.3);
+    expect(report.summary.rejectRate).toBeGreaterThanOrEqual(0.1);
+    expect(report.summary.rejectRate).toBeLessThanOrEqual(0.25);
+    for (const share of Object.values(report.summary.promiseShares)) {
+      expect(share).toBeGreaterThanOrEqual(0.1);
+    }
+  }, 300_000);
 });

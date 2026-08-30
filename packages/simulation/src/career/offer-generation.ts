@@ -31,8 +31,6 @@ export const generateOffers = (
     const fit = fitScore(club, position);
     const ageScore = save.player.age <= 16 ? 0.6 : save.player.age <= 19 ? 0.7 : 0.5;
     const preference = tierPreference(club.tier, agentPreferences.leagueTierBias);
-    // 层级远超当前能力时俱乐部兴趣下降，保证弱球员只会得到低层级要约。
-    const tierGapPenalty = Math.max(0, club.tier * 9 + 18 - ability) * 0.008;
     const noise = (rng.next() - 0.5) * 0.1;
     const interest =
       0.3 * clamp01(ability / 100) +
@@ -41,13 +39,16 @@ export const generateOffers = (
       0.15 * fit +
       0.1 * ageScore +
       0.1 * preference +
-      noise -
-      tierGapPenalty;
-    return { club, interest, ability };
+      noise;
+    // 能力 → 可签层级天花板：每 10 点能力 +1 档（能力 63 → 5 档）；
+    // 位置高度契合时俱乐部愿意冒险上调一档。
+    const ceiling = Math.floor((ability - 10) / 10) + (fit >= 0.8 && rng.next() < 0.5 ? 1 : 0);
+    return { club, interest, ability, ceiling };
   });
 
+  // 入池条件：兴趣达标且俱乐部层级不超过能力天花板，形成能力 → 层级的单调映射。
   const ranked = scored
-    .filter(({ interest }) => interest >= 0.45)
+    .filter(({ club, interest, ceiling }) => interest >= 0.45 && club.tier <= ceiling)
     .sort((a, b) => b.interest - a.interest || a.club.id.localeCompare(b.club.id));
 
   const targetCount = 2 + Math.floor(rng.next() * 3);
@@ -59,7 +60,7 @@ export const generateOffers = (
       .sort((a, b) => a.tier - b.tier);
     const fallback = remaining.find((club) => club.tier <= 4) ?? remaining[0];
     if (fallback) {
-      pool = [...pool, { club: fallback, interest: 0.42, ability }];
+      pool = [...pool, { club: fallback, interest: 0.42, ability, ceiling: 0 }];
     }
     if (pool.length < 2) {
       pool = [

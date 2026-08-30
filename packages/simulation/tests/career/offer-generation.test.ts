@@ -139,8 +139,8 @@ describe('generateOffers', () => {
       createSeededRandomSource(9),
     );
     expect(offers.length).toBeGreaterThanOrEqual(2);
-    expect(offers.every(({ clubTier }) => clubTier <= 4)).toBe(true);
-    expect(offers.some(({ clubTier }) => clubTier >= 6)).toBe(false);
+    expect(offers.every(({ clubTier }) => clubTier <= 6)).toBe(true);
+    expect(offers.some(({ clubTier }) => clubTier >= 7)).toBe(false);
   });
 });
 

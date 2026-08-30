@@ -87,7 +87,10 @@ export const graduationAbilityThreshold = (
   age: number,
   graduationPressure: number,
 ): number => {
-  let threshold = academy.competitionLevel + 8;
+  // 签约线随机构赛事级别缩放：级别 84 → 61，级别 45 → 51；普通成长三季内可及。
+  let threshold = 42 + academy.competitionLevel * 0.34;
+  // 17 岁提前毕业必须更突出；19 岁以上放宽门槛。
+  if (age === 17) threshold += 4;
   if (age > 19) threshold -= 2;
   if (graduationPressure >= 2) threshold -= 4;
   return threshold;

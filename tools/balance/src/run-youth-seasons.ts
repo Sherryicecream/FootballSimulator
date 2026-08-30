@@ -6,15 +6,33 @@ import {
   completeYouthSeason,
   createCareerSave,
   createYouthCareerV2,
+  enterOffseason,
+  generateContractOffers,
+  rejectOffers,
+  signContract,
+  startNextYouthSeason,
+  submitAgentPreferences,
   submitCareerDecision,
 } from '@football/application';
 import { getYouthContent } from '@football/content';
-import type { PlayerAttributes } from '@football/contracts';
+import type { CareerSaveV3, PlayerAttributes } from '@football/contracts';
+import { weightedAbility } from '@football/simulation';
 import {
+  correlation,
   percentile,
   type YouthBalanceReport,
   type YouthSeasonMetrics,
 } from './youth-season-metrics';
+
+/** 生涯终结方式：毕业签约或三季培养期满。 */
+type LifecycleOutcome = {
+  seasonsPlayed: number;
+  graduated: boolean;
+  graduationAge: number | null;
+  contractTier: number | null;
+  contractPromiseKind: string | null;
+  rejectedOfferSeasons: number;
+};
 
 export const runYouthSeasons = (runs: number, seedStart = 1): YouthBalanceReport => {
   const content = getYouthContent();
@@ -79,6 +97,9 @@ export const runYouthSeasons = (runs: number, seedStart = 1): YouthBalanceReport
     }
     const maxDecisionsInMonth = Math.max(0, ...decisionsByMonth.values());
 
+    // 三连季生命周期：休赛期 → 毕业签约（确定性策略）或留队/补救续打
+    const lifecycle = playLifecycle(final.save, content);
+
     metrics.push({
       seed,
       fixtures: final.save.season.fixtures.length,
@@ -102,6 +123,16 @@ export const runYouthSeasons = (runs: number, seedStart = 1): YouthBalanceReport
       form: final.save.currentState.form,
       confidence: final.save.currentState.confidence,
       playerRole: final.save.clubContext.playerRole,
+      seasonsPlayed: lifecycle.seasonsPlayed,
+      graduated: lifecycle.graduated,
+      graduationAge: lifecycle.graduationAge,
+      contractTier: lifecycle.contractTier,
+      contractPromiseKind: lifecycle.contractPromiseKind,
+      rejectedOfferSeasons: lifecycle.rejectedOfferSeasons,
+      weightedAbility: weightedAbility(
+        final.save.player.identity.primaryPosition,
+        final.save.player.attributes,
+      ),
     });
   }
   const watchStages = new Set([
@@ -112,6 +143,15 @@ export const runYouthSeasons = (runs: number, seedStart = 1): YouthBalanceReport
     'starting-appearance',
   ]);
   const appearanceStages = new Set(['substitute-appearance', 'starting-appearance']);
+  const graduatedMetrics = metrics.filter(({ graduated }) => graduated);
+  const promiseKinds = ['playing-time', 'position-guarantee', 'none'];
+  const promiseShares = Object.fromEntries(
+    promiseKinds.map((kind) => [
+      kind,
+      graduatedMetrics.filter(({ contractPromiseKind }) => contractPromiseKind === kind).length /
+        Math.max(1, graduatedMetrics.length),
+    ]),
+  );
   return {
     runs,
     seedStart,
@@ -158,8 +198,161 @@ export const runYouthSeasons = (runs: number, seedStart = 1): YouthBalanceReport
       uniqueEventCombinations: new Set(
         metrics.map(({ decisionEventIds }) => [...new Set(decisionEventIds)].sort().join('|')),
       ).size,
+      graduationRate: graduatedMetrics.length / runs,
+      underageGraduationRate:
+        graduatedMetrics.filter(({ graduationAge }) => graduationAge != null && graduationAge < 18)
+          .length / runs,
+      contractTierCorrelation: correlation(
+        graduatedMetrics.map(({ weightedAbility, contractTier }) => [
+          weightedAbility,
+          contractTier ?? 0,
+        ]),
+      ),
+      rejectRate:
+        metrics.filter(({ rejectedOfferSeasons }) => rejectedOfferSeasons > 0).length / runs,
+      promiseShares,
+      seasonsPlayedMedian: percentile(
+        metrics.map(({ seasonsPlayed }) => seasonsPlayed),
+        0.5,
+      ),
     },
   };
+};
+
+/**
+ * 版本化确定性毕业策略（policy v1）：
+ * 毕业资格达标即设定均衡倾向；有出场承诺要约时签薪资最高者，
+ * 否则签层级 ≤5 的最高薪要约；两者皆无则拒绝全部要约并继续青训。
+ */
+const playLifecycle = (
+  completed: CareerSaveV3,
+  content: ReturnType<typeof getYouthContent>,
+): LifecycleOutcome => {
+  let save: CareerSaveV3 = completed;
+  let seasonsPlayed = 1;
+  let rejectedOfferSeasons = 0;
+  const outcome: LifecycleOutcome = {
+    seasonsPlayed,
+    graduated: false,
+    graduationAge: null,
+    contractTier: null,
+    contractPromiseKind: null,
+    rejectedOfferSeasons,
+  };
+  for (let season = 1; season <= 3; season += 1) {
+    if (!save.season.completed) throw new Error('生命周期要求进入休赛期的存档已完成赛季');
+    const entered = enterOffseason(save, content.academies);
+    save = entered.save;
+    if (!save.offseason) throw new Error('休赛期状态缺失');
+    const finishYouth = (): LifecycleOutcome => ({
+      ...outcome,
+      seasonsPlayed,
+      rejectedOfferSeasons,
+    });
+    if (save.offseason.graduationEligible) {
+      const priorities = ['playing-time', 'development', 'salary'] as const;
+      const priority = priorities[save.randomState.seed % priorities.length]!;
+      const withPrefs = submitAgentPreferences(save, {
+        leagueTierBias: 'balanced',
+        priority,
+      });
+      const withOffers = generateContractOffers(withPrefs, content);
+      const offers = withOffers.pendingOffers;
+      // policy v3：诉求决定目标要约池；全部要约缺乏诚意（一年且无承诺）、
+      // 目标池为空，或最高层级低于球员身价一档以上时，拒绝并留在青训。
+      const attractive = offers.filter(
+        (offer) => offer.contractYears >= 2 || offer.promise.kind !== 'none',
+      );
+      const pool =
+        priority === 'playing-time'
+          ? attractive.filter(({ promise }) => promise.kind === 'playing-time')
+          : priority === 'development'
+            ? attractive.filter(
+                ({ promise, squadRole }) =>
+                  promise.kind === 'position-guarantee' || squadRole === 'highlighted-prospect',
+              )
+            : attractive;
+      const abilityCeiling = Math.floor(
+        (weightedAbility(save.player.identity.primaryPosition, save.player.attributes) - 10) / 10,
+      );
+      // 雄心风格：偶数种子要求报价达到身价层阶，奇数种子只接受高于身价一档的要约。
+      const ambitionFloor = abilityCeiling + (save.randomState.seed % 2);
+      const bestTier =
+        attractive.length > 0 ? Math.max(...attractive.map(({ clubTier }) => clubTier)) : 0;
+      if (attractive.length === 0 || pool.length === 0 || bestTier < ambitionFloor) {
+        save = rejectOffers(withOffers);
+        rejectedOfferSeasons += 1;
+      } else {
+        const candidates = pool.length > 0 ? pool : attractive;
+        const best = candidates.reduce((left, right) =>
+          right.clubTier !== left.clubTier
+            ? right.clubTier > left.clubTier
+              ? right
+              : left
+            : right.salaryPerYear > left.salaryPerYear
+              ? right
+              : left,
+        );
+        const signed = signContract(withOffers, best.id);
+        return {
+          seasonsPlayed,
+          graduated: true,
+          graduationAge: signed.player.age,
+          contractTier: signed.contract?.clubTier ?? null,
+          contractPromiseKind: signed.contract?.promise.kind ?? null,
+          rejectedOfferSeasons,
+        };
+      }
+    }
+    if (season === 3) return finishYouth();
+    save = completeNextSeason(save, content);
+    seasonsPlayed += 1;
+  }
+  return { ...outcome, seasonsPlayed, rejectedOfferSeasons };
+};
+
+/** 开启并完整模拟下个赛季，返回结算后的存档。 */
+const completeNextSeason = (
+  offseasonSave: CareerSaveV3,
+  content: ReturnType<typeof getYouthContent>,
+): CareerSaveV3 => {
+  let save = advanceToNextSeason(offseasonSave, content);
+  let guard = 0;
+  while (!save.season.completed && guard < 100) {
+    const outcome = advanceCareerMonth(save, content.academies, content.events);
+    save = outcome.save;
+    if (outcome.status === 'awaiting-decision') {
+      save = submitCareerDecision(save, outcome.event.eventId, outcome.event.choices[0]!.id);
+    }
+    guard += 1;
+  }
+  if (!save.season.completed) throw new Error('下个赛季未在保护步数内完成');
+  return completeYouthSeason(save).save;
+};
+
+const advanceToNextSeason = (
+  save: CareerSaveV3,
+  content: ReturnType<typeof getYouthContent>,
+): CareerSaveV3 => {
+  const lastStatus = save.seasonHistory.at(-1)?.status;
+  const pathwayByNextPath: Record<string, string> = {
+    'school-football': 'school-elite',
+    'lower-tier-academy': 'local-academy',
+    trial: 'relocation-academy',
+  };
+  let requestedAcademyId: string | undefined;
+  if (lastStatus === 'released') {
+    const nextPath = (['school-football', 'lower-tier-academy', 'trial'] as const)[
+      save.randomState.seed % 3
+    ]!;
+    const pathway = pathwayByNextPath[nextPath];
+    const candidates = content.academies.filter(
+      ({ pathway: candidatePathway }) => candidatePathway === pathway,
+    );
+    requestedAcademyId =
+      candidates.length > 0 ? candidates[save.randomState.seed % candidates.length]!.id : undefined;
+  }
+  return startNextYouthSeason(save, content, requestedAcademyId);
 };
 
 const flatten = (attributes: PlayerAttributes): Record<string, number> => ({

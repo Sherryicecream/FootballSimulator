@@ -244,7 +244,7 @@ describe('evaluateGraduationEligibility', () => {
         discipline: 50,
       },
     };
-    const weakAcademy = { ...academy, competitionLevel: 44 };
+    const weakAcademy = { ...academy, competitionLevel: 25 };
     const base = asV3({
       player: { ...createYouthSave().player, age: 18, attributes: allFifty },
     });
