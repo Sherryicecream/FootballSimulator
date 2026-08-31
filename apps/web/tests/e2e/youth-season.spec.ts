@@ -7,6 +7,11 @@ test.describe('Youth season monthly flow', () => {
     await page.getByRole('button', { name: '推进到下个月' }).click();
     await resolveUntilDashboard(page);
     await expect(page.getByLabel('月报')).toBeVisible();
+    await expect(page.getByLabel('本月节奏')).toBeVisible();
+    await expect(page.getByTestId('scene-art')).toBeVisible();
+    await expect(page.getByRole('status', { name: /体能/ })).toBeVisible();
+    await expect(page.getByRole('status', { name: /教练评价/ })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
     const after = await page.locator('.career-meta').textContent();
     expect(after).not.toBe(before);
     await page.reload();
@@ -52,6 +57,10 @@ test.describe('Youth season monthly flow', () => {
     await page.getByRole('button', { name: '推进到下个月' }).click();
     await resolveUntilDashboard(page);
     await expect(page.getByLabel('月报')).toBeVisible();
+    await expect(page.getByLabel('本月节奏')).toBeVisible();
+    await expect(page.getByTestId('scene-art')).toBeVisible();
+    await expect(page.getByRole('status', { name: /士气/ })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
 
     // 下个赛季刷新恢复
     await page.reload();
@@ -73,6 +82,7 @@ async function completeSeason(page: Page) {
 
 async function createCareer(page: Page) {
   await page.goto('/');
+  await expect(page.getByText('STEP 1 OF 3')).toBeVisible();
   await page.fill('input[aria-label="球员姓名"]', '林河');
   await page.selectOption('select[aria-label="家乡"]', 'shanghai');
   await page.selectOption('select[aria-label="主位置"]', 'CENTER_BACK');
@@ -99,8 +109,22 @@ async function resolveUntilDashboard(page: Page, allowSeasonEnd = false): Promis
     const dashboard = page.getByRole('button', { name: '推进到下个月' });
     if (await dashboard.isVisible().catch(() => false)) return decisions;
     if (allowSeasonEnd && (await isSeasonComplete(page))) return decisions;
+    const feedback = page.getByRole('button', { name: '继续推进' });
+    if (await feedback.isVisible().catch(() => false)) {
+      await expect(page.getByTestId('scene-art')).toBeVisible();
+      await expect(page.getByText('现场结果')).toBeVisible();
+      await expect(page.getByText('人物回应')).toBeVisible();
+      await expect(page.getByText('变化记录')).toBeVisible();
+      await expect(page.getByText('后续影响')).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+      await feedback.click();
+      continue;
+    }
     const choice = page.locator('main button').first();
     await expect(choice).toBeVisible();
+    await expect(page.getByTestId('scene-art')).toBeVisible();
+    await expect(page.getByText(/低风险|中风险|高风险/).first()).toBeVisible();
+    await expectNoHorizontalOverflow(page);
     decisions += 1;
     await choice.click();
   }
@@ -112,3 +136,11 @@ const isSeasonComplete = (page: Page): Promise<boolean> =>
     .getByText('赛季总结')
     .isVisible()
     .catch(() => false);
+
+async function expectNoHorizontalOverflow(page: Page) {
+  const dimensions = await page.evaluate(() => ({
+    documentWidth: document.documentElement.scrollWidth,
+    viewportWidth: window.innerWidth,
+  }));
+  expect(dimensions.documentWidth).toBeLessThanOrEqual(dimensions.viewportWidth);
+}

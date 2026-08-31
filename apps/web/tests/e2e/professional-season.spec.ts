@@ -3,6 +3,7 @@ import { createCareerSave } from '../../../../packages/application/src/use-cases
 import { createYouthCareerV2 } from '../../../../packages/application/src/use-cases/create-youth-career-v2';
 import { advanceCareerMonth } from '../../../../packages/application/src/use-cases/advance-career-month';
 import { submitCareerDecision } from '../../../../packages/application/src/use-cases/submit-career-decision';
+import { clearEventFeedback } from '../../../../packages/application/src/use-cases/clear-event-feedback';
 import { completeYouthSeason } from '../../../../packages/application/src/use-cases/complete-youth-season';
 import { enterOffseason } from '../../../../packages/application/src/use-cases/enter-offseason';
 import {
@@ -12,7 +13,7 @@ import {
 } from '../../../../packages/application/src/use-cases/contract-flow';
 import { startProfessionalSeason } from '../../../../packages/application/src/use-cases/pro-flow';
 import { getYouthContent } from '../../../../packages/content/src';
-import { migrateCareerSaveV4 } from '../../../../packages/contracts/src';
+import { CareerSaveV5Schema } from '../../../../packages/contracts/src';
 
 const content = getYouthContent();
 
@@ -34,7 +35,9 @@ function buildProSave(options: { completeSeason: boolean }) {
     const outcome = advanceCareerMonth(save, content.academies, content.events);
     save = outcome.save;
     if (outcome.status === 'awaiting-decision') {
-      save = submitCareerDecision(save, outcome.event.eventId, outcome.event.choices[0]!.id);
+      save = clearEventFeedback(
+        submitCareerDecision(save, outcome.event.eventId, outcome.event.choices[0]!.id),
+      );
     }
     guard += 1;
   }
@@ -77,7 +80,18 @@ function buildProSave(options: { completeSeason: boolean }) {
     ...save,
     contract: save.contract ? { ...save.contract, contractYears: 1 } : null,
   };
-  const v4 = migrateCareerSaveV4(save);
+  const debugInfo = {
+    sv: (save as { schemaVersion?: number }).schemaVersion,
+    keys: Object.keys(save).length,
+    careerPhase: (save as { careerPhase?: string }).careerPhase,
+  };
+  if (!CareerSaveV5Schema.safeParse(save).success) {
+    throw new Error(
+      JSON.stringify(debugInfo) +
+        JSON.stringify(CareerSaveV5Schema.safeParse(save).error?.issues.slice(0, 3)),
+    );
+  }
+  const v4 = CareerSaveV5Schema.parse(save);
   const proSave = startProfessionalSeason(v4, content.clubs);
   if (!options.completeSeason) return proSave;
 
@@ -87,7 +101,9 @@ function buildProSave(options: { completeSeason: boolean }) {
     const outcome = advanceProMonthHeadless(current);
     current = outcome.save;
     if (outcome.status === 'awaiting-decision') {
-      current = submitCareerDecision(current, outcome.event.eventId, outcome.event.choices[0]!.id);
+      current = clearEventFeedback(
+        submitCareerDecision(current, outcome.event.eventId, outcome.event.choices[0]!.id),
+      );
     }
     proGuard += 1;
   }
@@ -130,6 +146,10 @@ test.describe('职业赛季流程', () => {
     await expect(page.getByRole('region', { name: '职业仪表盘' })).toBeVisible();
     await expect(page.getByText('联赛积分榜')).toBeVisible();
     await expect(page.getByText('位置深度图')).toBeVisible();
+    await expect(page.getByTestId('scene-art')).toBeVisible();
+    await expect(page.getByRole('status', { name: /体能/ })).toBeVisible();
+    await expect(page.getByRole('status', { name: /教练评价/ })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
 
     await page.getByRole('button', { name: '推进到下个月' }).click();
     await resolveUntilProDashboard(page);
@@ -137,6 +157,7 @@ test.describe('职业赛季流程', () => {
     await page.reload();
     await expect(page.getByText('联赛积分榜')).toBeVisible();
     await expect(page.getByRole('button', { name: '推进到下个月' })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
   });
 
   test('完成职业赛季后查看承诺对照并接受续约', async ({ page }) => {
@@ -148,6 +169,8 @@ test.describe('职业赛季流程', () => {
 
     await expect(page.getByText('职业赛季总结')).toBeVisible();
     await expect(page.getByText(/合同承诺对照/)).toBeVisible();
+    await expect(page.getByTestId('scene-art')).toBeVisible();
+    await expectNoHorizontalOverflow(page);
 
     await page.reload();
     await expect(page.getByText('职业赛季总结')).toBeVisible();
@@ -158,6 +181,15 @@ test.describe('职业赛季流程', () => {
       await expect(page.getByRole('button', { name: '开始下个职业赛季' })).toBeVisible();
       await page.reload();
       await expect(page.getByText('职业赛季总结')).toBeVisible();
+      await expectNoHorizontalOverflow(page);
     }
   });
 });
+
+async function expectNoHorizontalOverflow(page: Page) {
+  const dimensions = await page.evaluate(() => ({
+    documentWidth: document.documentElement.scrollWidth,
+    viewportWidth: window.innerWidth,
+  }));
+  expect(dimensions.documentWidth).toBeLessThanOrEqual(dimensions.viewportWidth);
+}

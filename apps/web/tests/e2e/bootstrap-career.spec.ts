@@ -22,6 +22,8 @@ test.describe('Bootstrap Career Flow', () => {
     await expect(page.getByLabel('青训生涯仪表盘')).toBeVisible();
     await expect(page.getByRole('heading', { name: '林岳' })).toBeVisible();
     await expect(page.getByText('推进到下个月')).toBeVisible();
+    await expect(page.getByTestId('scene-art')).toBeVisible();
+    await expect(page.getByRole('status', { name: /体能/ })).toBeVisible();
   });
 
   test('generated profile controls stay hidden', async ({ page }) => {
