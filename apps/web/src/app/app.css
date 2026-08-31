@@ -14,6 +14,74 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+button:focus-visible,
+select:focus-visible,
+a:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
+.football-glyph {
+  display: inline-block;
+  flex: 0 0 auto;
+  vertical-align: middle;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-card-raised);
+  color: var(--color-text-secondary);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: 1;
+}
+
+.status-badge .football-glyph {
+  color: var(--color-text-muted);
+}
+
+.status-badge-label {
+  white-space: nowrap;
+}
+
+.status-badge-value {
+  color: var(--color-ink);
+  font-size: var(--text-base);
+}
+
+.status-badge--positive {
+  border-color: color-mix(in srgb, var(--color-risk-low) 50%, var(--color-border));
+}
+
+.status-badge--positive .football-glyph,
+.status-badge--positive .status-badge-value {
+  color: var(--color-risk-low);
+}
+
+.status-badge--caution {
+  border-color: color-mix(in srgb, var(--color-risk-medium) 50%, var(--color-border));
+}
+
+.status-badge--caution .football-glyph,
+.status-badge--caution .status-badge-value {
+  color: var(--color-risk-medium);
+}
+
+.status-badge--danger {
+  border-color: color-mix(in srgb, var(--color-risk-high) 50%, var(--color-border));
+}
+
+.status-badge--danger .football-glyph,
+.status-badge--danger .status-badge-value {
+  color: var(--color-risk-high);
+}
+
 input,
 select,
 button,

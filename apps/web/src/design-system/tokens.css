@@ -1,22 +1,27 @@
 :root {
   /* Colors */
-  --color-canvas: #f8f6f2;
-  --color-ink: #1a1a1a;
-  --color-accent: #c0392b;
-  --color-accent-hover: #a93226;
-  --color-card: #ffffff;
-  --color-border: #dddddd;
-  --color-border-light: #eeeeee;
-  --color-text-secondary: #666666;
-  --color-text-muted: #999999;
-  --color-risk-low: #27ae60;
-  --color-risk-medium: #f39c12;
-  --color-risk-high: #e74c3c;
-  --color-bg-muted: #f0f0f0;
+  --color-canvas: #07100d;
+  --color-ink: #f3f6ef;
+  --color-accent: #b8f044;
+  --color-accent-hover: #d0ff72;
+  --color-card: #101a15;
+  --color-card-raised: #16231b;
+  --color-border: #2b3a31;
+  --color-border-light: #1d2b23;
+  --color-text-secondary: #aab8ae;
+  --color-text-muted: #78877e;
+  --color-risk-low: #25d07d;
+  --color-risk-medium: #f4b443;
+  --color-risk-high: #f05c68;
+  --color-bg-muted: #17261d;
+  --color-focus: #e1ff8d;
+  --color-pitch: #123b2b;
+  --color-pitch-line: #2d8056;
 
   /* Typography */
   --font-serif: Georgia, 'Times New Roman', serif;
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Arial Black', 'Segoe UI', sans-serif;
   --font-mono: 'SF Mono', Monaco, 'Cascadia Code', monospace;
 
   /* Spacing */
@@ -28,9 +33,9 @@
   --space-2xl: 24px;
 
   /* Border radius */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
 
   /* Font sizes */
   --text-xs: 12px;
@@ -39,9 +44,9 @@
   --text-lg: 15px;
   --text-xl: 17px;
   --text-2xl: 20px;
-  --text-3xl: 24px;
+  --text-3xl: 28px;
 
   /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-sm: 0 8px 20px rgba(0, 0, 0, 0.18);
+  --shadow-md: 0 16px 36px rgba(0, 0, 0, 0.28);
 }
