@@ -19,13 +19,18 @@ import {
   generateContractOffers,
   acceptRenewal,
   advanceProMonth,
+  clearEventFeedback,
   completeProfessionalSeason,
   declineRenewal,
+  generateFreeAgentOffers,
   loadCareer,
   rejectOffers,
+  retire,
   signContract,
+  signTransfer,
   startNextYouthSeason,
   startProfessionalSeason,
+  submitNationalTeamDecision,
   submitAgentPreferences,
   submitCareerDecision,
   updateTrainingPlan,
@@ -34,12 +39,15 @@ import {
 import { CareerCreationForm } from '../career-creation/CareerCreationForm';
 import { YouthOpportunityPanel } from '../event-choice/YouthOpportunityPanel';
 import { EventChoicePanel } from '../event-choice/EventChoicePanel';
+import { EventFeedbackPanel } from '../event-choice/EventFeedbackPanel';
 import { CareerDashboard } from '../career-dashboard/CareerDashboard';
 import { OffseasonBriefing } from '../career-dashboard/OffseasonBriefing';
 import { ProDashboard } from '../career-dashboard/ProDashboard';
 import { ProOffseasonPanel } from '../career-dashboard/ProOffseasonPanel';
+import { CareerReviewPage } from '../career-dashboard/CareerReviewPage';
 import { AgentPreferencesForm } from '../career-dashboard/AgentPreferencesForm';
 import { OfferComparisonPanel } from '../career-dashboard/OfferComparisonPanel';
+import { sceneKindForTheme } from '../career-dashboard/career-presentation';
 import { createBootstrapContent } from './bootstrap-dependencies';
 import { createLocalStorageCareerV4Port } from '../persistence/local-storage-save';
 import './app.css';
@@ -49,14 +57,17 @@ type Step =
   | 'opportunity'
   | 'dashboard'
   | 'event'
+  | 'event-feedback'
   | 'offseason'
   | 'agent'
   | 'offers'
   | 'pro'
   | 'pro-offseason'
-  | 'free-agent';
+  | 'free-agent'
+  | 'retired';
 const bootstrapContent = createBootstrapContent();
 const youthContent = getYouthContent();
+const professionalClubs = [...youthContent.clubs, ...youthContent.overseasClubs];
 const advanceToDecision = createAdvanceToDecision(bootstrapContent);
 const chooseYouthOpportunity = createSubmitYouthChoice();
 const savePort = createLocalStorageCareerV4Port();
@@ -71,6 +82,12 @@ export function App() {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [invalidSlot, setInvalidSlot] = useState<string | null>(null);
+  const [freeAgentRetireConfirm, setFreeAgentRetireConfirm] = useState(false);
+  const activeEventId = save?.story.pendingEvent?.eventId ?? save?.story.pendingFeedback?.eventId;
+  const pendingEventDefinition = activeEventId
+    ? youthContent.events.find(({ id }) => id === activeEventId)
+    : undefined;
+  const eventSceneKind = sceneKindForTheme(pendingEventDefinition?.theme);
 
   useEffect(() => {
     void (async () => {
@@ -79,7 +96,10 @@ export function App() {
         const result = await savePort.load(slot);
         if (result.status === 'loaded') {
           const restored = loadCareer(result.save, youthContent);
-          if (restored.careerPhase === 'offseason') {
+          if (restored.story.pendingFeedback) {
+            setSave(restored);
+            setStep('event-feedback');
+          } else if (restored.careerPhase === 'offseason') {
             setSave(restored);
             setStep('offseason');
           } else if (restored.careerPhase === 'pro-season') {
@@ -97,6 +117,9 @@ export function App() {
           } else if (restored.careerPhase === 'offer-review') {
             setSave(restored);
             setStep('offers');
+          } else if (restored.careerPhase === 'retired') {
+            setSave(restored);
+            setStep('retired');
           } else if (restored.season.completed && !restored.story.pendingEvent) {
             const completed = completeYouthSeason(restored);
             setSave(completed.save);
@@ -174,7 +197,7 @@ export function App() {
     }
   };
   const advancePro = (current: CareerSaveV5) => {
-    const result = advanceProMonth(current, youthContent.clubs, youthContent.events);
+    const result = advanceProMonth(current, professionalClubs, youthContent.events);
     persist(result.save);
     if (result.status === 'awaiting-decision') {
       setStep('event');
@@ -184,7 +207,7 @@ export function App() {
     if (result.status === 'season-complete') {
       const settled = completeProfessionalSeason(result.save);
       persist(settled.save);
-      setStep('pro-offseason');
+      setStep(settled.save.story.pendingEvent ? 'event' : 'pro-offseason');
       return;
     }
     setStep('pro');
@@ -192,12 +215,34 @@ export function App() {
   const decide = (choiceId: string) => {
     if (!save?.story.pendingEvent) return;
     try {
+      if (
+        save.careerPhase === 'pro-offseason' &&
+        save.story.pendingEvent.storyId === 'national-team-debut'
+      ) {
+        const submitted = submitNationalTeamDecision(save, choiceId);
+        persist(submitted);
+        setStep('event-feedback');
+        return;
+      }
       const submitted = submitCareerDecision(save, save.story.pendingEvent.eventId, choiceId);
-      // 职业赛季中的事件提交后继续职业月度；其余走青训推进
-      if (submitted.careerPhase === 'pro-season') {
-        advancePro(submitted);
+      persist(submitted);
+      setStep('event-feedback');
+    } catch (caught) {
+      setError(message(caught));
+    }
+  };
+  const continueAfterEventFeedback = () => {
+    if (!save?.story.pendingFeedback) return;
+    setError(null);
+    try {
+      const cleared = clearEventFeedback(save);
+      persist(cleared);
+      if (cleared.careerPhase === 'pro-season') {
+        advancePro(cleared);
+      } else if (cleared.careerPhase === 'pro-offseason') {
+        setStep('pro-offseason');
       } else {
-        progress(submitted);
+        progress(cleared);
       }
     } catch (caught) {
       setError(message(caught));
@@ -272,7 +317,7 @@ export function App() {
     if (!save) return;
     setError(null);
     try {
-      const next = startProfessionalSeason(save, youthContent.clubs);
+      const next = startProfessionalSeason(save, professionalClubs);
       persist(next);
       setReport(null);
       setStep('pro');
@@ -293,8 +338,46 @@ export function App() {
     if (!save) return;
     setError(null);
     try {
-      persist(declineRenewal(save));
+      const free = declineRenewal(save);
+      const withOffers = generateFreeAgentOffers(free, youthContent);
+      persist(withOffers);
       setStep('free-agent');
+    } catch (caught) {
+      setError(message(caught));
+    }
+  };
+  const handleSignTransfer = (offerId: string) => {
+    if (!save) return;
+    setError(null);
+    try {
+      persist(signTransfer(save, offerId));
+      setStep('dashboard');
+    } catch (caught) {
+      setError(message(caught));
+    }
+  };
+  const handleWaitWindow = () => {
+    if (!save) return;
+    setError(null);
+    try {
+      const withOffers = generateFreeAgentOffers(save, youthContent);
+      persist(withOffers);
+    } catch (caught) {
+      setError(message(caught));
+    }
+  };
+  const handleRetire = () => {
+    if (step === 'free-agent' && !freeAgentRetireConfirm) {
+      setFreeAgentRetireConfirm(true);
+      return;
+    }
+    if (!save) return;
+    setError(null);
+    try {
+      const date = save.proSeason?.endDate ?? new Date().toISOString().slice(0, 10);
+      persist(retire(save, date));
+      setFreeAgentRetireConfirm(false);
+      setStep('retired');
     } catch (caught) {
       setError(message(caught));
     }
@@ -305,6 +388,7 @@ export function App() {
     setBootstrapSave(null);
     setReport(null);
     setOutcome(null);
+    setFreeAgentRetireConfirm(false);
     setStep('creation');
   };
   const discardInvalid = () => {
@@ -397,20 +481,64 @@ export function App() {
           onStartNextSeason={handleStartProSeason}
           onAcceptRenewal={handleAcceptRenewal}
           onDeclineRenewal={handleDeclineRenewal}
+          onRetire={handleRetire}
         />
       )}
       {step === 'free-agent' && save && (
         <section className="offseason" aria-label="自由球员">
-          <h2>生涯进入自由球员阶段</h2>
-          <p>你拒绝了续约，现在是自由球员。转会市场将在下一阶段开放（M7）。</p>
-          <button onClick={newCareer}>开始新生涯</button>
+          <h2>自由球员</h2>
+          {save.pendingOffers.length > 0 ? (
+            <OfferComparisonPanel
+              offers={save.pendingOffers}
+              onSign={handleSignTransfer}
+              onRejectAll={handleWaitWindow}
+            />
+          ) : (
+            <>
+              <p>转会市场暂时冷淡，没有俱乐部给出要约。</p>
+              {save.freeAgentSeasons >= 2 && save.player.age < 30 && (
+                <p className="warning">你的市场价值正在下降，考虑接受更低的报价。</p>
+              )}
+              <div className="offseason-actions">
+                <button onClick={handleWaitWindow}>等待下一个转会窗口</button>
+                {save.player.age >= 30 && (
+                  <button className="secondary-action" onClick={handleRetire}>
+                    宣布退役
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+          {save.player.age >= 30 && save.pendingOffers.length > 0 && (
+            <div className="offseason-actions">
+              <button className="secondary-action" onClick={handleRetire}>
+                宣布退役
+              </button>
+            </div>
+          )}
+          {freeAgentRetireConfirm && (
+            <div>
+              <p>退役是不可逆的，将结束当前生涯并生成回顾。</p>
+              <button onClick={handleRetire}>确认退役</button>
+              <button onClick={() => setFreeAgentRetireConfirm(false)}>继续寻找机会</button>
+            </div>
+          )}
         </section>
       )}
+      {step === 'retired' && save && <CareerReviewPage save={save} onNewCareer={newCareer} />}
       {step === 'event' && save?.story.pendingEvent && (
         <EventChoicePanel
           key={save.story.pendingEvent.eventId}
           event={save.story.pendingEvent}
+          sceneKind={eventSceneKind}
           onSubmit={decide}
+        />
+      )}
+      {step === 'event-feedback' && save?.story.pendingFeedback && (
+        <EventFeedbackPanel
+          feedback={save.story.pendingFeedback}
+          sceneKind={eventSceneKind}
+          onContinue={continueAfterEventFeedback}
         />
       )}
     </main>

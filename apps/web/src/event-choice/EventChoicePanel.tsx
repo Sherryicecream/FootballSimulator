@@ -1,12 +1,38 @@
-import { useState, useRef } from 'react';
+import { useRef, useState } from 'react';
 import type { EventInstance, YouthEventInstance } from '@football/contracts';
+import { SceneBanner } from '../design-system/SceneBanner';
+import { StatusBadge, type StatusBadgeTone } from '../design-system/StatusBadge';
+import type { SceneKind } from '../design-system/scene-types';
 
 interface EventChoicePanelProps {
   event: EventInstance | YouthEventInstance;
+  sceneKind?: SceneKind;
   onSubmit: (choiceId: string) => void;
 }
 
-export function EventChoicePanel({ event, onSubmit }: EventChoicePanelProps) {
+const RISK_LABELS: Record<string, string> = {
+  low: '低风险',
+  medium: '中风险',
+  high: '高风险',
+};
+
+const RISK_TONES: Record<string, StatusBadgeTone> = {
+  low: 'positive',
+  medium: 'caution',
+  high: 'danger',
+};
+
+const RISK_GLYPHS: Record<string, 'form' | 'warning' | 'match'> = {
+  low: 'form',
+  medium: 'match',
+  high: 'warning',
+};
+
+export function EventChoicePanel({
+  event,
+  sceneKind = 'neutral',
+  onSubmit,
+}: EventChoicePanelProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const committed = useRef(false);
   const isResolved = event.resolvedChoiceId !== null;
@@ -19,126 +45,45 @@ export function EventChoicePanel({ event, onSubmit }: EventChoicePanelProps) {
   };
 
   return (
-    <div style={{ fontFamily: 'var(--font-serif)' }}>
-      <div
-        style={{
-          borderBottom: '2px solid var(--color-accent)',
-          paddingBottom: 'var(--space-sm)',
-          marginBottom: 'var(--space-xl)',
-        }}
-      >
-        <div
-          style={{
-            fontSize: 'var(--text-xs)',
-            color: 'var(--color-accent)',
-            textTransform: 'uppercase',
-            letterSpacing: '2px',
-          }}
-        >
-          事件
-        </div>
-        <div
-          style={{
-            fontSize: 'var(--text-2xl)',
-            fontWeight: 'bold',
-            color: 'var(--color-ink)',
-            marginTop: 'var(--space-xs)',
-          }}
-        >
-          {event.title}
-        </div>
-      </div>
+    <section className="event-choice-panel" aria-label="事件选择">
+      <SceneBanner
+        kind={sceneKind}
+        eyebrow="生涯事件 · 需要决定"
+        title={event.title}
+        detail={event.description}
+      />
 
-      <div
-        style={{
-          background: 'var(--color-card)',
-          border: '1px solid var(--color-border)',
-          borderRadius: 'var(--radius-lg)',
-          padding: 'var(--space-xl)',
-          marginBottom: 'var(--space-lg)',
-        }}
-      >
-        <div
-          style={{
-            fontSize: 'var(--text-base)',
-            color: 'var(--color-ink)',
-            lineHeight: '1.6',
-            marginBottom: 'var(--space-lg)',
-          }}
-        >
-          {event.description}
+      <div className="event-choice-card">
+        <div className="event-choice-intro">
+          <span className="event-choice-kicker">请选择行动</span>
+          <p>你的选择会留下生涯记录，也可能改变接下来几周的训练与关系。</p>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+        <div className="event-choice-list">
           {event.choices.map((choice) => {
             const isChosen = selectedId === choice.id || event.resolvedChoiceId === choice.id;
-            const riskColor =
-              choice.riskLabel === 'low'
-                ? '#27ae60'
-                : choice.riskLabel === 'medium'
-                  ? '#f39c12'
-                  : '#e74c3c';
+            const riskLabel = RISK_LABELS[choice.riskLabel] ?? '未知风险';
+            const riskTone = RISK_TONES[choice.riskLabel] ?? 'neutral';
+            const riskGlyph = RISK_GLYPHS[choice.riskLabel] ?? 'match';
             return (
               <button
                 key={choice.id}
+                className={'event-choice' + (isChosen ? ' event-choice--chosen' : '')}
                 type="button"
                 onClick={() => handleChoice(choice.id)}
                 disabled={committed.current || isResolved}
-                style={{
-                  width: '100%',
-                  textAlign: 'left',
-                  border: `${isChosen ? 2 : 1}px solid ${isChosen ? 'var(--color-accent)' : 'var(--color-border)'}`,
-                  borderRadius: 'var(--radius-lg)',
-                  padding: 'var(--space-lg)',
-                  background: 'var(--color-card)',
-                  cursor: committed.current || isResolved ? 'default' : 'pointer',
-                  opacity: committed.current && !isChosen ? 0.5 : 1,
-                }}
+                aria-pressed={isChosen}
               >
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
-                >
-                  <span style={{ fontSize: 'var(--text-base)', color: 'var(--color-ink)' }}>
-                    {choice.text}
-                  </span>
-                  <span
-                    style={{
-                      background: riskColor,
-                      color: '#fff',
-                      padding: '2px 10px',
-                      borderRadius: '12px',
-                      fontSize: 'var(--text-xs)',
-                      fontWeight: 'bold',
-                    }}
-                  >
-                    {choice.riskLabel === 'low'
-                      ? '低风险'
-                      : choice.riskLabel === 'medium'
-                        ? '中风险'
-                        : '高风险'}
-                  </span>
-                </div>
-                {isChosen && (
-                  <div
-                    style={{
-                      fontSize: 'var(--text-sm)',
-                      color: 'var(--color-accent)',
-                      marginTop: 'var(--space-sm)',
-                      fontStyle: 'italic',
-                    }}
-                  >
-                    ← 已选择
-                  </div>
-                )}
+                <span className="event-choice-copy">
+                  <strong>{choice.text}</strong>
+                  {isChosen && <small>已选择 · 等待记录</small>}
+                </span>
+                <StatusBadge glyph={riskGlyph} label="风险" value={riskLabel} tone={riskTone} />
               </button>
             );
           })}
         </div>
       </div>
-    </div>
+    </section>
   );
 }
