@@ -11,7 +11,11 @@ export interface StatusBadgeProps {
 }
 
 export const StatusBadge = ({ glyph, label, value, tone }: StatusBadgeProps) => (
-  <span className={'status-badge status-badge--' + tone} role="status">
+  <span
+    className={'status-badge status-badge--' + tone}
+    role="status"
+    aria-label={`${label} ${value}`}
+  >
     <FootballGlyph name={glyph} size={17} />
     <span className="status-badge-label">{label}</span>
     <strong className="status-badge-value">{value}</strong>

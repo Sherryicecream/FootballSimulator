@@ -5,6 +5,34 @@ import type {
   YouthEventTheme,
 } from '@football/contracts';
 import type { SceneKind } from '../design-system/scene-types';
+import type { StatusBadgeTone } from '../design-system/StatusBadge';
+
+const BEAT_INTENSITY_PRIORITY: Record<MonthlyBeat['intensity'], number> = {
+  routine: 1,
+  notable: 2,
+  'turning-point': 3,
+};
+
+export const pickLeadBeat = (beats: readonly MonthlyBeat[]): MonthlyBeat | null => {
+  let lead: MonthlyBeat | null = null;
+  for (const beat of beats) {
+    if (
+      lead === null ||
+      BEAT_INTENSITY_PRIORITY[beat.intensity] > BEAT_INTENSITY_PRIORITY[lead.intensity]
+    ) {
+      lead = beat;
+    }
+  }
+  return lead;
+};
+
+export const statusToneForScore = (score: number, inverted = false): StatusBadgeTone => {
+  const effectiveScore = inverted ? 100 - score : score;
+  if (effectiveScore >= 70) return 'positive';
+  if (effectiveScore >= 45) return 'neutral';
+  if (effectiveScore >= 25) return 'caution';
+  return 'danger';
+};
 
 export const sceneKindForBeat = (kind: MonthlyBeat['kind']): SceneKind => {
   switch (kind) {

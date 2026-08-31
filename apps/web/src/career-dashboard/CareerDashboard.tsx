@@ -8,7 +8,11 @@ import type {
 import { ContractCard } from './ContractCard';
 import type { YouthSeasonOutcome } from '@football/application';
 import { buildPlayerProfile, buildRecentRecords, labelAttribute } from './career-presentation';
+import { pickLeadBeat, sceneKindForBeat } from './career-presentation';
 import { StoryCodex } from './StoryCodex';
+import { MonthlyMomentumPanel } from './MonthlyMomentumPanel';
+import { SceneBanner } from '../design-system/SceneBanner';
+import { CurrentStateBadges } from './CurrentStateBadges';
 
 interface CareerDashboardProps {
   save: CareerSaveV4Like;
@@ -60,6 +64,15 @@ export function CareerDashboard({
   );
   const recentRecords = buildRecentRecords(save);
   const playerProfile = buildPlayerProfile(save.player);
+  const leadBeat = pickLeadBeat(report?.momentum?.beats ?? []);
+  const sceneKind = leadBeat ? sceneKindForBeat(leadBeat.kind) : 'neutral';
+  const sceneTitle =
+    leadBeat?.title ?? report?.momentum?.title ?? (outcome ? '青训赛季结论' : '等待下一个月度节点');
+  const sceneDetail =
+    leadBeat?.detail ??
+    report?.momentum?.summary ??
+    outcome?.summary ??
+    '训练、比赛与选择会在这里汇成你的下一段生涯。';
   return (
     <section className="career-shell" aria-label="青训生涯仪表盘">
       <header className="career-hero">
@@ -73,6 +86,13 @@ export function CareerDashboard({
           <span>第 {save.season.currentWeek} 周</span>
         </div>
       </header>
+
+      <SceneBanner
+        kind={sceneKind}
+        eyebrow={report ? `${report.monthKey} · 月度主线` : '青训生涯 · 工作台'}
+        title={sceneTitle}
+        detail={sceneDetail}
+      />
 
       {outcome && (
         <section className="report-card">
@@ -101,15 +121,24 @@ export function CareerDashboard({
           )}
         </section>
       )}
+      {report && !outcome && (
+        <MonthlyMomentumPanel monthKey={report.monthKey} momentum={report.momentum} />
+      )}
 
       <div className="dashboard-grid">
         <section className="dashboard-card">
-          <h3>当前状态</h3>
-          <State label="体能" value={save.health.fitness} />
-          <State label="疲劳" value={save.health.fatigue} />
-          <State label="士气" value={save.currentState.morale} />
-          <State label="状态" value={save.currentState.form} />
-          <State label="教练评价" value={save.clubContext.coachEvaluation} />
+          <div className="card-heading">
+            <span className="card-kicker">生涯监测</span>
+            <h3>当前状态</h3>
+          </div>
+          <CurrentStateBadges
+            fitness={save.health.fitness}
+            fatigue={save.health.fatigue}
+            morale={save.currentState.morale}
+            form={save.currentState.form}
+            coachEvaluation={save.clubContext.coachEvaluation}
+            injuryWeeks={save.health.activeInjury?.expectedRecoveryWeeks}
+          />
           <p className="muted">一线队：{stageLabels[save.clubContext.firstTeamStage]}</p>
           {save.health.activeInjury && (
             <p className="warning">
@@ -240,17 +269,5 @@ export function CareerDashboard({
         </button>
       </footer>
     </section>
-  );
-}
-
-function State({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="state-row">
-      <span>{label}</span>
-      <div>
-        <i style={{ width: `${value}%` }} />
-      </div>
-      <strong>{value}</strong>
-    </div>
   );
 }

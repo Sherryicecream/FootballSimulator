@@ -1,10 +1,14 @@
-import type { CareerSaveV4Like } from '@football/contracts';
+import type { CareerSaveV5Like } from '@football/contracts';
 import { labelAttribute } from './career-presentation';
+import { pickLeadBeat, sceneKindForBeat } from './career-presentation';
 import { ContractCard } from './ContractCard';
 import type { MonthlyReport } from '@football/contracts';
+import { MonthlyMomentumPanel } from './MonthlyMomentumPanel';
+import { SceneBanner } from '../design-system/SceneBanner';
+import { CurrentStateBadges } from './CurrentStateBadges';
 
 interface ProDashboardProps {
-  save: CareerSaveV4Like;
+  save: CareerSaveV5Like;
   report: MonthlyReport | null;
   advancing: boolean;
   onAdvance: () => void;
@@ -46,6 +50,13 @@ export function ProDashboard({
   const stats = save.proSeasonStats;
   const avgRating =
     stats.ratingCount > 0 ? Math.round((stats.ratingSum / stats.ratingCount) * 10) / 10 : null;
+  const leadBeat = pickLeadBeat(report?.momentum?.beats ?? []);
+  const sceneKind = leadBeat ? sceneKindForBeat(leadBeat.kind) : 'neutral';
+  const sceneTitle = leadBeat?.title ?? report?.momentum?.title ?? '职业赛季进行中';
+  const sceneDetail =
+    leadBeat?.detail ??
+    report?.momentum?.summary ??
+    '训练、比赛与队内竞争正在共同决定你的下一次出场。';
 
   return (
     <section className="pro-dashboard" aria-label="职业仪表盘">
@@ -61,7 +72,28 @@ export function ProDashboard({
         </div>
       </header>
 
+      <SceneBanner
+        kind={sceneKind}
+        eyebrow={report ? `${report.monthKey} · 职业赛季` : '职业赛季 · 工作台'}
+        title={sceneTitle}
+        detail={sceneDetail}
+      />
+
       <div className="dashboard-grid">
+        <section className="dashboard-card current-state-card">
+          <div className="card-heading">
+            <span className="card-kicker">球员监测</span>
+            <h3>当前状态</h3>
+          </div>
+          <CurrentStateBadges
+            fitness={save.health.fitness}
+            fatigue={save.health.fatigue}
+            morale={save.currentState.morale}
+            form={save.currentState.form}
+            coachEvaluation={save.clubContext.coachEvaluation}
+            injuryWeeks={save.health.activeInjury?.expectedRecoveryWeeks}
+          />
+        </section>
         <section className="dashboard-card">
           <h3>赛季数据</h3>
           <dl className="profile-facts">
@@ -141,26 +173,51 @@ export function ProDashboard({
           </table>
         </section>
 
+        <section className="dashboard-card national-team-card">
+          <h3>国家队</h3>
+          {save.nationalTeam?.capped ? (
+            <dl className="profile-facts">
+              <div>
+                <dt>国家队出场</dt>
+                <dd>{save.nationalTeam.caps}</dd>
+              </div>
+              <div>
+                <dt>国家队进球</dt>
+                <dd>{save.nationalTeam.goals}</dd>
+              </div>
+              <div>
+                <dt>首秀日期</dt>
+                <dd>{save.nationalTeam.debutOn ?? '—'}</dd>
+              </div>
+            </dl>
+          ) : (
+            <p>尚未入选国家队</p>
+          )}
+        </section>
+
         {save.contract && <ContractCard contract={save.contract} />}
 
         {report && (
-          <section className="report-card" aria-label="月报">
-            <h3>{report.monthKey} 月报</h3>
-            <p>
-              {report.matchIds.length} 场比赛 · {report.attributeChanges.length} 项属性提升 ·{' '}
-              {report.facts.length} 条生涯记录
-            </p>
-            {report.attributeChanges.length > 0 && (
+          <>
+            <section className="report-card" aria-label="月报">
+              <h3>{report.monthKey} 月报</h3>
               <p>
-                {report.attributeChanges
-                  .map(
-                    ({ attribute, oldValue, newValue }) =>
-                      `${labelAttribute(attribute)} ${oldValue}→${newValue}`,
-                  )
-                  .join('，')}
+                {report.matchIds.length} 场比赛 · {report.attributeChanges.length} 项属性提升 ·{' '}
+                {report.facts.length} 条生涯记录
               </p>
-            )}
-          </section>
+              {report.attributeChanges.length > 0 && (
+                <p>
+                  {report.attributeChanges
+                    .map(
+                      ({ attribute, oldValue, newValue }) =>
+                        `${labelAttribute(attribute)} ${oldValue}→${newValue}`,
+                    )
+                    .join('，')}
+                </p>
+              )}
+            </section>
+            <MonthlyMomentumPanel monthKey={report.monthKey} momentum={report.momentum} />
+          </>
         )}
       </div>
 
@@ -180,10 +237,10 @@ export function ProDashboard({
   );
 }
 
-const memberName = (pro: NonNullable<CareerSaveV4Like['proSeason']>, personId: string): string =>
+const memberName = (pro: NonNullable<CareerSaveV5Like['proSeason']>, personId: string): string =>
   pro.squad.find(({ personId: id }) => id === personId)?.name ?? personId;
 
-const clubName = (save: CareerSaveV4Like, clubId: string): string => {
+const clubName = (save: CareerSaveV5Like, clubId: string): string => {
   if (clubId === save.proSeason?.clubId) return save.contract?.clubName ?? clubId;
   // 其他俱乐部名称从内容包渲染由调用方保证；此处退化为 ID
   return clubDisplayName(clubId);

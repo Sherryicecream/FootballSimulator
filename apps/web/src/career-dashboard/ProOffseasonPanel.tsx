@@ -1,11 +1,15 @@
+import { useState } from 'react';
 import type { CareerSaveV4Like } from '@football/contracts';
 import type { PromiseReview } from '@football/contracts';
+import { SceneBanner } from '../design-system/SceneBanner';
+import { StatusBadge } from '../design-system/StatusBadge';
 
 interface ProOffseasonPanelProps {
   save: CareerSaveV4Like;
   onStartNextSeason: () => void;
   onAcceptRenewal: () => void;
   onDeclineRenewal: () => void;
+  onRetire: () => void;
 }
 
 const causeLabels: Record<PromiseReview['cause'], string> = {
@@ -21,7 +25,9 @@ export function ProOffseasonPanel({
   onStartNextSeason,
   onAcceptRenewal,
   onDeclineRenewal,
+  onRetire,
 }: ProOffseasonPanelProps) {
+  const [retireConfirm, setRetireConfirm] = useState(false);
   const lastReview = save.promiseReviews.at(-1);
   const renewalOffer = save.pendingOffers[0] ?? null;
   const stats = save.proSeasonStats;
@@ -30,7 +36,12 @@ export function ProOffseasonPanel({
 
   return (
     <section className="offseason" aria-label="职业休赛期">
-      <h2>职业赛季总结</h2>
+      <SceneBanner
+        kind="neutral"
+        eyebrow="职业生涯 · 赛季结算"
+        title="职业赛季总结"
+        detail="回看这一年的出场、承诺与下一步选择。"
+      />
       <ul className="offseason-list">
         <li>
           联赛出场 {stats.leagueAppearances} 次，预备队出场 {stats.reserveAppearances} 次，共{' '}
@@ -47,7 +58,15 @@ export function ProOffseasonPanel({
 
       {lastReview && (
         <div className={lastReview.status === 'kept' ? 'promise kept' : 'promise broken'}>
-          <h3>合同承诺对照：{lastReview.status === 'kept' ? '已兑现' : '未兑现'}</h3>
+          <h3>
+            合同承诺对照：{lastReview.status === 'kept' ? '已兑现' : '未兑现'}{' '}
+            <StatusBadge
+              glyph={lastReview.status === 'kept' ? 'coach-trust' : 'warning'}
+              label="承诺状态"
+              value={lastReview.status === 'kept' ? '已兑现' : '未兑现'}
+              tone={lastReview.status === 'kept' ? 'positive' : 'danger'}
+            />
+          </h3>
           <p>
             出场份额 {Math.round(lastReview.share * 100)}%（承诺{' '}
             {Math.round(lastReview.promisedShare * 100)}%）
@@ -72,6 +91,24 @@ export function ProOffseasonPanel({
       ) : (
         <div className="offseason-actions">
           <button onClick={onStartNextSeason}>开始下个职业赛季</button>
+        </div>
+      )}
+
+      {save.player.age >= 30 && (
+        <div className="retire-block">
+          {retireConfirm ? (
+            <>
+              <p>退役是不可逆的决定。确定要结束球员生涯吗？</p>
+              <button className="confirm" onClick={onRetire}>
+                确认退役
+              </button>
+              <button onClick={() => setRetireConfirm(false)}>再踢一年</button>
+            </>
+          ) : (
+            <button className="secondary-action" onClick={() => setRetireConfirm(true)}>
+              宣布退役
+            </button>
+          )}
         </div>
       )}
     </section>

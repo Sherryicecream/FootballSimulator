@@ -627,3 +627,175 @@ fieldset {
 .promise h3 {
   margin-top: 0;
 }
+/* Football workspace: unified dashboard hierarchy */
+@media (min-width: 721px) {
+  .app {
+    max-width: 1180px;
+  }
+}
+
+.career-hero {
+  position: relative;
+  min-height: 112px;
+  padding: 24px 26px 20px;
+  border: 1px solid var(--color-border);
+  border-top: 3px solid var(--color-accent);
+  border-bottom: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(115deg, rgba(18, 59, 43, 0.84), rgba(10, 20, 15, 0.96)), var(--color-card);
+  box-shadow: var(--shadow-md);
+}
+
+.career-hero h2 {
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 3.6rem);
+  letter-spacing: -0.055em;
+  line-height: 0.98;
+}
+
+.career-hero .eyebrow {
+  font-family: var(--font-sans);
+  font-weight: 800;
+}
+
+.career-meta span {
+  padding: 5px 9px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: rgba(7, 16, 13, 0.42);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+}
+
+.dashboard-grid {
+  align-items: stretch;
+}
+
+.dashboard-card,
+.report-card,
+.contract-card,
+.offseason {
+  box-shadow: var(--shadow-sm);
+}
+
+.dashboard-card h3,
+.report-card h3,
+.contract-card h3,
+.offseason h2,
+.offseason h3 {
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  letter-spacing: -0.025em;
+}
+
+.card-heading {
+  display: grid;
+  gap: 3px;
+  margin-bottom: 15px;
+}
+
+.card-heading h3 {
+  margin: 0;
+}
+
+.card-kicker {
+  color: var(--color-accent);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.state-badges {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.state-badges .status-badge {
+  justify-content: space-between;
+  min-width: 0;
+  width: 100%;
+  border-radius: var(--radius-md);
+}
+
+.state-badges .status-badge-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.status-badge--neutral {
+  background: var(--color-card);
+}
+
+.status-badge--positive {
+  background: rgba(37, 208, 125, 0.08);
+}
+
+.status-badge--caution {
+  background: rgba(244, 180, 67, 0.09);
+}
+
+.status-badge--danger {
+  background: rgba(240, 92, 104, 0.1);
+}
+
+.current-state-card {
+  grid-column: 1 / -1;
+}
+
+.dashboard-card select {
+  color: var(--color-ink);
+  background: var(--color-card-raised);
+}
+
+.primary-action {
+  color: #07100d;
+  box-shadow: 0 8px 18px rgba(184, 240, 68, 0.2);
+}
+
+.secondary-action,
+.career-actions .secondary-action {
+  color: var(--color-ink);
+}
+
+.offseason > .scene-banner {
+  margin-top: 0;
+}
+
+.promise h3 {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.promise h3 .status-badge {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+@media (max-width: 720px) {
+  .career-hero {
+    min-height: 0;
+    padding: 20px 18px 17px;
+  }
+
+  .career-hero h2 {
+    font-size: clamp(1.8rem, 10vw, 2.8rem);
+  }
+
+  .state-badges {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .current-state-card {
+    grid-column: 1;
+  }
+}
