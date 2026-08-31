@@ -82,6 +82,105 @@ a:focus-visible {
   color: var(--color-risk-high);
 }
 
+.scene-banner {
+  position: relative;
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 18px;
+  align-items: center;
+  min-height: 132px;
+  margin-bottom: 18px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(135deg, rgba(18, 59, 43, 0.92), rgba(9, 24, 18, 0.98)), var(--color-card);
+  color: var(--color-ink);
+  box-shadow: var(--shadow-sm);
+}
+
+.scene-banner::after {
+  position: absolute;
+  right: -35px;
+  bottom: -75px;
+  width: 210px;
+  height: 210px;
+  border: 1px solid var(--color-pitch-line);
+  border-radius: 50%;
+  opacity: 0.45;
+  content: '';
+}
+
+.scene-banner-art {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 74px;
+  height: 74px;
+  margin-left: 18px;
+  border: 1px solid rgba(184, 240, 68, 0.4);
+  border-radius: 22px;
+  background: rgba(7, 16, 13, 0.46);
+  color: var(--color-accent);
+}
+
+.scene-banner-art svg {
+  width: 48px;
+  height: 48px;
+}
+
+.scene-banner-copy {
+  position: relative;
+  z-index: 1;
+  padding: 20px 22px 20px 0;
+}
+
+.scene-banner-eyebrow {
+  display: block;
+  color: var(--color-accent);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.scene-banner h3 {
+  margin: 5px 0 4px;
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
+  line-height: 1.15;
+}
+
+.scene-banner p {
+  max-width: 58ch;
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.scene-banner--match {
+  background:
+    linear-gradient(135deg, rgba(14, 67, 51, 0.96), rgba(8, 22, 17, 0.98)), var(--color-card);
+}
+
+.scene-banner--recovery {
+  background:
+    linear-gradient(135deg, rgba(32, 49, 52, 0.96), rgba(10, 24, 25, 0.98)), var(--color-card);
+}
+
+.scene-banner--locker-room {
+  background:
+    linear-gradient(135deg, rgba(50, 39, 24, 0.96), rgba(24, 20, 14, 0.98)), var(--color-card);
+}
+
+.scene-banner--neutral {
+  background:
+    linear-gradient(135deg, rgba(28, 43, 35, 0.96), rgba(10, 20, 15, 0.98)), var(--color-card);
+}
+
 input,
 select,
 button,

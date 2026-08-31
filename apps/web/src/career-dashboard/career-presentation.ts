@@ -1,4 +1,45 @@
-import type { CareerLedgerEntryV2, CareerSaveV2 } from '@football/contracts';
+import type {
+  CareerLedgerEntryV2,
+  CareerSaveV2,
+  MonthlyBeat,
+  YouthEventTheme,
+} from '@football/contracts';
+import type { SceneKind } from '../design-system/scene-types';
+
+export const sceneKindForBeat = (kind: MonthlyBeat['kind']): SceneKind => {
+  switch (kind) {
+    case 'training':
+      return 'training';
+    case 'match':
+    case 'first-team':
+      return 'match';
+    case 'health':
+      return 'recovery';
+    case 'decision':
+    case 'event':
+    case 'relationship':
+      return 'locker-room';
+    case 'settlement':
+      return 'neutral';
+  }
+};
+
+export const sceneKindForTheme = (theme: YouthEventTheme | undefined): SceneKind => {
+  switch (theme) {
+    case 'match':
+    case 'trajectory':
+      return 'match';
+    case 'training':
+      return 'training';
+    case 'health':
+      return 'recovery';
+    case 'relationships':
+    case 'off-pitch':
+      return 'locker-room';
+    default:
+      return 'neutral';
+  }
+};
 
 export const ATTRIBUTE_LABELS = {
   firstTouch: '停球',
