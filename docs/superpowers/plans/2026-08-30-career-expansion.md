@@ -295,7 +295,16 @@ Run: git commit -m "docs: complete visual experience milestone"
 
 实际结果：`pnpm test` 通过（81 个测试文件、415 个测试，含架构 10/10）；`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm build` 和 `pnpm test:e2e` 通过（16/16）；`pnpm balance:youth -- --runs 1000 --seed-start 1 --output artifacts/youth-balance-module3.json` 通过，报告保留模块 2 的决策密度、事件上限、伤病与职业期分布范围。
 
-### 模块 4：内容丰富度与 AI 生动性（待执行）
+### 模块 4：内容丰富度与 AI 生动性（执行中）
+
+#### Task 1：让专属反馈真正到达事件实例（已完成）
+
+- [x] Step 1: Write the failing tests
+- [x] Step 2: Run the tests to verify they fail
+- [x] Step 3: Preserve authored response, participant responses, and follow-up fields in legacy event snapshots; add dedicated response and follow-up copy to both national-team debut choices.
+- [x] Step 4: Run focused regression tests, global unit/architecture tests, typecheck, lint, format, build, and E2E.
+
+实际结果：修复前回归测试分别因国家队首召缺少回应、legacy 快照丢失字段而失败；修复后 3 个相关测试文件 37/37 通过，全局 81 个测试文件 417/417、架构 10/10、生产构建和桌面/移动端 E2E 16/16 通过。数值效果和随机序列未改变，继续使用 `artifacts/youth-balance-module3.json` 作为当前平衡基线。
 
 - 将事件从孤立图鉴扩展为“选择 → 即时回应 → 后续影响 → 再次触发”的可追踪链条。
 - 增加有参与者、有事实依据、有关系变化的事件组合；对话变体必须由内容和种子显式提供，保持可回放与可测试。
