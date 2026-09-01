@@ -270,6 +270,33 @@ export const MonthlyMomentumSchema = z.strictObject({
 });
 export type MonthlyMomentum = z.infer<typeof MonthlyMomentumSchema>;
 
+export const StoryProgressStatusSchema = z.enum(['active', 'waiting', 'completed']);
+export type StoryProgressStatus = z.infer<typeof StoryProgressStatusSchema>;
+
+export const StoryProgressEntrySchema = z.strictObject({
+  storyId: IdSchema,
+  title: z.string().min(1).max(100),
+  status: StoryProgressStatusSchema,
+  completedNodes: z.number().int().min(0).max(20),
+  totalNodes: z.number().int().min(1).max(20),
+  progressPercent: z.number().int().min(0).max(100),
+  activeNodeTitles: z.array(z.string().min(1).max(100)).max(8),
+  waitReason: z.string().min(1).max(200),
+});
+export type StoryProgressEntry = z.infer<typeof StoryProgressEntrySchema>;
+
+export const StoryProgressSnapshotSchema = z.strictObject({
+  entries: z.array(StoryProgressEntrySchema).max(8),
+  recentChoice: z
+    .strictObject({
+      eventTitle: z.string().min(1).max(100),
+      choiceText: z.string().min(1).max(200),
+      weekKey: z.string().min(1).max(20),
+    })
+    .nullable(),
+});
+export type StoryProgressSnapshot = z.infer<typeof StoryProgressSnapshotSchema>;
+
 export const MonthlyReportSchema = z.strictObject({
   monthKey: z.string().regex(/^\d{4}-\d{2}$/),
   facts: z.array(CareerLedgerEntryV2Schema),
@@ -286,6 +313,7 @@ export const MonthlyReportSchema = z.strictObject({
   }),
   matchIds: z.array(IdSchema),
   momentum: MonthlyMomentumSchema.optional(),
+  storyProgress: StoryProgressSnapshotSchema.optional(),
 });
 export type MonthlyReport = z.infer<typeof MonthlyReportSchema>;
 

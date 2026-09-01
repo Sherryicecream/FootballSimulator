@@ -227,6 +227,7 @@ describe('automatic youth events', () => {
         { id: 'recover', text: '接受恢复安排', riskLabel: 'low', effects: { fatigue: -2 } },
       ],
       cooldownWeeks: 52,
+      storyId: 'automatic-recovery-story',
     };
     let completed: ReturnType<typeof advanceCareerMonth> | undefined;
 
@@ -248,5 +249,14 @@ describe('automatic youth events', () => {
       completed.save.ledger.filter(({ summary }) => summary.includes('恢复提醒')),
     ).toHaveLength(1);
     expect(completed.save.story.pendingEvent).toBeNull();
+    expect(completed.report.storyProgress?.entries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          storyId: 'automatic-recovery-story',
+          status: 'completed',
+          progressPercent: 100,
+        }),
+      ]),
+    );
   });
 });

@@ -6,6 +6,7 @@ import type { MonthlyReport } from '@football/contracts';
 import { MonthlyMomentumPanel } from './MonthlyMomentumPanel';
 import { SceneBanner } from '../design-system/SceneBanner';
 import { CurrentStateBadges } from './CurrentStateBadges';
+import { StoryProgressPanel } from './StoryProgressPanel';
 
 interface ProDashboardProps {
   save: CareerSaveV5Like;
@@ -217,6 +218,7 @@ export function ProDashboard({
               )}
             </section>
             <MonthlyMomentumPanel monthKey={report.monthKey} momentum={report.momentum} />
+            <StoryProgressPanel progress={report.storyProgress} />
           </>
         )}
       </div>

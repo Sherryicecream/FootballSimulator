@@ -12,6 +12,7 @@ import {
   createSeededRandomSource,
   pickYouthEventForWeek,
   buildMonthlyMomentum,
+  buildStoryProgress,
   settleMonthlyDevelopment,
   simulateYouthWeek,
   type DevelopmentAccrual,
@@ -148,6 +149,7 @@ export const advanceCareerMonth = <
     },
     matchIds,
     momentum: buildMonthlyMomentum(reportFacts, settlement.attributeChanges),
+    storyProgress: buildStoryProgress(save, events),
   };
   return { status: save.season.completed ? 'season-complete' : 'month-complete', save, report };
 };

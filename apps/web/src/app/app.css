@@ -1,3 +1,157 @@
+.story-progress-panel {
+  margin-bottom: 24px;
+  border: 1px solid #334155;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: #0b1220;
+  color: #f8fafc;
+  box-shadow: 0 14px 32px #0f172a20;
+}
+
+.story-progress-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #ffffff1a;
+}
+
+.story-progress-header .eyebrow {
+  color: #a7f3d0;
+}
+
+.story-progress-header h3 {
+  margin: 6px 0 0;
+  color: #ffffff;
+  font-size: clamp(1.25rem, 3vw, 1.65rem);
+}
+
+.story-progress-count,
+.story-progress-status {
+  border: 1px solid #94a3b866;
+  border-radius: 999px;
+  padding: 4px 9px;
+  color: #cbd5e1;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.story-progress-recent {
+  display: grid;
+  gap: 5px;
+  padding: 14px 24px;
+  border-bottom: 1px solid #ffffff1a;
+  background: #17255480;
+}
+
+.story-progress-recent > span {
+  color: #93c5fd;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  letter-spacing: 0.05em;
+}
+
+.story-progress-recent strong {
+  color: #f8fafc;
+}
+
+.story-progress-recent p,
+.story-progress-active,
+.story-progress-wait {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: var(--text-sm);
+  line-height: 1.6;
+}
+
+.story-progress-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 16px 24px 20px;
+}
+
+.story-progress-entry {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #334155;
+  border-radius: var(--radius-md);
+  background: #111827;
+}
+
+.story-progress-entry-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.story-progress-entry-header h4 {
+  margin: 8px 0 0;
+  color: #f8fafc;
+  font-size: 1rem;
+}
+
+.story-progress-entry-header > strong {
+  color: #bef264;
+  font-family: var(--font-sans);
+  font-size: 1.25rem;
+}
+
+.story-progress-status--active {
+  border-color: #34d39999;
+  color: #a7f3d0;
+}
+
+.story-progress-status--waiting {
+  border-color: #fbbf2499;
+  color: #fde68a;
+}
+
+.story-progress-status--completed {
+  border-color: #64748b99;
+  color: #cbd5e1;
+}
+
+.story-progress-track {
+  height: 6px;
+  margin: 14px 0 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #334155;
+}
+
+.story-progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #34d399, #bef264);
+}
+
+.story-progress-active {
+  color: #e2e8f0;
+}
+
+.story-progress-wait {
+  margin-top: 4px;
+  color: #94a3b8;
+}
+
+@media (max-width: 640px) {
+  .story-progress-header,
+  .story-progress-recent,
+  .story-progress-list {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .story-progress-list {
+    grid-template-columns: 1fr;
+  }
+}
 @import '../design-system/tokens.css';
 
 * {
