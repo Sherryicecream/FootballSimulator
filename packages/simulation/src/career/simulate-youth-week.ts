@@ -12,6 +12,7 @@ import {
 } from '../player-development/development';
 import { simulateInjuryRisk } from '../health/injury-model';
 import { createSeededRandomSource } from '../randomness';
+import { academyStrength } from '../match/scheduled-youth-match';
 import { simulateScheduledYouthMatch } from '../match/scheduled-youth-match';
 
 export type YouthWeekInputShape = CareerSaveV2Like;
@@ -71,6 +72,7 @@ export const simulateYouthWeek = <S extends YouthWeekInputShape>(
     load,
     matchResult,
     injury,
+    academies,
     matchTags(save, matchResult, academies),
   );
   const nextDate = addDays(save.season.currentDate, 7);
@@ -144,6 +146,7 @@ const createFacts = (
   load: number,
   match: YouthMatchResultV2 | null,
   injury: CareerSaveV2['health']['activeInjury'],
+  academies: readonly YouthAcademyProfile[],
   tags: string[],
 ): CareerLedgerEntryV2[] => {
   const facts: CareerLedgerEntryV2[] = [
@@ -159,6 +162,15 @@ const createFacts = (
     facts.push({
       id: match.id,
       weekKey,
+      matchContext: {
+        opponentStrength: opponentStrengthFor(match, academies),
+        isHome: match.isHome,
+        played: match.played,
+        minutesPlayed: match.minutesPlayed,
+        rating: match.rating,
+        goals: match.goals,
+        assists: match.assists,
+      },
       type: 'match',
       summary: `${match.opponentName} ${match.homeScore}:${match.awayScore}；${match.played ? `出场 ${match.minutesPlayed} 分钟，评分 ${match.rating}` : '未出场'}${tags.length ? `；${tags.join('、')}` : ''}`,
       participantIds: [],
@@ -172,6 +184,15 @@ const createFacts = (
       participantIds: [],
     });
   return facts;
+};
+
+const opponentStrengthFor = (
+  match: YouthMatchResultV2,
+  academies: readonly YouthAcademyProfile[],
+): number => {
+  const opponent = academies.find(({ id }) => id === match.opponentId);
+  if (!opponent) return 55;
+  return academyStrength(opponent).overall;
 };
 
 const matchTags = (

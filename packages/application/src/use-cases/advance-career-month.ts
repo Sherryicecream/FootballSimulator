@@ -10,6 +10,7 @@ import type {
 import {
   advanceFirstTeamPathway,
   createSeededRandomSource,
+  buildMatchdayMoments,
   pickYouthEventForWeek,
   buildMonthlyMomentum,
   buildStoryProgress,
@@ -149,6 +150,7 @@ export const advanceCareerMonth = <
     },
     matchIds,
     momentum: buildMonthlyMomentum(reportFacts, settlement.attributeChanges),
+    matchdayMoments: buildMatchdayMoments(reportFacts),
     storyProgress: buildStoryProgress(save, events),
   };
   return { status: save.season.completed ? 'season-complete' : 'month-complete', save, report };

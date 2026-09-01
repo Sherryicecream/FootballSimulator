@@ -14,6 +14,7 @@ import { MonthlyMomentumPanel } from './MonthlyMomentumPanel';
 import { SceneBanner } from '../design-system/SceneBanner';
 import { CurrentStateBadges } from './CurrentStateBadges';
 import { StoryProgressPanel } from './StoryProgressPanel';
+import { MatchdayRhythmPanel } from './MatchdayRhythmPanel';
 
 interface CareerDashboardProps {
   save: CareerSaveV4Like;
@@ -133,6 +134,7 @@ export function CareerDashboard({
         <MonthlyMomentumPanel monthKey={report.monthKey} momentum={report.momentum} />
       )}
       {report && !outcome && <StoryProgressPanel progress={report.storyProgress} />}
+      {report && !outcome && <MatchdayRhythmPanel moments={report.matchdayMoments ?? []} />}
 
       <div className="dashboard-grid">
         <section className="dashboard-card">

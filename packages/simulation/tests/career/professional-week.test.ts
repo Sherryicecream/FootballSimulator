@@ -88,6 +88,16 @@ describe('simulateProfessionalWeek', () => {
     if (weekFixtures.some((f) => f.homeClubId === 'pro-club-1' || f.awayClubId === 'pro-club-1')) {
       expect(matchResult).not.toBeNull();
       expect(matchResult!.id.startsWith('pro-')).toBe(true);
+      expect(next.ledger.find(({ id }) => id === matchResult!.id)?.matchContext).toEqual(
+        expect.objectContaining({
+          opponentStrength: expect.any(Number),
+          isHome: expect.any(Boolean),
+          played: expect.any(Boolean),
+          minutesPlayed: expect.any(Number),
+          goals: expect.any(Number),
+          assists: expect.any(Number),
+        }),
+      );
     }
   });
 

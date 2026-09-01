@@ -13,6 +13,7 @@ import {
   applyAgeDecline,
   accrueNationalTeam,
   buildMonthlyMomentum,
+  buildMatchdayMoments,
   buildStoryProgress,
   buildDepthChart,
   buildRenewalOffer,
@@ -297,6 +298,7 @@ export const advanceProMonth = <S extends CareerSaveV4Like>(
     matchIds,
     momentum: buildMonthlyMomentum(reportFacts, attributeChanges),
     storyProgress: buildStoryProgress(save, events),
+    matchdayMoments: buildMatchdayMoments(reportFacts),
   };
   void mergeDevelopmentAccrual;
   return {

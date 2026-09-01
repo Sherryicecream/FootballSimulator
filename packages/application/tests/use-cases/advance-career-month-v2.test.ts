@@ -36,6 +36,10 @@ describe('advanceCareerMonth', () => {
     expect(outcome.save.season.currentMonth).toBe('2024-10');
     expect(outcome.save.season.fixtures[0]?.status).toBe('played');
     expect(outcome.report.matchIds).toEqual(['match-fixture-1', 'match-fixture-2']);
+    expect(outcome.report.matchdayMoments).toHaveLength(2);
+    expect(outcome.report.matchdayMoments?.[0]).toEqual(
+      expect.objectContaining({ preMatch: expect.any(String), postMatch: expect.any(String) }),
+    );
     expect(outcome.report.attributeChanges).toHaveLength(0);
     expect(
       Object.values(outcome.save.monthlyAdvance.developmentAccrual).some(

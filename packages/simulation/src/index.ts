@@ -55,6 +55,7 @@ export { buildEventFeedback } from './events/event-feedback';
 export { selectEventNarrativeVariant } from './events/narrative-variants';
 export type { NarrativeVariantKey, SelectedNarrativeVariant } from './events/narrative-variants';
 export { buildMonthlyMomentum } from './career/monthly-momentum';
+export { buildMatchdayMoments } from './career/matchday-moments';
 export { buildStoryProgress } from './career/story-progress';
 export { evaluateOffseason } from './career/evaluate-offseason';
 export {

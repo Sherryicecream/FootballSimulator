@@ -9,6 +9,16 @@ describe('simulateYouthWeek', () => {
     const second = simulateYouthWeek(save, academies);
 
     expect(first).toEqual(second);
+    expect(first.facts.find(({ type }) => type === 'match')?.matchContext).toEqual(
+      expect.objectContaining({
+        opponentStrength: expect.any(Number),
+        isHome: expect.any(Boolean),
+        played: expect.any(Boolean),
+        minutesPlayed: expect.any(Number),
+        goals: expect.any(Number),
+        assists: expect.any(Number),
+      }),
+    );
     expect(first.matchResult?.opponentName).toBe('齐鲁青年队');
     expect(first.save.season.fixtures[0]?.status).toBe('played');
     expect(first.save.player.attributes).toEqual(save.player.attributes);

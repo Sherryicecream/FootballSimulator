@@ -7,6 +7,7 @@ import { MonthlyMomentumPanel } from './MonthlyMomentumPanel';
 import { SceneBanner } from '../design-system/SceneBanner';
 import { CurrentStateBadges } from './CurrentStateBadges';
 import { StoryProgressPanel } from './StoryProgressPanel';
+import { MatchdayRhythmPanel } from './MatchdayRhythmPanel';
 
 interface ProDashboardProps {
   save: CareerSaveV5Like;
@@ -218,6 +219,7 @@ export function ProDashboard({
               )}
             </section>
             <MonthlyMomentumPanel monthKey={report.monthKey} momentum={report.momentum} />
+            <MatchdayRhythmPanel moments={report.matchdayMoments ?? []} />
             <StoryProgressPanel progress={report.storyProgress} />
           </>
         )}

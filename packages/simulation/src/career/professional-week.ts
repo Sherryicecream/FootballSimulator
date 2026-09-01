@@ -98,6 +98,7 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
   const selection = decideAppearance(save, health, rng, Boolean(ownFixture));
 
   let matchResult: YouthMatchResultV2 | null = null;
+  let opponentStrength: number | undefined;
   let standings: LeagueStanding[] = pro.standings;
   const clubById = new Map(clubs.map((club) => [club.id, club]));
   const ownClub = clubById.get(pro.clubId);
@@ -120,6 +121,7 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
     standings = updateStandings(standings, fixture, result.homeScore, result.awayScore);
     if (isOwn && selection.appearance !== 'unavailable') {
       const isHome = fixture.homeClubId === pro.clubId;
+      opponentStrength = clubStrength(isHome ? away : home).overall;
       matchResult = {
         id: `pro-${fixture.id}`,
         fixtureId: fixture.id,
@@ -140,7 +142,15 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
     }
   }
 
-  const facts = createProFacts(save, weekKey, load, matchResult, selection, injury);
+  const facts = createProFacts(
+    save,
+    weekKey,
+    load,
+    matchResult,
+    selection,
+    injury,
+    opponentStrength,
+  );
   const nextDate = addDays(pro.currentDate, 7);
   const playedIds = new Set(weekFixtures.map(({ id }) => id));
   const fixtures = pro.fixtures.map((fixture) =>
@@ -355,6 +365,7 @@ const createProFacts = (
   match: YouthMatchResultV2 | null,
   selection: ProAppearanceDecision,
   injury: CareerSaveV4Like['health']['activeInjury'],
+  opponentStrength: number | undefined,
 ): CareerLedgerEntryV2[] => {
   const facts: CareerLedgerEntryV2[] = [
     {
@@ -376,6 +387,15 @@ const createProFacts = (
       id: match.id,
       weekKey,
       type: 'pro-match',
+      matchContext: {
+        opponentStrength: opponentStrength ?? 55,
+        isHome: match.isHome,
+        played: match.played,
+        minutesPlayed: match.minutesPlayed,
+        rating: match.rating,
+        goals: match.goals,
+        assists: match.assists,
+      },
       summary: `${match.opponentName} ${match.homeScore}:${match.awayScore}；${appearanceText}${match.rating != null ? `，评分 ${match.rating}` : ''}${match.goals + match.assists > 0 ? `；${match.goals} 球 ${match.assists} 助攻` : ''}`,
       participantIds: [],
     });

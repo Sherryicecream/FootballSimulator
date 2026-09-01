@@ -199,6 +199,17 @@ export const YouthStoryStateSchema = z.strictObject({
 });
 export type YouthStoryState = z.infer<typeof YouthStoryStateSchema>;
 
+export const MatchContextSchema = z.strictObject({
+  opponentStrength: ScoreSchema,
+  isHome: z.boolean(),
+  played: z.boolean(),
+  minutesPlayed: z.number().int().min(0).max(90),
+  rating: z.number().min(1).max(10).nullable(),
+  goals: z.number().int().min(0).max(50),
+  assists: z.number().int().min(0).max(50),
+});
+export type MatchContext = z.infer<typeof MatchContextSchema>;
+
 export const CareerLedgerEntryV2Schema = z.strictObject({
   id: IdSchema,
   weekKey: z.string().min(1).max(20),
@@ -224,6 +235,7 @@ export const CareerLedgerEntryV2Schema = z.strictObject({
   ]),
   summary: z.string().min(1).max(500),
   participantIds: z.array(IdSchema),
+  matchContext: MatchContextSchema.optional(),
 });
 export type CareerLedgerEntryV2 = z.infer<typeof CareerLedgerEntryV2Schema>;
 
@@ -270,6 +282,19 @@ export const MonthlyMomentumSchema = z.strictObject({
 });
 export type MonthlyMomentum = z.infer<typeof MonthlyMomentumSchema>;
 
+export const MatchdayMomentSchema = z.strictObject({
+  weekKey: z.string().min(1).max(20),
+  opponentName: z.string().min(1).max(80),
+  opponentStrength: ScoreSchema,
+  difficulty: z.enum(['favorable', 'balanced', 'difficult']),
+  scoreline: z.string().min(3).max(20),
+  result: z.enum(['win', 'draw', 'loss']),
+  playerStatus: z.enum(['played', 'not-played']),
+  preMatch: z.string().min(1).max(220),
+  postMatch: z.string().min(1).max(220),
+});
+export type MatchdayMoment = z.infer<typeof MatchdayMomentSchema>;
+
 export const StoryProgressStatusSchema = z.enum(['active', 'waiting', 'completed']);
 export type StoryProgressStatus = z.infer<typeof StoryProgressStatusSchema>;
 
@@ -314,6 +339,7 @@ export const MonthlyReportSchema = z.strictObject({
   matchIds: z.array(IdSchema),
   momentum: MonthlyMomentumSchema.optional(),
   storyProgress: StoryProgressSnapshotSchema.optional(),
+  matchdayMoments: z.array(MatchdayMomentSchema).max(5).optional(),
 });
 export type MonthlyReport = z.infer<typeof MonthlyReportSchema>;
 

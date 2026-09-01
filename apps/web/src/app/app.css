@@ -1,3 +1,152 @@
+@import '../design-system/tokens.css';
+.matchday-rhythm-panel {
+  margin-bottom: 24px;
+  border: 1px solid #344e5c;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, #0b1720 0%, #102a2b 100%),
+    repeating-linear-gradient(90deg, #ffffff03 0 1px, transparent 1px 42px);
+  color: #f8fafc;
+  box-shadow: 0 16px 36px #0f172a1f;
+}
+
+.matchday-rhythm-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #ffffff1a;
+}
+
+.matchday-rhythm-header .eyebrow {
+  color: #a7f3d0;
+}
+
+.matchday-rhythm-header h3 {
+  margin: 6px 0 0;
+  color: #ffffff;
+  font-size: clamp(1.25rem, 3vw, 1.65rem);
+}
+
+.matchday-rhythm-header > span,
+.matchday-moment-week,
+.matchday-moment-difficulty {
+  color: #94a3b8;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+}
+
+.matchday-rhythm-list {
+  display: grid;
+  gap: 12px;
+  padding: 16px 24px 20px;
+}
+
+.matchday-moment {
+  padding: 15px;
+  border: 1px solid #36545d;
+  border-radius: var(--radius-md);
+  background: #0f2028cc;
+}
+
+.matchday-moment--difficult {
+  border-color: #f59e0b88;
+}
+
+.matchday-moment--favorable {
+  border-color: #34d39966;
+}
+
+.matchday-moment-heading,
+.matchday-moment-difficulty {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.matchday-moment-heading h4 {
+  margin: 7px 0 0;
+  color: #f8fafc;
+  font-size: 1.05rem;
+}
+
+.matchday-moment-score {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+}
+
+.matchday-moment-score strong {
+  color: #bef264;
+  font-family: var(--font-sans);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.matchday-moment-score span {
+  color: #a7f3d0;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.matchday-moment-difficulty {
+  align-items: center;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid #ffffff14;
+}
+
+.matchday-moment-difficulty strong {
+  color: #fde68a;
+}
+
+.matchday-moment--favorable .matchday-moment-difficulty strong {
+  color: #a7f3d0;
+}
+
+.matchday-moment-story {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 13px;
+}
+
+.matchday-moment-story section {
+  padding: 11px 12px;
+  border-radius: 8px;
+  background: #0206175c;
+}
+
+.matchday-moment-story section > span {
+  color: #93c5fd;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.matchday-moment-story p {
+  margin: 6px 0 0;
+  color: #cbd5e1;
+  font-size: var(--text-sm);
+  line-height: 1.65;
+}
+
+@media (max-width: 640px) {
+  .matchday-rhythm-header,
+  .matchday-rhythm-list {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .matchday-moment-story {
+    grid-template-columns: 1fr;
+  }
+}
 .story-progress-panel {
   margin-bottom: 24px;
   border: 1px solid #334155;
@@ -152,7 +301,6 @@
     grid-template-columns: 1fr;
   }
 }
-@import '../design-system/tokens.css';
 
 * {
   margin: 0;

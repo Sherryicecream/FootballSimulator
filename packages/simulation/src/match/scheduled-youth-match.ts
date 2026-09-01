@@ -93,7 +93,7 @@ const requireAcademy = (
   return academy;
 };
 
-const academyStrength = (academy: YouthAcademyProfile, playerAbility = 50) => {
+export const academyStrength = (academy: YouthAcademyProfile, playerAbility = 50) => {
   const base = academy.competitionLevel * 0.55 + academy.coachingLevel * 0.25 + playerAbility * 0.2;
   return {
     attack: Math.round(base + academy.promotionTendency / 20),
