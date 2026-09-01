@@ -14,5 +14,6 @@ export * from './youth-season';
 export * from './save-migration';
 export * from './graduation';
 export * from './clubs';
+export * from './narration';
 export * from './professional';
 export * from './career-expansion';

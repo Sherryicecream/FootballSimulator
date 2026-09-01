@@ -384,12 +384,19 @@ Run: git commit -m "docs: complete visual experience milestone"
 
 门禁结果：pnpm test 通过（93 个测试文件、441 个测试，架构 10/10）；pnpm typecheck、pnpm lint、pnpm format:check、pnpm build 通过；pnpm test:e2e 通过（16/16）；pnpm balance:youth -- --runs 1000 --seed-start 1 --output artifacts/youth-balance-module3.json 通过，完成率 100%、比赛中位 22、决策中位 10、重伤率 0.7%、毕业率 60.9%、职业承诺兑现率 93.4%。
 
-### 模块 4：安全的本地 AI 叙事层（执行中）
+### 模块 4：安全的本地 AI 叙事层（已完成）
 
-- AI 只润色已确定文案，不能新增事实、数值、关系或阶段转移；失败回退确定性作者文案。
-- 先用本地 mock、超时、schema 和越权输出测试，再考虑真实适配器。
+- [x] 定义最小叙事事实包和版本化 prompt，AI 输入不包含存档、随机源、属性或阶段机。
+- [x] 使用严格输出 schema，只允许回应、人物对白和后续文案；未知字段直接拒绝。
+- [x] 实现 provider、deterministic mock、超时、异常、非法 schema、参与人物变更和新增数字事实的安全回退。
+- [x] 保留作者原文为离线默认路径，AI 输出不写入账本、存档或机械状态。
+- [x] 将 local-ai 纳入 root 测试发现范围，并完成全量门禁和 1,000 赛季平衡检查。
 
-### 模块 5：视觉沉浸与场景表现（待执行）
+实际结果：安全适配器只对已确定的文字草稿做可选润色；成功时返回 provider 文案，任何失败或越权输出返回原作者文案并标注原因。当前没有真实模型 provider，后续接入时仍必须通过同一 adapter。
+
+门禁结果：pnpm test 通过（95 个测试文件、450 个测试，架构 10/10）；pnpm typecheck、pnpm lint、pnpm format:check、pnpm build 通过；pnpm test:e2e 通过（16/16）；pnpm balance:youth -- --runs 1000 --seed-start 1 --output artifacts/youth-balance-module4.json 通过，核心模拟分布与模块 3 完全一致。
+
+### 模块 5：视觉沉浸与场景表现（执行中）
 
 - 在现有深色球场工作台上补充训练、比赛、更衣室、恢复和市场场景；优先使用可控 SVG/本地资源。
 - 通过桌面/移动端 E2E 验证可读性、键盘操作和无横向溢出。

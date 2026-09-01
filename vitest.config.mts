@@ -19,6 +19,13 @@ export default defineConfig({
       },
       {
         test: {
+          name: 'local-ai',
+          environment: 'node',
+          include: ['apps/local-ai/tests/**/*.test.ts'],
+        },
+      },
+      {
+        test: {
           name: 'web',
           environment: 'jsdom',
           globals: true,
