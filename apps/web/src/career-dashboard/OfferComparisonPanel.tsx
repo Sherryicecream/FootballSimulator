@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { SceneBanner } from '../design-system/SceneBanner';
 import type { ContractOfferV3 } from '@football/contracts';
 
 interface OfferComparisonPanelProps {
@@ -34,7 +35,12 @@ export function OfferComparisonPanel({
 
   return (
     <section className="offer-panel" aria-label="合同要约">
-      <h2>经纪人的报价</h2>
+      <SceneBanner
+        kind="locker-room"
+        eyebrow="职业市场 · 谈判桌"
+        title="经纪人的报价"
+        detail="每一份合同都代表不同的出场路径、成长速度和风险承担。"
+      />
       <div className="offer-list">
         {offers.map((offer) => (
           <article

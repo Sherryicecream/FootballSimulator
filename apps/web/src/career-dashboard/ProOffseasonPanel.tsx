@@ -37,10 +37,10 @@ export function ProOffseasonPanel({
   return (
     <section className="offseason" aria-label="职业休赛期">
       <SceneBanner
-        kind="neutral"
+        kind="locker-room"
         eyebrow="职业生涯 · 赛季结算"
         title="职业赛季总结"
-        detail="回看这一年的出场、承诺与下一步选择。"
+        detail="更衣室的灯还亮着：回看这一年的出场、承诺与下一步选择。"
       />
       <ul className="offseason-list">
         <li>

@@ -1,4 +1,5 @@
 import type { MonthlyMomentum } from '@football/contracts';
+import { FootballGlyph, type FootballGlyphName } from '../design-system/FootballGlyph';
 
 interface MonthlyMomentumPanelProps {
   monthKey: string;
@@ -12,15 +13,15 @@ const TONE_LABELS: Record<MonthlyMomentum['tone'], string> = {
   warning: '需要回应',
 };
 
-const BEAT_ICONS: Record<MonthlyMomentum['beats'][number]['kind'], string> = {
-  training: '◌',
-  match: '⚽',
-  decision: '◆',
-  event: '✦',
-  health: '＋',
-  relationship: '◎',
-  'first-team': '↗',
-  settlement: '▣',
+const BEAT_GLYPHS: Record<MonthlyMomentum['beats'][number]['kind'], FootballGlyphName> = {
+  training: 'training',
+  match: 'match',
+  decision: 'form',
+  event: 'warning',
+  health: 'recovery',
+  relationship: 'relationship',
+  'first-team': 'coach-trust',
+  settlement: 'locker-room',
 };
 
 export const MonthlyMomentumPanel = ({ monthKey, momentum }: MonthlyMomentumPanelProps) => {
@@ -48,7 +49,7 @@ export const MonthlyMomentumPanel = ({ monthKey, momentum }: MonthlyMomentumPane
             key={`${beat.weekKey}-${beat.kind}`}
           >
             <div className="monthly-momentum-beat-marker" aria-hidden="true">
-              <span>{BEAT_ICONS[beat.kind]}</span>
+              <FootballGlyph name={BEAT_GLYPHS[beat.kind]} size={17} />
             </div>
             <div className="monthly-momentum-beat-copy">
               <div className="monthly-momentum-beat-meta">

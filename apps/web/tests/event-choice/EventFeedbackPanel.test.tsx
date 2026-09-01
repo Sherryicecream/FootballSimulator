@@ -40,12 +40,14 @@ const feedback: EventFeedback = {
 
 describe('EventFeedbackPanel', () => {
   it('shows the selected choice, participant dialogue, and explainable changes', () => {
-    render(<EventFeedbackPanel feedback={feedback} onContinue={() => {}} />);
+    const { container } = render(<EventFeedbackPanel feedback={feedback} onContinue={() => {}} />);
 
     expect(screen.getByRole('heading', { name: '训练场上的误会' })).toBeDefined();
     expect(screen.getByText(feedback.response)).toBeDefined();
     expect(screen.getByText(feedback.participantResponses[0]!.text)).toBeDefined();
     expect(screen.getByText(feedback.participantResponses[1]!.text)).toBeDefined();
+    expect(container.querySelector('[data-glyph="coach-trust"]')).not.toBeNull();
+    expect(container.querySelector('[data-glyph="relationship"]')).not.toBeNull();
     expect(screen.getByText('信心')).toBeDefined();
     expect(screen.getByText((content) => content.includes('教练信任'))).toBeDefined();
     expect(screen.getByText('后续影响')).toBeDefined();

@@ -279,6 +279,10 @@ describe('ProOffseasonPanel', () => {
       />,
     );
     expect(screen.getByText('职业赛季总结')).toBeVisible();
+    expect(screen.getByRole('region', { name: '足球场景：职业赛季总结' })).toHaveAttribute(
+      'data-scene-kind',
+      'locker-room',
+    );
     expect(screen.getByText('合同承诺对照：已兑现')).toBeVisible();
     expect(screen.getByText(/出场份额 42%（承诺 30%）/)).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: '开始下个职业赛季' }));

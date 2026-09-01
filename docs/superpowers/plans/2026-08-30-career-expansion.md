@@ -396,10 +396,14 @@ Run: git commit -m "docs: complete visual experience milestone"
 
 门禁结果：pnpm test 通过（95 个测试文件、450 个测试，架构 10/10）；pnpm typecheck、pnpm lint、pnpm format:check、pnpm build 通过；pnpm test:e2e 通过（16/16）；pnpm balance:youth -- --runs 1000 --seed-start 1 --output artifacts/youth-balance-module4.json 通过，核心模拟分布与模块 3 完全一致。
 
-### 模块 5：视觉沉浸与场景表现（执行中）
+### 模块 5：视觉沉浸与场景表现（已完成）
 
 - 在现有深色球场工作台上补充训练、比赛、更衣室、恢复和市场场景；优先使用可控 SVG/本地资源。
+- 月度节点与人物回应统一使用 FootballGlyph，休赛期、经纪人、报价、合同和自由球员等待窗口补充 SceneBanner 场景语义。
+- 场景横幅增加稳定的场景类型标识；纯视觉装饰不参与布局宽度，保留文字标题和 aria 语义。
 - 通过桌面/移动端 E2E 验证可读性、键盘操作和无横向溢出。
+实际结果：全量单元/架构测试 95 个文件、451 个测试，架构 10/10；typecheck、lint、format、build 通过；E2E 16/16 通过。
+平衡结果：artifacts/youth-balance-module5.json；完成率 100%、比赛中位 22、决策中位 10、每月最多 2 个决策、重伤率 0.7%、毕业率 60.9%、职业承诺兑现率 93.4%。
 
 ### 模块 6：全生涯回放与长期目标（待执行）
 

@@ -1717,3 +1717,128 @@ fieldset {
     align-self: flex-start;
   }
 }
+/* M9 模块 5：让转场页面也保持足球场景与信息层级。 */
+.scene-banner {
+  isolation: isolate;
+  background-size: cover;
+}
+.scene-banner::before {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0 58%,
+      rgba(184, 240, 68, 0.06) 58% 58.2%,
+      transparent 58.2%
+    ),
+    repeating-linear-gradient(90deg, transparent 0 44px, rgba(255, 255, 255, 0.035) 44px 45px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 48%);
+  pointer-events: none;
+  content: '';
+}
+.scene-banner::after {
+  pointer-events: none;
+}
+.scene-banner-art {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 12px 24px rgba(0, 0, 0, 0.18);
+}
+.scene-banner--locker-room .scene-banner-art {
+  border-color: rgba(244, 180, 67, 0.55);
+  color: #f4b443;
+}
+.scene-banner--recovery .scene-banner-art {
+  border-color: rgba(125, 211, 252, 0.5);
+  color: #7dd3fc;
+}
+.monthly-momentum-beat-marker .football-glyph {
+  width: 17px;
+  height: 17px;
+}
+.event-feedback-avatar {
+  color: var(--color-accent);
+}
+.event-feedback-avatar .football-glyph {
+  width: 17px;
+  height: 17px;
+}
+.offseason,
+.agent-form,
+.offer-panel,
+.contract-card {
+  background:
+    linear-gradient(135deg, rgba(16, 26, 21, 0.98), rgba(9, 18, 14, 0.98)), var(--color-card);
+}
+.offseason-list,
+.eligibility-list {
+  font-family: var(--font-sans);
+}
+.offseason-list li,
+.eligibility-list li {
+  padding: 9px 11px;
+  border-left: 2px solid var(--color-pitch-line);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: rgba(255, 255, 255, 0.025);
+}
+.eligibility-list .met {
+  color: var(--color-risk-low);
+}
+.eligibility-list .unmet {
+  color: var(--color-risk-high);
+}
+.graduation-hint {
+  color: #f7d28b;
+  background: rgba(244, 180, 67, 0.1);
+  border: 1px solid rgba(244, 180, 67, 0.28);
+}
+.offer-card {
+  background: rgba(7, 16, 13, 0.32);
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+.offer-card:hover {
+  border-color: var(--color-pitch-line);
+  transform: translateY(-2px);
+}
+.offer-card.selected {
+  border-color: var(--color-accent);
+  box-shadow:
+    0 0 0 2px rgba(184, 240, 68, 0.18),
+    var(--shadow-sm);
+}
+.offer-card h3,
+.contract-card-heading h3 {
+  color: var(--color-ink);
+  font-family: var(--font-display);
+}
+.sign-confirm {
+  border-color: rgba(244, 180, 67, 0.52);
+  background: rgba(54, 39, 19, 0.72);
+  color: var(--color-ink);
+}
+.contract-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-accent);
+}
+.contract-card-heading h3 {
+  margin: 0;
+}
+.agent-form fieldset {
+  padding: 10px 14px 12px;
+  border-color: var(--color-border);
+  background: rgba(7, 16, 13, 0.24);
+}
+.agent-form legend {
+  padding: 0 5px;
+  color: var(--color-accent);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}

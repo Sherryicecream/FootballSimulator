@@ -1,5 +1,6 @@
 import type { EventFeedback } from '@football/contracts';
 import { SceneBanner } from '../design-system/SceneBanner';
+import { FootballGlyph, type FootballGlyphName } from '../design-system/FootballGlyph';
 import type { SceneKind } from '../design-system/scene-types';
 
 interface EventFeedbackPanelProps {
@@ -15,6 +16,13 @@ const ROLE_LABELS: Record<string, string> = {
   teammate: '队友',
   rival: '竞争者',
   family: '家人',
+};
+const SPEAKER_GLYPHS: Record<string, FootballGlyphName> = {
+  'youth-coach': 'coach-trust',
+  'assistant-coach': 'coach-trust',
+  teammate: 'relationship',
+  rival: 'form',
+  family: 'relationship',
 };
 
 const STATE_LABELS: Record<string, string> = {
@@ -68,11 +76,10 @@ export function EventFeedbackPanel({
               <article className="event-feedback-dialogue-line" key={participant.personId}>
                 <div className="event-feedback-speaker">
                   <span className="event-feedback-avatar" aria-hidden="true">
-                    {participant.role === 'youth-coach' || participant.role === 'assistant-coach'
-                      ? '教'
-                      : participant.role === 'family'
-                        ? '家'
-                        : '队'}
+                    <FootballGlyph
+                      name={SPEAKER_GLYPHS[participant.role] ?? 'relationship'}
+                      size={17}
+                    />
                   </span>
                   <span>
                     <strong>{participant.personName}</strong>

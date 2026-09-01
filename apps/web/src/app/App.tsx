@@ -49,6 +49,7 @@ import { CareerReviewPage } from '../career-dashboard/CareerReviewPage';
 import { AgentPreferencesForm } from '../career-dashboard/AgentPreferencesForm';
 import { OfferComparisonPanel } from '../career-dashboard/OfferComparisonPanel';
 import { sceneKindForTheme } from '../career-dashboard/career-presentation';
+import { SceneBanner } from '../design-system/SceneBanner';
 import { createBootstrapContent } from './bootstrap-dependencies';
 import { createLocalStorageCareerV4Port } from '../persistence/local-storage-save';
 import './app.css';
@@ -505,7 +506,14 @@ export function App() {
           className="offseason"
           aria-label={save.clubHistory.length === 0 ? '职业市场' : '自由球员'}
         >
-          <h2>{save.clubHistory.length === 0 ? '职业市场' : '自由球员'}</h2>
+          {save.pendingOffers.length === 0 && (
+            <SceneBanner
+              kind="locker-room"
+              eyebrow="职业市场 · 等待窗口"
+              title={save.clubHistory.length === 0 ? '职业市场' : '自由球员'}
+              detail="球员通道外的电话还没有响起；耐心、年龄和市场评价会共同影响下一份机会。"
+            />
+          )}
           {save.pendingOffers.length > 0 ? (
             <OfferComparisonPanel
               offers={save.pendingOffers}

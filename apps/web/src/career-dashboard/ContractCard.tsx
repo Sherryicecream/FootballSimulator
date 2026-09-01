@@ -1,4 +1,5 @@
 import type { SignedContract } from '@football/contracts';
+import { FootballGlyph } from '../design-system/FootballGlyph';
 
 interface ContractCardProps {
   contract: SignedContract;
@@ -28,7 +29,10 @@ const promiseStatusLabels: Record<SignedContract['promiseStatus'], string> = {
 export function ContractCard({ contract }: ContractCardProps) {
   return (
     <section className="contract-card" aria-label="职业合同">
-      <h3>职业合同</h3>
+      <div className="contract-card-heading">
+        <FootballGlyph name="locker-room" size={19} />
+        <h3>职业合同</h3>
+      </div>
       <ul>
         <li>
           俱乐部：{contract.clubName}（层级 {contract.clubTier}）

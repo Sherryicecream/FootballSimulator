@@ -1,4 +1,5 @@
 import type { CareerSaveV4Like, YouthAcademyProfile } from '@football/contracts';
+import { SceneBanner } from '../design-system/SceneBanner';
 import type { YouthSeasonOutcome } from '@football/application';
 
 interface OffseasonBriefingProps {
@@ -47,7 +48,12 @@ export function OffseasonBriefing({
 
   return (
     <section className="offseason" aria-label="休赛期简报">
-      <h2>休赛期简报</h2>
+      <SceneBanner
+        kind="locker-room"
+        eyebrow="青训生涯 · 赛季结算"
+        title="休赛期简报"
+        detail="赛季哨声已经结束，身体、声望和下一条路都在这里重新排位。"
+      />
       <ul className="offseason-list">
         <li>{briefing.healthClearance}</li>
         <li>

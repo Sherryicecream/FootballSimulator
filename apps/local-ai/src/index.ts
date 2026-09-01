@@ -3,7 +3,6 @@ import {
   NarrativePolishRequestSchema,
   type NarrativePolishRequest,
 } from '@football/contracts';
-import { buildNarrativePolishRequest } from './prompts/narrative-polish';
 import {
   fallbackNarrativeDraft,
   UnsafeNarrativeOutputError,

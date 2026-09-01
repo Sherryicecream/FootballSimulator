@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { SceneBanner } from '../design-system/SceneBanner';
 import type { AgentPreferences } from '@football/contracts';
 
 interface AgentPreferencesFormProps {
@@ -23,8 +24,12 @@ export function AgentPreferencesForm({ onSubmit }: AgentPreferencesFormProps) {
 
   return (
     <section className="agent-form" aria-label="经纪人倾向">
-      <h2>与经纪人沟通</h2>
-      <p>告诉经纪人你的偏好。这会影响收到的报价构成，但不保证结果。</p>
+      <SceneBanner
+        kind="locker-room"
+        eyebrow="职业市场 · 第一次谈判"
+        title="与经纪人沟通"
+        detail="告诉经纪人你想争取什么；偏好会改变报价构成，但不保证结果。"
+      />
 
       <fieldset>
         <legend>联赛层级偏好</legend>

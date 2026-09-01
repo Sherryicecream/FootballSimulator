@@ -44,7 +44,11 @@ const sceneArt: Record<SceneKind, ReactNode> = {
 };
 
 export const SceneBanner = ({ kind, eyebrow, title, detail }: SceneBannerProps) => (
-  <section className={'scene-banner scene-banner--' + kind} aria-label={'足球场景：' + title}>
+  <section
+    className={'scene-banner scene-banner--' + kind}
+    aria-label={'足球场景：' + title}
+    data-scene-kind={kind}
+  >
     <div className="scene-banner-art" data-testid="scene-art" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
         {sceneArt[kind]}
