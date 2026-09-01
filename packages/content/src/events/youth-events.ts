@@ -2,6 +2,7 @@ import type { EventDefinition } from '@football/contracts';
 import { balancedOneOffEvents } from './one-off-events';
 import { shortStoryEvents } from './story-events';
 import { trajectoryEvents } from './trajectory-events';
+import { branchingStoryEvents } from './branching-story-events';
 
 const legacyYouthEvents: EventDefinition[] = [
   {
@@ -905,6 +906,7 @@ export const youthEvents: EventDefinition[] = [
   ...balancedOneOffEvents,
   ...shortStoryEvents,
   ...trajectoryEvents,
+  ...branchingStoryEvents,
 ];
 
 export function getYouthEvents(): EventDefinition[] {

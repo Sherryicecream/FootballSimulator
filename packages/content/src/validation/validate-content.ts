@@ -189,6 +189,13 @@ const validateEvents = (events: EventDefinition[]): void => {
         throw new Error(`断裂故事链：${event.id} -> ${nextEventId}`);
       }
     }
+    for (const choice of event.choices) {
+      for (const nextEventId of choice.nextEventIds ?? []) {
+        if (!eventIds.has(nextEventId)) {
+          throw new Error(`断裂选择分支：${event.id}.${choice.id} -> ${nextEventId}`);
+        }
+      }
+    }
     assertNoRealClubBrand(`${event.title} ${event.description}`);
   }
 };

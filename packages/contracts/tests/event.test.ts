@@ -12,6 +12,7 @@ describe('EventChoice', () => {
     });
     expect(valid.id).toBe('accept_challenge');
     expect(valid.riskLabel).toBe('中等');
+    expect(valid.nextEventIds).toBeUndefined();
   });
 });
 

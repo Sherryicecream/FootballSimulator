@@ -98,6 +98,7 @@ const hydratePendingEvent = (
         ...(authored.narrativeVariants !== undefined
           ? { narrativeVariants: authored.narrativeVariants }
           : {}),
+        ...(authored.nextEventIds !== undefined ? { nextEventIds: authored.nextEventIds } : {}),
       };
     }),
   };
@@ -125,7 +126,7 @@ const hydratePendingFeedback = (
     nextEventIds:
       pendingFeedback.nextEventIds && pendingFeedback.nextEventIds.length > 0
         ? pendingFeedback.nextEventIds
-        : (definition?.nextEvents ?? []),
+        : (authored.nextEventIds ?? definition?.nextEvents ?? []),
   };
 };
 

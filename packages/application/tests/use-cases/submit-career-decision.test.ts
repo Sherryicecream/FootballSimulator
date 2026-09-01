@@ -239,4 +239,43 @@ describe('resolveCareerEvent', () => {
     );
     expect(direct.monthlyAdvance.nextWeekIndex).toBe(save.monthlyAdvance.nextWeekIndex);
   });
+
+  it('uses the chosen branch instead of the event default for the next scene', () => {
+    const base = createSave();
+    const rival = base.relationships.persons.find(({ role }) => role === 'rival')!;
+    const save = {
+      ...base,
+      story: {
+        ...base.story,
+        pendingEvent: {
+          eventId: 'branching-event',
+          title: '入选边缘',
+          description: '教练准备决定你是否进入下一场名单。',
+          choices: [
+            {
+              id: 'ask-plan',
+              text: '询问清晰的训练计划',
+              riskLabel: 'low',
+              effects: {},
+              nextEventIds: ['selection-bubble-plan'],
+            },
+          ],
+          resolvedChoiceId: null,
+          participantIds: [rival.id],
+          factRefs: [],
+          storyId: 'selection-bubble-opened',
+          nextEventIds: ['selection-bubble-default'],
+          interaction: 'decision' as const,
+        },
+      },
+      monthlyAdvance: { ...base.monthlyAdvance, status: 'awaiting-decision' as const },
+    };
+
+    const result = resolveCareerEvent(save, 'ask-plan');
+
+    expect(result.story.activeStorylines).toEqual(['selection-bubble-plan']);
+    expect(result.story.pendingFeedback).toEqual(
+      expect.objectContaining({ nextEventIds: ['selection-bubble-plan'] }),
+    );
+  });
 });

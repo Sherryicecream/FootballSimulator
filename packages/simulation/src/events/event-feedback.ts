@@ -51,7 +51,7 @@ export const buildEventFeedback = (
         '真正的影响会在接下来的训练和比赛中显现。',
       variables,
     ),
-    nextEventIds: event.nextEventIds,
+    nextEventIds: choice.nextEventIds ?? event.nextEventIds,
     ...(selectedNarrative ? { narrativeVariantIndex: selectedNarrative.index } : {}),
   };
 };

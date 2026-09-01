@@ -55,6 +55,7 @@ export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId
     participantIds: event.participantIds,
   };
   const activeStorylines = save.story.activeStorylines.filter((id) => id !== event.eventId);
+  const nextEventIds = choice.nextEventIds ?? event.nextEventIds;
 
   // 按输入版本选择校验 Schema：v4 存档保留 v4 字段，v2/v3 走原路径
   // v3 走原 Schema；v4/v5 归一化为 v5（补默认字段且保留新字段）
@@ -68,7 +69,7 @@ export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId
     relationships,
     story: {
       ...save.story,
-      activeStorylines: [...new Set([...activeStorylines, ...event.nextEventIds])],
+      activeStorylines: [...new Set([...activeStorylines, ...nextEventIds])],
       completedStoryIds:
         event.storyId && !save.story.completedStoryIds.includes(event.storyId)
           ? [...save.story.completedStoryIds, event.storyId]

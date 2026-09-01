@@ -56,6 +56,7 @@ export const EventChoiceSchema = z.object({
   response: z.string().min(1).max(500).optional(),
   responses: z.array(EventChoiceResponseSchema).max(6).optional(),
   followUp: z.string().min(1).max(300).optional(),
+  nextEventIds: z.array(z.string().min(1).max(60)).max(8).optional(),
   narrativeVariants: z.array(EventChoiceNarrativeVariantSchema).min(2).max(4).optional(),
 });
 
