@@ -417,7 +417,12 @@ Run: git commit -m "docs: complete visual experience milestone"
 
 门禁结果：pnpm test 通过（97 个测试文件、453 个测试，架构 10/10）；pnpm typecheck、pnpm lint、pnpm format:check、pnpm build 通过；pnpm test:e2e 通过（16/16）；pnpm balance:youth -- --runs 1000 --seed-start 1 --output artifacts/youth-balance-module6.json 通过，完成率 100%、比赛中位 22、决策中位 10、每月最多 2 个决策、重伤率 0.7%、毕业率 60.9%、职业承诺兑现率 93.4%。
 
-### 模块 7：综合平衡与发布前验收（待执行）
+### 模块 7：综合平衡与发布前验收（已完成）
 
-- 汇总全生涯、故事链、比赛节奏、AI 回退和视觉 E2E 结果。
-- 运行所有门禁与批量命令，保留每个模块提交点，再由用户决定合并或继续调参。
+- [x] 汇总全生涯回放、故事链、比赛节奏、AI 回退和视觉场景结果。
+- [x] 从干净的 M9 模块 6 保存点重新运行 pnpm test、pnpm typecheck、pnpm lint、pnpm format:check、pnpm build。
+- [x] 运行 pnpm test:e2e 和 1,000 赛季平衡命令，保留最终报告与各模块提交点。
+
+实际结果：最终门禁从提交 ac5728d 通过；97 个测试文件、453 个测试，架构检查 10/10，E2E 16/16，类型/Lint/格式/构建全部通过。最终平衡报告为 artifacts/youth-balance-final.json：完成率 100%、比赛中位 22、决策中位 10、P90 13、每月最多 2 个决策、重伤率 0.7%、毕业率 60.9%、职业承诺兑现率 93.4%、生涯赛季中位 14、职业赛季中位 12、退役年龄中位 30、回顾生成率 100%。
+
+M9 模块 1–7 完成；各阶段提交保存点保留在当前分支，下一步由用户进行本地体验检查并决定是否继续内容扩充、真实模型 provider 接入或平衡调参。
