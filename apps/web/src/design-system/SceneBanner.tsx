@@ -6,6 +6,7 @@ export interface SceneBannerProps {
   eyebrow: string;
   title: string;
   detail?: string;
+  landmark?: boolean;
 }
 
 const sceneArt: Record<SceneKind, ReactNode> = {
@@ -43,10 +44,16 @@ const sceneArt: Record<SceneKind, ReactNode> = {
   ),
 };
 
-export const SceneBanner = ({ kind, eyebrow, title, detail }: SceneBannerProps) => (
+export const SceneBanner = ({
+  kind,
+  eyebrow,
+  title,
+  detail,
+  landmark = true,
+}: SceneBannerProps) => (
   <section
     className={'scene-banner scene-banner--' + kind}
-    aria-label={'足球场景：' + title}
+    aria-label={landmark ? '足球场景：' + title : undefined}
     data-scene-kind={kind}
   >
     <div className="scene-banner-art" data-testid="scene-art" aria-hidden="true">

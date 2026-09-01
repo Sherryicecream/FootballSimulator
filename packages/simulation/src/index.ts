@@ -1,3 +1,10 @@
+export type {
+  CareerGoal,
+  CareerGoalStatus,
+  CareerReplayMoment,
+  CareerReplayMomentKind,
+  CareerReviewData,
+} from './career/career-review';
 export { createSeededRandomSource } from './randomness';
 export type { SeededRandomSource } from './randomness';
 export { createPlayer } from './player-development/player-factory';
