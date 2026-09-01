@@ -4,6 +4,7 @@ import { createCareerSave } from '../../src/use-cases/start-career';
 import { createYouthCareerV2 } from '../../src/use-cases/create-youth-career-v2';
 import { submitCareerDecision } from '../../src/use-cases/submit-career-decision';
 import { resolveCareerEvent } from '../../src/use-cases/resolve-career-event';
+import { clearEventFeedback } from '../../src/use-cases/clear-event-feedback';
 
 describe('submitCareerDecision', () => {
   it('applies a decision to participants once and preserves the monthly cursor', () => {
@@ -47,6 +48,105 @@ describe('submitCareerDecision', () => {
     expect(result.monthlyAdvance.nextWeekIndex).toBe(2);
     expect(result.story.pendingEvent).toBeNull();
     expect(() => submitCareerDecision(result, 'rival-talk', 'respect')).toThrow('没有待处理');
+  });
+
+  it('stores an immediate participant response and explainable consequences', () => {
+    const base = createSave();
+    const coach = base.relationships.persons.find(({ role }) => role === 'youth-coach')!;
+    const teammate = base.relationships.persons.find(({ role }) => role === 'teammate')!;
+    const pendingEvent = {
+      eventId: 'misunderstanding-clarification',
+      title: '训练场上的误会',
+      description: '一次训练中的沟通失误让你和队友都感到不舒服。',
+      choices: [
+        {
+          id: 'clarify',
+          text: '当面澄清误会',
+          riskLabel: 'medium',
+          effects: { respect: 3, trust: 2, confidence: 2 },
+          response: '你把事情说清楚了，训练场的空气终于松动下来。',
+          responses: [
+            {
+              speakerRole: 'youth-coach',
+              text: '{personName}：“愿意把问题说开，这是成熟的表现。”',
+            },
+            {
+              speakerRole: 'teammate',
+              text: '{personName}：“那我们别把误会带进下一场比赛。”',
+            },
+          ],
+        },
+      ],
+      resolvedChoiceId: null,
+      participantIds: [coach.id, teammate.id],
+      factRefs: [],
+      storyId: null,
+      nextEventIds: [],
+      interaction: 'decision' as const,
+    } as unknown as typeof base.story.pendingEvent;
+    const save = {
+      ...base,
+      story: { ...base.story, pendingEvent },
+      monthlyAdvance: { ...base.monthlyAdvance, status: 'awaiting-decision' as const },
+    };
+
+    const result = submitCareerDecision(save, 'misunderstanding-clarification', 'clarify');
+    const feedback = (
+      result.story as typeof result.story & {
+        pendingFeedback?: {
+          response: string;
+          participantResponses: Array<{ personName: string; text: string }>;
+          relationshipChanges: Array<{ personId: string; dimension: string; delta: number }>;
+          stateChanges: Array<{ key: string; oldValue: number; newValue: number }>;
+        };
+      }
+    ).pendingFeedback;
+
+    expect(feedback?.response).toContain('事情说清楚');
+    expect(feedback?.participantResponses.map(({ personName }) => personName)).toEqual([
+      coach.name,
+      teammate.name,
+    ]);
+    expect(feedback?.participantResponses[0]?.text).toContain(coach.name);
+    expect(feedback?.participantResponses[1]?.text).toContain(teammate.name);
+    expect(feedback?.relationshipChanges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ personId: coach.id, dimension: 'trust', delta: 2 }),
+        expect.objectContaining({ personId: teammate.id, dimension: 'respect', delta: 3 }),
+      ]),
+    );
+    expect(feedback?.stateChanges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ key: 'confidence', oldValue: 60, newValue: 62 }),
+      ]),
+    );
+  });
+
+  it('clears acknowledged feedback without changing the resolved event', () => {
+    const base = createSave();
+    const save = {
+      ...base,
+      story: {
+        ...base.story,
+        pendingFeedback: {
+          eventId: 'feedback-1',
+          title: '一次反馈',
+          choiceId: 'choice-1',
+          choiceText: '继续训练',
+          response: '教练记住了你的选择。',
+          participantResponses: [],
+          stateChanges: [],
+          relationshipChanges: [],
+          followUp: '下个月会看到影响。',
+        },
+      },
+    };
+
+    const result = clearEventFeedback(save);
+
+    expect(result.story.pendingFeedback).toBeNull();
+    expect(result.story.pendingEvent).toBeNull();
+    expect(result.monthlyAdvance).toEqual(base.monthlyAdvance);
   });
 });
 
@@ -134,6 +234,9 @@ describe('resolveCareerEvent', () => {
     expect(direct.story.activeStorylines).toEqual(['position-review']);
     expect(direct.story.completedStoryIds).toContain('position-race-opened');
     expect(direct.story.pendingDelayedEffects).toHaveLength(1);
+    expect(direct.story.pendingFeedback).toEqual(
+      expect.objectContaining({ nextEventIds: ['position-review'] }),
+    );
     expect(direct.monthlyAdvance.nextWeekIndex).toBe(save.monthlyAdvance.nextWeekIndex);
   });
 });

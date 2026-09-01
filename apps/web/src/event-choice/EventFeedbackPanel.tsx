@@ -4,6 +4,7 @@ import type { SceneKind } from '../design-system/scene-types';
 
 interface EventFeedbackPanelProps {
   feedback: EventFeedback;
+  nextEvents?: readonly { id: string; title: string }[];
   sceneKind?: SceneKind;
   onContinue: () => void;
 }
@@ -33,6 +34,7 @@ const RELATIONSHIP_LABELS: Record<string, string> = {
 
 export function EventFeedbackPanel({
   feedback,
+  nextEvents = [],
   sceneKind = 'neutral',
   onContinue,
 }: EventFeedbackPanelProps) {
@@ -149,6 +151,26 @@ export function EventFeedbackPanel({
         <span className="event-feedback-kicker">后续影响</span>
         <p>{feedback.followUp}</p>
       </article>
+
+      {nextEvents.length > 0 && (
+        <section className="event-feedback-next" aria-label="下一幕线索">
+          <div className="event-feedback-section-heading">
+            <span>剧情推进</span>
+            <h3>下一幕线索</h3>
+          </div>
+          <p className="event-feedback-next-intro">
+            这次选择已经留下了后续问题。它不会立刻跳过当前月度流程，但会在满足条件时再次回到你的生涯里。
+          </p>
+          <div className="event-feedback-next-list">
+            {nextEvents.map((event) => (
+              <article className="event-feedback-next-card" key={event.id}>
+                <span aria-hidden="true">NEXT</span>
+                <strong>{event.title}</strong>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       <footer className="event-feedback-actions">
         <button className="primary-action" type="button" onClick={onContinue}>

@@ -135,6 +135,23 @@ describe('balanced youth one-off events', () => {
 });
 
 describe('youth stories and trajectory signals', () => {
+  it('turns the misunderstanding into a match-tested follow-up instead of a one-off entry', () => {
+    const events = getYouthContent().events;
+    const opening = events.find(({ id }) => id === 'misunderstanding-clarification');
+    const followUp = events.find(({ id }) => id === 'misunderstanding-repair');
+
+    expect(opening?.nextEvents).toEqual(['misunderstanding-repair']);
+    expect(followUp?.condition).toEqual(
+      expect.objectContaining({
+        requireStoryId: 'misunderstanding-opened',
+        requireFactType: 'match',
+        requirePersonRole: 'teammate',
+      }),
+    );
+    expect(followUp?.participantRoles).toEqual(['youth-coach', 'teammate']);
+    expect(followUp?.choices.every(({ response, followUp: next }) => response && next)).toBe(true);
+  });
+
   it('contains two exact three-stage chains with valid prerequisite memories', () => {
     expect(shortStoryEvents).toHaveLength(6);
     expect(shortStoryEvents.map(({ id }) => id)).toEqual([

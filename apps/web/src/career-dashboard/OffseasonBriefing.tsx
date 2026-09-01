@@ -5,7 +5,8 @@ interface OffseasonBriefingProps {
   save: CareerSaveV4Like;
   outcome: YouthSeasonOutcome | null;
   academies: readonly YouthAcademyProfile[];
-  onStartNextSeason: (academyId?: string) => void;
+  canContinueYouth: boolean;
+  onStartNextSeason?: (academyId?: string) => void;
   onSeekOffers?: () => void;
 }
 
@@ -31,6 +32,7 @@ export function OffseasonBriefing({
   save,
   outcome,
   academies,
+  canContinueYouth,
   onStartNextSeason,
   onSeekOffers,
 }: OffseasonBriefingProps) {
@@ -76,16 +78,22 @@ export function OffseasonBriefing({
       </ul>
       {graduationEligible && (
         <p className="graduation-hint">
-          你已获得职业合同谈判资格，可以寻找经纪人寻求签约，也可以留在青训继续磨练。
+          {canContinueYouth
+            ? '你已获得职业合同谈判资格，可以寻找经纪人寻求签约，也可以留在青训继续磨练。'
+            : '青训年龄窗口已关闭，你已获得职业合同谈判资格，下一步将进入职业市场。'}
         </p>
       )}
 
-      {released ? (
+      {released && canContinueYouth ? (
         candidates.length > 0 && (
           <div className="offseason-actions">
             <p>俱乐部结束了本阶段培养，请选择补救路线：</p>
             {candidates.map((academy) => (
-              <button key={academy.id} onClick={() => onStartNextSeason(academy.id)}>
+              <button
+                key={academy.id}
+                onClick={() => onStartNextSeason?.(academy.id)}
+                disabled={!onStartNextSeason}
+              >
                 加入{academy.name}
               </button>
             ))}
@@ -96,7 +104,12 @@ export function OffseasonBriefing({
           {graduationEligible && onSeekOffers && (
             <button onClick={onSeekOffers}>寻找经纪人报价</button>
           )}
-          <button onClick={() => onStartNextSeason()}>开始下赛季</button>
+          {canContinueYouth && onStartNextSeason && (
+            <button onClick={() => onStartNextSeason()}>开始下赛季</button>
+          )}
+          {!canContinueYouth && (
+            <p className="warning">本赛季已是青训阶段的最后窗口，请先处理职业市场机会。</p>
+          )}
         </div>
       )}
     </section>

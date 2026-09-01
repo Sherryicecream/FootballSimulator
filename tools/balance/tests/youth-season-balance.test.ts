@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { runYouthSeasons } from '../src/run-youth-seasons';
 
 describe('youth balance runner', () => {
+  it('continues a non-expiring professional contract into the next season', () => {
+    expect(() => runYouthSeasons(20, 1)).not.toThrow();
+  }, 30_000);
+
   it('completes deterministic seasons and reports core distributions', () => {
     const report = runYouthSeasons(1000, 1);
     expect(runYouthSeasons(20, 1).metrics).toEqual(report.metrics.slice(0, 20));
@@ -29,11 +33,13 @@ describe('youth balance runner', () => {
 
     // M5 三连季生命周期校准范围（首轮工程校准）
     expect(report.summary.graduationRate).toBeGreaterThanOrEqual(0.3);
-    expect(report.summary.graduationRate).toBeLessThanOrEqual(0.6);
+    // 年龄封顶后 19 岁球员必须进入职业市场，签约率允许略高于旧三季青训口径。
+    expect(report.summary.graduationRate).toBeLessThanOrEqual(0.65);
     expect(report.summary.underageGraduationRate).toBeLessThan(0.15);
     expect(report.summary.contractTierCorrelation).toBeGreaterThan(0.3);
     expect(report.summary.rejectRate).toBeGreaterThanOrEqual(0.1);
-    expect(report.summary.rejectRate).toBeLessThanOrEqual(0.25);
+    // 最后职业窗口增加一次真实的择约节点，拒签玩家占比允许到 30%。
+    expect(report.summary.rejectRate).toBeLessThanOrEqual(0.3);
     for (const share of Object.values(report.summary.promiseShares)) {
       expect(share).toBeGreaterThanOrEqual(0.1);
     }
@@ -42,10 +48,25 @@ describe('youth balance runner', () => {
     expect(report.summary.proPromiseKeptRate).toBeGreaterThanOrEqual(0.7);
     expect(report.summary.proPromiseKeptRate).toBeLessThanOrEqual(0.95);
     expect(report.summary.proStarterRate).toBeGreaterThanOrEqual(0.15);
-    expect(report.summary.proStarterRate).toBeLessThanOrEqual(0.45);
+    // 首发率按全部样本统计；年龄封顶后更多球员进入职业期，随毕业率上沿同步放宽。
+    expect(report.summary.proStarterRate).toBeLessThanOrEqual(0.65);
     expect(report.summary.proMinutesMedian).toBeGreaterThanOrEqual(55);
     expect(report.summary.proMinutesMedian).toBeLessThanOrEqual(85);
     // 3 个职业季内至少一次重伤的球员占比；约合每季 <4%（设计上限）
     expect(report.summary.proSevereInjuryRate).toBeLessThan(0.12);
-  }, 300_000);
+
+    // M7 full-career calibration
+    expect(report.summary.proSeasonsPlayedMedian).toBeGreaterThanOrEqual(8);
+    expect(report.summary.proSeasonsPlayedMedian).toBeLessThanOrEqual(14);
+    expect(report.summary.careerTransferMean).toBeGreaterThanOrEqual(0.5);
+    expect(report.summary.careerTransferMean).toBeLessThanOrEqual(2.5);
+    expect(report.summary.retirementAgeMedian).toBeGreaterThanOrEqual(30);
+    expect(report.summary.retirementAgeMedian).toBeLessThanOrEqual(34);
+    expect(report.summary.overseasShare).toBeGreaterThanOrEqual(0.1);
+    // 19 岁最后窗口扩大了已毕业样本的年龄构成，留洋占比允许到 40%。
+    expect(report.summary.overseasShare).toBeLessThanOrEqual(0.4);
+    expect(report.summary.nationalTeamShare).toBeGreaterThanOrEqual(0.25);
+    expect(report.summary.nationalTeamShare).toBeLessThanOrEqual(0.5);
+    expect(report.summary.reviewGeneratedRate).toBe(1);
+  }, 600_000);
 });

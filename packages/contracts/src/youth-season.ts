@@ -146,6 +146,48 @@ export const YouthEventInstanceSchema = z.strictObject({
 });
 export type YouthEventInstance = z.infer<typeof YouthEventInstanceSchema>;
 
+export const EventFeedbackParticipantResponseSchema = z.strictObject({
+  personId: IdSchema,
+  personName: z.string().min(1).max(50),
+  role: z.string().min(1).max(30),
+  text: z.string().min(1).max(500),
+});
+export type EventFeedbackParticipantResponse = z.infer<
+  typeof EventFeedbackParticipantResponseSchema
+>;
+
+export const EventFeedbackStateChangeSchema = z.strictObject({
+  key: z.string().min(1).max(40),
+  oldValue: ScoreSchema,
+  newValue: ScoreSchema,
+});
+export type EventFeedbackStateChange = z.infer<typeof EventFeedbackStateChangeSchema>;
+
+export const EventFeedbackRelationshipChangeSchema = z.strictObject({
+  personId: IdSchema,
+  personName: z.string().min(1).max(50),
+  dimension: z.enum(['trust', 'respect', 'closeness']),
+  oldValue: ScoreSchema,
+  newValue: ScoreSchema,
+  delta: z.number().int().min(-100).max(100),
+});
+export type EventFeedbackRelationshipChange = z.infer<typeof EventFeedbackRelationshipChangeSchema>;
+
+export const EventFeedbackSchema = z.strictObject({
+  eventId: IdSchema,
+  title: z.string().min(1).max(100),
+  choiceId: IdSchema,
+  choiceText: z.string().min(1).max(200),
+  response: z.string().min(1).max(500),
+  participantResponses: z.array(EventFeedbackParticipantResponseSchema).max(12),
+  stateChanges: z.array(EventFeedbackStateChangeSchema).max(8),
+  relationshipChanges: z.array(EventFeedbackRelationshipChangeSchema).max(24),
+  followUp: z.string().min(1).max(300),
+  nextEventIds: z.array(IdSchema).max(8).optional(),
+  narrativeVariantIndex: z.number().int().min(0).max(3).optional(),
+});
+export type EventFeedback = z.infer<typeof EventFeedbackSchema>;
+
 export const YouthStoryStateSchema = z.strictObject({
   activeStorylines: z.array(IdSchema),
   completedStoryIds: z.array(IdSchema),
@@ -153,6 +195,7 @@ export const YouthStoryStateSchema = z.strictObject({
   themeCooldownsByTheme: z.record(z.string(), z.number().int().min(0).max(52)).default({}),
   pendingDelayedEffects: z.array(YouthDelayedEffectSchema),
   pendingEvent: YouthEventInstanceSchema.nullable().default(null),
+  pendingFeedback: EventFeedbackSchema.nullable().optional(),
 });
 export type YouthStoryState = z.infer<typeof YouthStoryStateSchema>;
 
@@ -200,6 +243,33 @@ export const YouthMatchResultV2Schema = z.strictObject({
 });
 export type YouthMatchResultV2 = z.infer<typeof YouthMatchResultV2Schema>;
 
+export const MonthlyBeatSchema = z.strictObject({
+  weekKey: z.string().min(1).max(20),
+  kind: z.enum([
+    'training',
+    'match',
+    'decision',
+    'event',
+    'health',
+    'relationship',
+    'first-team',
+    'settlement',
+  ]),
+  title: z.string().min(1).max(80),
+  detail: z.string().min(1).max(220),
+  intensity: z.enum(['routine', 'notable', 'turning-point']),
+});
+export type MonthlyBeat = z.infer<typeof MonthlyBeatSchema>;
+
+export const MonthlyMomentumSchema = z.strictObject({
+  tone: z.enum(['steady', 'progress', 'turning-point', 'warning']),
+  title: z.string().min(1).max(100),
+  summary: z.string().min(1).max(300),
+  nextFocus: z.string().min(1).max(220),
+  beats: z.array(MonthlyBeatSchema).max(5),
+});
+export type MonthlyMomentum = z.infer<typeof MonthlyMomentumSchema>;
+
 export const MonthlyReportSchema = z.strictObject({
   monthKey: z.string().regex(/^\d{4}-\d{2}$/),
   facts: z.array(CareerLedgerEntryV2Schema),
@@ -215,6 +285,7 @@ export const MonthlyReportSchema = z.strictObject({
     fatigue: ScoreSchema,
   }),
   matchIds: z.array(IdSchema),
+  momentum: MonthlyMomentumSchema.optional(),
 });
 export type MonthlyReport = z.infer<typeof MonthlyReportSchema>;
 

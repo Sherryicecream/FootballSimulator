@@ -6,6 +6,7 @@ import type {
   YouthAcademyProfile,
 } from '@football/contracts';
 import { deriveDevelopmentSignals } from './development-signals';
+import { isFinalYouthSeason } from './youth-age';
 
 /** 各位置的关键属性权重；未列出的属性权重为 0。 */
 const POSITION_WEIGHTS: Record<string, Partial<Record<AttributePath, number>>> = {
@@ -123,5 +124,7 @@ export const evaluateGraduationEligibility = (
       met: stageRank >= STAGE_ORDER.indexOf('watchlist') || save.clubContext.coachEvaluation >= 65,
     },
   ];
-  return { eligible: report.every(({ met }) => met), report };
+  // 19 岁是青训最后窗口：即使技术或表现未完全达标，也必须离开青训进入职业市场，
+  // 由报价层级反映现实差异，避免把成年人无限留在青训体系里。
+  return { eligible: isFinalYouthSeason(age) || report.every(({ met }) => met), report };
 };

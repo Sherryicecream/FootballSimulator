@@ -41,6 +41,13 @@ const stageLabels: Record<CareerSaveV4Like['clubContext']['firstTeamStage'], str
   'substitute-appearance': '替补出场',
   'starting-appearance': '首发出场',
 };
+const youthPathLabels: Record<YouthSeasonOutcome['nextPath'], string> = {
+  'academy-continuation': '原青训体系',
+  'school-football': '校园足球',
+  'lower-tier-academy': '低级别青训',
+  trial: '其他机构试训',
+  'professional-market': '职业市场',
+};
 
 export function CareerDashboard({
   save,
@@ -98,7 +105,7 @@ export function CareerDashboard({
         <section className="report-card">
           <h3>赛季总结</h3>
           <p>{outcome.summary}</p>
-          <p>后续方向：{outcome.nextPath}</p>
+          <p>后续方向：{youthPathLabels[outcome.nextPath]}</p>
         </section>
       )}
       {save.contract && <ContractCard contract={save.contract} />}

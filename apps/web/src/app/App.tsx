@@ -12,6 +12,7 @@ import { getYouthContent } from '@football/content';
 import {
   advanceCareerMonth,
   completeYouthSeason,
+  canContinueYouthSeason,
   createAdvanceToDecision,
   createSubmitYouthChoice,
   createYouthCareerV2,
@@ -88,6 +89,12 @@ export function App() {
     ? youthContent.events.find(({ id }) => id === activeEventId)
     : undefined;
   const eventSceneKind = sceneKindForTheme(pendingEventDefinition?.theme);
+  const canContinueYouth = save ? canContinueYouthSeason(save) : false;
+  const pendingFeedbackNextEvents =
+    save?.story.pendingFeedback?.nextEventIds?.flatMap((eventId) => {
+      const definition = youthContent.events.find(({ id }) => id === eventId);
+      return definition ? [{ id: definition.id, title: definition.title }] : [];
+    }) ?? [];
 
   useEffect(() => {
     void (async () => {
@@ -307,7 +314,14 @@ export function App() {
     if (!save) return;
     setError(null);
     try {
-      persist(rejectOffers(save));
+      const rejected = rejectOffers(save);
+      if (rejected.careerPhase === 'free-agent') {
+        const withOffers = generateFreeAgentOffers(rejected, youthContent);
+        persist(withOffers);
+        setStep('free-agent');
+        return;
+      }
+      persist(rejected);
       setStep('offseason');
     } catch (caught) {
       setError(message(caught));
@@ -454,6 +468,7 @@ export function App() {
           save={save}
           outcome={outcome}
           academies={youthContent.academies}
+          canContinueYouth={canContinueYouth}
           onStartNextSeason={handleStartNextSeason}
           onSeekOffers={handleSeekOffers}
         />
@@ -464,6 +479,7 @@ export function App() {
           offers={save.pendingOffers}
           onSign={handleSignContract}
           onRejectAll={handleRejectOffers}
+          rejectLabel={canContinueYouth ? '拒绝全部要约，留在青训' : '拒绝全部要约，进入职业市场'}
         />
       )}
       {step === 'pro' && save && (
@@ -485,17 +501,25 @@ export function App() {
         />
       )}
       {step === 'free-agent' && save && (
-        <section className="offseason" aria-label="自由球员">
-          <h2>自由球员</h2>
+        <section
+          className="offseason"
+          aria-label={save.clubHistory.length === 0 ? '职业市场' : '自由球员'}
+        >
+          <h2>{save.clubHistory.length === 0 ? '职业市场' : '自由球员'}</h2>
           {save.pendingOffers.length > 0 ? (
             <OfferComparisonPanel
               offers={save.pendingOffers}
               onSign={handleSignTransfer}
               onRejectAll={handleWaitWindow}
+              rejectLabel="暂不签约，等待下一个窗口"
             />
           ) : (
             <>
-              <p>转会市场暂时冷淡，没有俱乐部给出要约。</p>
+              <p>
+                {save.clubHistory.length === 0
+                  ? '青训阶段已结束，当前没有俱乐部给出职业合同。'
+                  : '转会市场暂时冷淡，没有俱乐部给出要约。'}
+              </p>
               {save.freeAgentSeasons >= 2 && save.player.age < 30 && (
                 <p className="warning">你的市场价值正在下降，考虑接受更低的报价。</p>
               )}
@@ -537,6 +561,7 @@ export function App() {
       {step === 'event-feedback' && save?.story.pendingFeedback && (
         <EventFeedbackPanel
           feedback={save.story.pendingFeedback}
+          nextEvents={pendingFeedbackNextEvents}
           sceneKind={eventSceneKind}
           onContinue={continueAfterEventFeedback}
         />

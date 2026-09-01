@@ -51,12 +51,17 @@ export { initializeYouthRelationships } from './relationships/youth-relationship
 export { applyRelationshipEffects } from './relationships/relationship-effects';
 export type { RelationshipEffects } from './relationships/relationship-effects';
 export { renderTemplate, generateEventNarrative } from './events/narrative';
+export { buildEventFeedback } from './events/event-feedback';
+export { selectEventNarrativeVariant } from './events/narrative-variants';
+export type { NarrativeVariantKey, SelectedNarrativeVariant } from './events/narrative-variants';
+export { buildMonthlyMomentum } from './career/monthly-momentum';
 export { evaluateOffseason } from './career/evaluate-offseason';
 export {
   evaluateGraduationEligibility,
   weightedAbility,
   graduationAbilityThreshold,
 } from './career/graduation';
+export { MAX_YOUTH_AGE, isFinalYouthSeason, canStartNextYouthSeason } from './career/youth-age';
 export { startNextSeason, createYouthFixtures } from './career/start-next-season';
 export { generateOffers } from './career/offer-generation';
 export { createLeagueFixtures } from './career/league-fixtures';
@@ -65,3 +70,5 @@ export { simulateProfessionalWeek, decideAppearance } from './career/professiona
 export { reviewPromise, evaluateProRole, buildRenewalOffer } from './career/promise-review';
 export { growthAgeFactor, applyAgeDecline } from './career/age-curve';
 export { generateTransferOffers } from './career/transfer-offers';
+export { isEligibleForNationalTeam, accrueNationalTeam } from './career/national-team';
+export { buildCareerReview } from './career/career-review';

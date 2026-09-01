@@ -5,6 +5,8 @@ import {
   signContract,
   rejectOffers,
 } from '../../src/use-cases/contract-flow';
+import { generateFreeAgentOffers, signTransfer } from '../../src/use-cases/transfer-flow';
+import { migrateCareerSaveV5 } from '@football/contracts';
 import { completeYouthSeason, enterOffseason } from '../../src/index';
 import { finishSeason, createSave, content } from '../fixtures/youth-save';
 
@@ -53,12 +55,14 @@ describe('毕业签约流程', () => {
     expect(uniqueClubIds.size).toBe(save.pendingOffers.length);
 
     const target = save.pendingOffers[0]!;
+    const reputationBefore = save.player.reputation;
     save = signContract(save, target.id);
     expect(save.careerPhase).toBe('professional-contract');
     expect(save.contract).toMatchObject({ clubId: target.clubId, promiseStatus: 'pending' });
     expect(save.contract?.signedOn).toBe(save.offseason?.nextSeasonStart);
     expect(save.pendingOffers).toEqual([]);
     expect(save.player.careerStage).toBe('PROFESSIONAL');
+    expect(save.player.reputation).toBeGreaterThan(reputationBefore);
     expect(save.ledger.some(({ type }) => type === 'contract-signed')).toBe(true);
   });
 
@@ -72,6 +76,36 @@ describe('毕业签约流程', () => {
     expect(save.pendingOffers).toEqual([]);
     expect(save.graduationPressure).toBe(before + 1);
     expect(save.ledger.some(({ summary }) => summary.includes('拒绝全部要约'))).toBe(true);
+  });
+
+  it('19 岁最后职业窗口拒绝报价后不再回到青训', () => {
+    let save = eligibleOffseasonSave();
+    save = {
+      ...save,
+      player: { ...save.player, age: 19 },
+    };
+    save = submitAgentPreferences(save, { leagueTierBias: 'low', priority: 'salary' });
+    save = generateContractOffers(save, content);
+
+    save = rejectOffers(save);
+
+    expect(save.careerPhase).toBe('free-agent');
+    expect(save.contract).toBeNull();
+    expect(save.ledger.at(-1)?.summary).toContain('进入职业市场');
+  });
+
+  it('青训年龄窗口后的自由市场签约会切换到职业阶段', () => {
+    let save = migrateCareerSaveV5(eligibleOffseasonSave());
+    save = { ...save, player: { ...save.player, age: 19 } };
+    save = submitAgentPreferences(save, { leagueTierBias: 'low', priority: 'salary' });
+    save = generateContractOffers(save, content);
+    save = generateFreeAgentOffers(rejectOffers(save), content);
+    const offer = save.pendingOffers[0];
+    expect(offer).toBeDefined();
+
+    const signed = signTransfer(save, offer!.id);
+
+    expect(signed.player.careerStage).toBe('PROFESSIONAL');
   });
 
   it('同种子同操作的要约与签署结果完全一致', () => {

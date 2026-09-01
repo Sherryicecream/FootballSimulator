@@ -3,7 +3,23 @@ import type {
   CareerSaveV3Like,
   YouthContentBundle,
 } from '@football/contracts';
-import { startNextSeason } from '@football/simulation';
+import {
+  canStartNextYouthSeason as canStartNextYouthSeasonAt,
+  startNextSeason,
+} from '@football/simulation';
+
+export const canContinueYouthSeason = <S extends CareerSaveV3Like>(save: S): boolean => {
+  if (
+    !['offseason', 'agent-preferences', 'offer-review'].includes(save.careerPhase) ||
+    !save.offseason
+  ) {
+    return false;
+  }
+  return canStartNextYouthSeasonAt(
+    save.player.identity.dateOfBirth,
+    save.offseason.nextSeasonStart,
+  );
+};
 
 export const startNextYouthSeason = <S extends CareerSaveV3Like>(
   save: S,

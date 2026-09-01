@@ -6,6 +6,7 @@ import {
   type YouthContentBundle,
 } from '@football/contracts';
 import { createSeededRandomSource, generateOffers } from '@football/simulation';
+import { isFinalYouthSeason } from '@football/simulation';
 
 export const submitAgentPreferences = <S extends CareerSaveV3Like>(
   save: S,
@@ -62,7 +63,12 @@ export const signContract = <S extends CareerSaveV3Like>(save: S, offerId: strin
   return {
     ...save,
     careerPhase: 'professional-contract',
-    player: { ...save.player, careerStage: 'PROFESSIONAL' },
+    player: {
+      ...save.player,
+      careerStage: 'PROFESSIONAL',
+      // 首份职业合同带来可见曝光；层级越高，媒体与球探覆盖越广。
+      reputation: Math.min(100, save.player.reputation + Math.max(4, offer.clubTier)),
+    },
     contract: {
       ...offer,
       signedOn,
@@ -78,16 +84,20 @@ export const rejectOffers = <S extends CareerSaveV3Like>(save: S): S => {
   if (save.careerPhase !== 'offer-review') {
     throw new Error(`非法阶段转移：当前阶段 ${save.careerPhase} 不能拒绝要约`);
   }
+  const finalYouthWindow = isFinalYouthSeason(save.player.age);
   const fact: CareerLedgerEntryV2 = {
     id: `offers-rejected-${save.offseason?.nextSeasonStart ?? save.season.endDate}`,
     weekKey: `${save.season.startDate.slice(0, 4)}-W${String(save.season.currentWeek).padStart(2, '0')}`,
     type: 'decision',
-    summary: '拒绝全部要约，留在青训体系继续培养',
+    summary: finalYouthWindow
+      ? '拒绝全部要约，进入职业市场等待其他机会'
+      : '拒绝全部要约，留在青训体系继续培养',
     participantIds: [],
   };
   return {
     ...save,
-    careerPhase: 'offseason',
+    careerPhase: finalYouthWindow ? 'free-agent' : 'offseason',
+    contract: finalYouthWindow ? null : save.contract,
     pendingOffers: [],
     graduationPressure: Math.min(3, save.graduationPressure + 1),
     ledger: [...save.ledger, fact],

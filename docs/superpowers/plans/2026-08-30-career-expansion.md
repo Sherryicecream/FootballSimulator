@@ -306,9 +306,36 @@ Run: git commit -m "docs: complete visual experience milestone"
 
 实际结果：修复前回归测试分别因国家队首召缺少回应、legacy 快照丢失字段和旧待决存档未补全文案而失败；修复后 4 个相关测试文件 39/39 通过，全局 81 个测试文件 418/418、架构 10/10、生产构建和桌面/移动端 E2E 16/16 通过。数值效果和随机序列未改变，继续使用 `artifacts/youth-balance-module3.json` 作为当前平衡基线。
 
-- 将事件从孤立图鉴扩展为“选择 → 即时回应 → 后续影响 → 再次触发”的可追踪链条。
-- 增加有参与者、有事实依据、有关系变化的事件组合；对话变体必须由内容和种子显式提供，保持可回放与可测试。
-- 再评估本地 AI/生成式内容的接入边界，不能让核心 simulation 依赖外部服务或产生不可复现的比赛结果。
+#### Task 2：把用户选择接入可追踪后续链（已完成）
+
+- [x] Step 1: Write the failing tests
+- [x] Step 2: Run the tests to verify they fail
+- [x] Step 3: Add an explicit misunderstanding follow-up with match-fact gating, coach/teammate participation, relationship-only effects, authored responses, and authored follow-up copy; persist optional `nextEventIds` in feedback and show only the next scene clue in the feedback page.
+- [x] Step 4: Hydrate `storyId`, `nextEventIds`, and feedback next-scene metadata for older pending event/feedback saves.
+- [x] Step 5: Run focused regression tests, global unit/architecture tests, typecheck, lint, format, build, E2E, and the 1,000-season balance command.
+
+实际结果：用户选择现在形成“即时回应 → 后续影响 → 下一幕线索 → 满足比赛事实后再次触发”的可回放链条；普通无后续事件不显示空占位，反馈页不承担完整剧情图鉴。全局 81 个测试文件、419 个测试和架构 10/10 通过，E2E 16/16 通过，1,000 赛季报告写入 `artifacts/youth-balance-module4.json`。新增内容效果仅作用于事件参与人物的信任/尊重关系，放弃率回到 1.1%，未改变月度节奏、核心数值模拟或随机序列。
+
+#### 跨模块修复：青训年龄边界（已完成）
+
+- [x] Step 1: 追踪年龄派生、休赛期评估和下赛季入口，确认 20 岁青训来自入口无年龄上限，而不是出生日期计算错误。
+- [x] Step 2: 先添加并验证失败回归测试：20 岁不得开启青训、19 岁进入最后职业窗口、拒绝最后报价进入自由市场。
+- [x] Step 3: 在 simulation 设定 19 岁最后青训窗口；application 保护阶段转移、兼容旧休赛期存档，并把最终赛季方向记录为 `professional-market`。
+- [x] Step 4: 前端隐藏不可用的“开始下赛季”，将最终窗口和首份合同拒绝后的状态展示为职业市场；运行全量门禁与 1,000 季平衡检查。
+
+实际结果：青训从 16 岁起步，19 岁为最后完整赛季，下一赛季若将满 20 岁会被阶段机拒绝；19 岁未完全达标者仍可进入低层级职业市场，拒绝报价后进入自由球员流程。全量测试 81 个文件、424 个用例，架构检查 10/10，E2E 16/16；1,000 季完成率 100%，毕业签约率 61%，拒签率 28%，职业承诺兑现率 93.4%，退役年龄中位 30。
+
+#### Task 3：内容驱动的确定性对话变体（已完成）
+
+- [x] Step 1: Write the failing regression tests
+- [x] Step 2: Run the tests to verify they fail
+- [x] Step 3: 将对话变体限制为内容包显式提供的候选文本，由生涯种子、事件 ID 和选择 ID 稳定选择；变体只承载主回应、参与人物回应和后续影响，不改变事件效果或随机游标。
+- [x] Step 4: 持久化 `narrativeVariantIndex`，并在旧事件/反馈存档恢复时保留已选文本；旧内容无变体时继续使用原有单一文案回退。
+- [x] Step 5: 为“训练场上的误会 / 澄清误会”加入两组完整内容变体，并扩展内容质量校验覆盖变体文案。
+- [x] Step 6: local-AI 只作为可选叙事层边界，不能写入比赛结果、属性、关系或阶段机；本任务不接入核心运行时，无服务时始终使用确定性内容回退。
+- [x] Step 7: 运行聚焦回归、全量门禁、E2E 和 1,000 赛季平衡命令。
+
+实际结果：同一种子、同一事件和同一选择始终得到同一组完整对话；反馈索引与实际文案可序列化、可重放，读档不会被当前内容包的单一回应覆盖。聚焦回归 4 个测试文件、5 个用例通过；全量 `pnpm test` 为 85 个测试文件、429 个用例，架构检查 10/10，`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm build` 和 `pnpm test:e2e`（16/16）均通过；1,000 赛季平衡报告写入 `artifacts/youth-balance-module4-task3.json`，完成率 100%、决策中位 10、重伤率 0.7%、职业承诺兑现率 93.4%、退役年龄中位 30。
 
 ### M8 完成定义
 

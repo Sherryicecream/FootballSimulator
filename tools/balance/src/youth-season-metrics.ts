@@ -19,6 +19,7 @@ export interface YouthSeasonMetrics {
   playerRole: string;
   /** 三连季生命周期指标 */
   seasonsPlayed: number;
+  careerSeasons: number;
   graduated: boolean;
   graduationAge: number | null;
   contractTier: number | null;
@@ -33,6 +34,11 @@ export interface YouthSeasonMetrics {
   proLeagueAppearances: number;
   proSevereInjuries: number;
   freeAgent: boolean;
+  transferCount: number;
+  retireAge: number | null;
+  overseasSpent: boolean;
+  hadCaps: boolean;
+  capCount: number;
 }
 
 export interface YouthBalanceReport {
@@ -63,6 +69,14 @@ export interface YouthBalanceReport {
     proMinutesMedian: number;
     proSevereInjuryRate: number;
     proFreeAgentRate: number;
+    careerTransferMean: number;
+    overseasShare: number;
+    nationalTeamShare: number;
+    capsMedian: number;
+    retirementAgeMedian: number;
+    reviewGeneratedRate: number;
+    careerSeasonsMedian: number;
+    proSeasonsPlayedMedian: number;
     contractTierCorrelation: number;
     rejectRate: number;
     promiseShares: Record<string, number>;

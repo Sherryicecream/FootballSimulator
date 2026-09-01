@@ -17,11 +17,12 @@ export type { YouthSeasonOutcome } from './use-cases/complete-youth-season';
 export { loadCareer } from './use-cases/load-career';
 export { getRelationshipLabel } from '@football/simulation';
 export { resolveCareerEvent } from './use-cases/resolve-career-event';
+export { clearEventFeedback } from './use-cases/clear-event-feedback';
 export { createInMemorySaveStore } from './ports/save-port';
 export type { SavePort, InMemorySaveStore } from './ports/save-port';
 export type { BootstrapContentPort } from './ports/bootstrap-content';
 export { enterOffseason } from './use-cases/enter-offseason';
-export { startNextYouthSeason } from './use-cases/start-next-season';
+export { canContinueYouthSeason, startNextYouthSeason } from './use-cases/start-next-season';
 export {
   submitAgentPreferences,
   generateContractOffers,
@@ -32,8 +33,10 @@ export {
   startProfessionalSeason,
   advanceProMonth,
   completeProfessionalSeason,
+  submitNationalTeamDecision,
   acceptRenewal,
   declineRenewal,
 } from './use-cases/pro-flow';
 export type { AdvanceProMonthOutcome } from './use-cases/pro-flow';
 export { generateFreeAgentOffers, signTransfer, retire } from './use-cases/transfer-flow';
+export { buildCareerReview } from '@football/simulation';

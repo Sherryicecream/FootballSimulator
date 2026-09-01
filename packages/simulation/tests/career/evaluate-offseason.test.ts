@@ -221,6 +221,32 @@ describe('evaluateOffseason', () => {
     );
     expect(graduationEligible).toBe(true);
   });
+
+  it('19 岁结束青训赛季时即使表现未达标也进入职业窗口', () => {
+    const base = createYouthSave();
+    const finalYouthSeason = asV3({
+      player: {
+        ...base.player,
+        age: 19,
+        identity: { ...base.player.identity, dateOfBirth: '2006-01-01' },
+      },
+      clubContext: {
+        ...base.clubContext,
+        coachEvaluation: 45,
+        firstTeamStage: 'none',
+      },
+      currentState: { morale: 35, form: 30, confidence: 30 },
+    });
+
+    const { graduationEligible } = evaluateOffseason(
+      finalYouthSeason,
+      academy,
+      '2026-09-01',
+      createSeededRandomSource(7),
+    );
+
+    expect(graduationEligible).toBe(true);
+  });
 });
 
 describe('evaluateGraduationEligibility', () => {

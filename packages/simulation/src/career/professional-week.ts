@@ -174,7 +174,11 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
     },
     health,
     currentState: {
-      morale: clamp(save.currentState.morale + moraleDelta(matchResult)),
+      morale: clamp(
+        Math.round(
+          save.currentState.morale + moraleDelta(matchResult) - overseasMoralePenalty(save),
+        ),
+      ),
       form: clamp(save.currentState.form + formDelta(matchResult)),
       confidence: clamp(save.currentState.confidence + confidenceDelta(matchResult)),
     },
@@ -227,6 +231,8 @@ export const decideAppearance = (
   const depthScore = Math.max(20, 100 - (rank - 1) * 12);
   const trainingPerf = clamp(50 + save.player.development.professionalism / 4 + rng.next() * 20);
   let threshold = 62;
+  if (contract?.squadRole === 'first-team-rotation') threshold -= 6;
+  else if (contract?.squadRole === 'rotation') threshold -= 3;
   const promise = contract?.promise;
   if (promise?.kind === 'playing-time') {
     threshold -= promise.minimumShare >= 0.5 ? 6 : 3;
@@ -259,7 +265,7 @@ export const decideAppearance = (
       threshold,
     };
   }
-  if (selectionScore >= 45) {
+  if (selectionScore >= 40) {
     return {
       appearance: 'bench',
       minutes: 10 + Math.floor(rng.next() * 26),
@@ -318,6 +324,17 @@ const matchRating = (
 
 const reserveRating = (rng: ReturnType<typeof createSeededRandomSource>): number =>
   Math.min(10, Math.max(4, Math.round((6 + (rng.next() - 0.5) * 2) * 10) / 10));
+
+/** 留洋适应损耗（设计 §6）：首季每周 -(100-适应力)/25，次季减半，之后归零。 */
+const overseasMoralePenalty = (save: CareerSaveV4Like): number => {
+  if (!save.overseasSince) return 0;
+  const seasonYear = Number(save.proSeason?.startDate.slice(0, 4) ?? 0);
+  const years = seasonYear - Number(save.overseasSince.slice(0, 4));
+  const full = (100 - save.player.development.adaptability) / 25;
+  if (years <= 0) return Math.round(full * 10) / 10;
+  if (years === 1) return Math.round((full / 2) * 10) / 10;
+  return 0;
+};
 
 const moraleDelta = (match: YouthMatchResultV2 | null) =>
   !match

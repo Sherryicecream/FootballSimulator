@@ -54,7 +54,12 @@ describe('EventFeedbackPanel', () => {
 
   it('shows the shared football scene when the event theme is known', () => {
     render(
-      <EventFeedbackPanel feedback={feedback} sceneKind="locker-room" onContinue={() => {}} />,
+      <EventFeedbackPanel
+        feedback={{ ...feedback, nextEventIds: ['position-race-review'] }}
+        nextEvents={[{ id: 'position-race-review', title: '位置竞争的进展' }]}
+        sceneKind="locker-room"
+        onContinue={() => {}}
+      />,
     );
 
     expect(screen.getByRole('region', { name: '足球场景：训练场上的误会' })).toBeVisible();
@@ -62,6 +67,8 @@ describe('EventFeedbackPanel', () => {
     expect(screen.getByText('人物回应')).toBeVisible();
     expect(screen.getByText('变化记录')).toBeVisible();
     expect(screen.getByText('后续影响')).toBeVisible();
+    expect(screen.getByText('下一幕线索')).toBeVisible();
+    expect(screen.getByText('位置竞争的进展')).toBeVisible();
   });
 
   it('continues only after the player acknowledges the feedback', async () => {

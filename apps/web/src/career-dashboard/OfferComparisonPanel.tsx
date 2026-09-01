@@ -5,6 +5,7 @@ interface OfferComparisonPanelProps {
   offers: ContractOfferV3[];
   onSign: (offerId: string) => void;
   onRejectAll: () => void;
+  rejectLabel?: string;
 }
 
 const roleLabels: Record<ContractOfferV3['squadRole'], string> = {
@@ -22,7 +23,12 @@ const promiseLabel = (offer: ContractOfferV3): string => {
   return '无特殊承诺';
 };
 
-export function OfferComparisonPanel({ offers, onSign, onRejectAll }: OfferComparisonPanelProps) {
+export function OfferComparisonPanel({
+  offers,
+  onSign,
+  onRejectAll,
+  rejectLabel = '拒绝全部要约，留在青训',
+}: OfferComparisonPanelProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = offers.find(({ id }) => id === selectedId) ?? null;
 
@@ -66,7 +72,7 @@ export function OfferComparisonPanel({ offers, onSign, onRejectAll }: OfferCompa
       )}
 
       <button className="reject-all" onClick={onRejectAll}>
-        拒绝全部要约，留在青训
+        {rejectLabel}
       </button>
     </section>
   );

@@ -4,6 +4,7 @@ import { createCareerSave } from '../../src/use-cases/start-career';
 import { createYouthCareerV2 } from '../../src/use-cases/create-youth-career-v2';
 import { advanceCareerMonth } from '../../src/use-cases/advance-career-month';
 import { submitCareerDecision } from '../../src/use-cases/submit-career-decision';
+import { clearEventFeedback } from '../../src/use-cases/clear-event-feedback';
 import { completeYouthSeason } from '../../src/use-cases/complete-youth-season';
 import { loadCareer } from '../../src/use-cases/load-career';
 
@@ -33,7 +34,9 @@ describe('headless youth career flow', () => {
           expect(save.season.fixtures.map(({ id, status }) => ({ id, status }))).toEqual(
             fixtureState,
           );
-          save = submitCareerDecision(save, result.event.eventId, result.event.choices[0]!.id);
+          save = clearEventFeedback(
+            submitCareerDecision(save, result.event.eventId, result.event.choices[0]!.id),
+          );
           pendingDecisionIds.push(save.ledger.at(-1)!.id);
           decisions += 1;
         } else {
@@ -59,6 +62,104 @@ describe('headless youth career flow', () => {
       ).toHaveLength(1);
     }
   }, 60_000);
+
+  it('restores authored feedback fields for an older pending event snapshot', () => {
+    const authoredEvent: EventDefinition = {
+      ...event,
+      storyId: 'misunderstanding-opened',
+      nextEvents: ['misunderstanding-repair'],
+      choices: [
+        {
+          ...event.choices[0]!,
+          response: '你把训练中的误会解释清楚，教练也看到了你的处理方式。',
+          responses: [
+            {
+              speakerRole: 'youth-coach',
+              text: '{personName}：“说清楚之后，下一次才知道怎么改。”',
+            },
+          ],
+          followUp: '下一场训练会继续观察你是否把这次沟通变成场上的判断。',
+        },
+      ],
+    };
+    const restoredContent = { ...content, events: [authoredEvent] };
+    const save = createYouthCareerV2(
+      createCareerSave({
+        playerName: '林河',
+        hometown: '上海',
+        primaryPosition: 'FORWARD',
+        preferredFoot: 'RIGHT',
+        regionId: 'shanghai',
+        seed: 42,
+      }),
+      restoredContent,
+    );
+    const pendingEvent = {
+      eventId: authoredEvent.id,
+      title: authoredEvent.title,
+      description: authoredEvent.description,
+      choices: [
+        {
+          id: authoredEvent.choices[0]!.id,
+          text: authoredEvent.choices[0]!.text,
+          riskLabel: authoredEvent.choices[0]!.riskLabel,
+          effects: authoredEvent.choices[0]!.effects,
+        },
+      ],
+      resolvedChoiceId: null,
+      participantIds: [],
+      factRefs: [],
+      storyId: null,
+      nextEventIds: [],
+      interaction: 'decision' as const,
+    };
+
+    const restored = loadCareer(
+      {
+        ...save,
+        story: { ...save.story, pendingEvent },
+      },
+      restoredContent,
+    );
+    const choice = restored.story.pendingEvent?.choices[0];
+
+    expect(choice?.response).toBe(authoredEvent.choices[0]!.response);
+    expect(choice?.responses).toEqual(authoredEvent.choices[0]!.responses);
+    expect(choice?.followUp).toBe(authoredEvent.choices[0]!.followUp);
+    expect(restored.story.pendingEvent?.storyId).toBe(authoredEvent.storyId);
+    expect(restored.story.pendingEvent?.nextEventIds).toEqual(authoredEvent.nextEvents);
+
+    const restoredFeedback = loadCareer(
+      {
+        ...save,
+        story: {
+          ...save.story,
+          pendingEvent: null,
+          pendingFeedback: {
+            eventId: authoredEvent.id,
+            title: authoredEvent.title,
+            choiceId: authoredEvent.choices[0]!.id,
+            choiceText: '旧版本保存的选择文字',
+            response: '旧版本的通用结果',
+            participantResponses: [],
+            stateChanges: [],
+            relationshipChanges: [],
+            followUp: '旧版本的通用后续',
+          },
+        },
+      },
+      restoredContent,
+    );
+
+    expect(restoredFeedback.story.pendingFeedback?.choiceText).toBe(authoredEvent.choices[0]!.text);
+    expect(restoredFeedback.story.pendingFeedback?.response).toBe(
+      authoredEvent.choices[0]!.response,
+    );
+    expect(restoredFeedback.story.pendingFeedback?.followUp).toBe(
+      authoredEvent.choices[0]!.followUp,
+    );
+    expect(restoredFeedback.story.pendingFeedback?.nextEventIds).toEqual(authoredEvent.nextEvents);
+  });
 });
 
 const academy = (id: string, level: number): YouthAcademyProfile => ({

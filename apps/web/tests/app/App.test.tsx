@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from '../../src/app/App';
 import { createCareerSave } from '@football/application';
+import { migrateCareerSaveV5 } from '@football/contracts';
 import type { CareerSave } from '@football/contracts';
 
 // Mock localStorage for persistence
@@ -93,6 +94,71 @@ describe('App', () => {
     expect(await screen.findByText('必须处理的事件')).toBeDefined();
     expect(screen.queryByRole('button', { name: '返回仪表盘' })).toBeNull();
   });
+
+  it('restores an unacknowledged event feedback before opening the dashboard', async () => {
+    const migrated = migrateCareerSaveV5(
+      createCareerSave({
+        playerName: '林河',
+        hometown: '上海',
+        primaryPosition: 'CENTER_BACK',
+        preferredFoot: 'RIGHT',
+        regionId: 'shanghai',
+        seed: 42,
+      }),
+    );
+    const withFeedback = {
+      ...migrated,
+      story: {
+        ...migrated.story,
+        pendingFeedback: {
+          eventId: 'feedback-1',
+          title: '训练场上的误会',
+          choiceId: 'clarify',
+          choiceText: '当面澄清误会',
+          response: '你把事情说清楚了。',
+          participantResponses: [],
+          stateChanges: [],
+          relationshipChanges: [],
+          followUp: '接下来会看到影响。',
+        },
+      },
+    };
+    storeSave(withFeedback);
+
+    render(<App />);
+
+    expect(await screen.findByRole('region', { name: '事件反馈' })).toBeDefined();
+    expect(screen.getByText('你把事情说清楚了。')).toBeDefined();
+    expect(screen.queryByText('青训生涯')).toBeNull();
+  });
+
+  it('restores a retired v5 save into the review page', async () => {
+    const user = userEvent.setup();
+    const migrated = migrateCareerSaveV5(
+      createCareerSave({
+        playerName: 'Lin Yue',
+        hometown: 'Shanghai',
+        primaryPosition: 'CENTER_BACK',
+        preferredFoot: 'RIGHT',
+        regionId: 'shanghai',
+        seed: 42,
+      }),
+    );
+    const retired = {
+      ...migrated,
+      careerPhase: 'retired',
+      retiredOn: '2025-06-30',
+    } as const;
+    storeSave(retired);
+
+    render(<App />);
+
+    expect(await screen.findByRole('region')).toBeDefined();
+    expect(document.querySelector('.career-review')).not.toBeNull();
+    expect(screen.queryByLabelText('5�S�w^~)�u')).toBeNull();
+    await user.click(screen.getByRole('button', { name: '开始新生涯' }));
+    expect(await screen.findByLabelText('球员姓名')).toBeDefined();
+  });
 });
 
 const createSaveWithPendingEvent = (): CareerSave => {
@@ -127,7 +193,7 @@ const createSaveWithPendingEvent = (): CareerSave => {
   };
 };
 
-const storeSave = (save: CareerSave): void => {
+const storeSave = (save: CareerSave | { careerId: string }): void => {
   localStorage.setItem(
     `football-save-${save.careerId}`,
     JSON.stringify({ version: 1, savedAt: '2024-09-01T00:00:00.000Z', data: save }),

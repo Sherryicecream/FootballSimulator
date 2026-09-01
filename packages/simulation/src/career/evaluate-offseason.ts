@@ -32,7 +32,10 @@ export const evaluateOffseason = <S extends CareerSaveV3Like>(
   const ageUpdate = { from: save.player.age, to: age };
   const drift = settlePhysicalDrift(save, age, rng);
   const reputationChange = reputationDelta(save);
-  const evaluation = evaluateGraduationEligibility(save, academy);
+  const evaluation = evaluateGraduationEligibility(
+    { ...save, player: { ...save.player, age } },
+    academy,
+  );
 
   const briefing: OffseasonBriefing = {
     healthClearance: health.clearance,

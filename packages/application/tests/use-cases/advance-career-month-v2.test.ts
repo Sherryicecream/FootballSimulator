@@ -4,6 +4,29 @@ import type { EventDefinition } from '@football/contracts';
 import { advanceCareerMonth } from '../../src/use-cases/advance-career-month';
 
 describe('advanceCareerMonth', () => {
+  it('requires the player to acknowledge event feedback before resuming the month', () => {
+    const base = createSave();
+    const save = {
+      ...base,
+      story: {
+        ...base.story,
+        pendingFeedback: {
+          eventId: 'feedback-1',
+          title: '事件反馈',
+          choiceId: 'choice-1',
+          choiceText: '继续训练',
+          response: '教练记住了你的选择。',
+          participantResponses: [],
+          stateChanges: [],
+          relationshipChanges: [],
+          followUp: '下个月会看到影响。',
+        },
+      },
+    };
+
+    expect(() => advanceCareerMonth(save, academies)).toThrow('反馈');
+  });
+
   it('advances every week in the month, settles growth once and uses fixed opponents', () => {
     const save = createSave();
     const outcome = advanceCareerMonth(save, academies);

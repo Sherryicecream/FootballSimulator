@@ -80,6 +80,13 @@ export const validateYouthContent = (raw: YouthContentBundle): YouthContentBundl
     assertNoReplacementChar(event.description);
     for (const choice of event.choices) {
       assertNoReplacementChar(choice.text);
+      for (const variant of choice.narrativeVariants ?? []) {
+        assertNoReplacementChar(variant.response);
+        assertNoReplacementChar(variant.followUp);
+        for (const response of variant.responses ?? []) {
+          assertNoReplacementChar(response.text);
+        }
+      }
     }
   }
 

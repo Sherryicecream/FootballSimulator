@@ -15,6 +15,28 @@ export type YouthEventTheme = z.infer<typeof YouthEventThemeSchema>;
 export const EventInteractionSchema = z.enum(['decision', 'automatic']);
 export type EventInteraction = z.infer<typeof EventInteractionSchema>;
 
+export const EventSpeakerRoleSchema = z.enum([
+  'youth-coach',
+  'assistant-coach',
+  'teammate',
+  'rival',
+  'family',
+]);
+export type EventSpeakerRole = z.infer<typeof EventSpeakerRoleSchema>;
+
+export const EventChoiceResponseSchema = z.strictObject({
+  speakerRole: EventSpeakerRoleSchema,
+  text: z.string().min(1).max(500),
+});
+export type EventChoiceResponse = z.infer<typeof EventChoiceResponseSchema>;
+
+export const EventChoiceNarrativeVariantSchema = z.strictObject({
+  response: z.string().min(1).max(500),
+  responses: z.array(EventChoiceResponseSchema).max(6).optional(),
+  followUp: z.string().min(1).max(300),
+});
+export type EventChoiceNarrativeVariant = z.infer<typeof EventChoiceNarrativeVariantSchema>;
+
 export const EventCategorySchema = z.enum([
   'china-youth',
   'dressing-room',
@@ -31,6 +53,10 @@ export const EventChoiceSchema = z.object({
   effects: z.record(z.string(), z.number().int()).default({}),
   delayEffects: z.record(z.string(), z.number().int()).optional(),
   memoryKey: z.string().optional(),
+  response: z.string().min(1).max(500).optional(),
+  responses: z.array(EventChoiceResponseSchema).max(6).optional(),
+  followUp: z.string().min(1).max(300).optional(),
+  narrativeVariants: z.array(EventChoiceNarrativeVariantSchema).min(2).max(4).optional(),
 });
 
 export type EventChoice = z.infer<typeof EventChoiceSchema>;

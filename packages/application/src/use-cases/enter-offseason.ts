@@ -15,6 +15,7 @@ export const enterOffseason = <S extends CareerSaveV3Like>(
   }
   if (!save.season.completed) throw new Error('赛季尚未结束，不能进入休赛期');
   if (save.story.pendingEvent) throw new Error('请先处理待决事件');
+  if (save.story.pendingFeedback) throw new Error('请先确认事件反馈');
   const academy = academies.find(({ id }) => id === save.season.academyId);
   if (!academy) throw new Error(`青训机构 ${save.season.academyId} 不在内容包中`);
 

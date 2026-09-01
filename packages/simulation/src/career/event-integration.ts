@@ -70,8 +70,9 @@ export const pickYouthEventForWeek = <S extends YouthWeekInputShape>(
     save.story.activeStorylines.includes(definition.id),
   );
   const selectionPool = activeFollowUps.length > 0 ? activeFollowUps : eligible;
+  const eventTriggerChance = activeFollowUps.length > 0 ? 0.4 : 0.34;
   const selected =
-    selectionPool.length > 0 && rng.next() < 0.34
+    selectionPool.length > 0 && rng.next() < eventTriggerChance
       ? selectYouthEvent(selectionPool, selectionSave, rng)
       : undefined;
   const event = selected ? instantiateYouthEvent(selected, save) : null;
@@ -181,12 +182,8 @@ export function pickEventForWeek(
       title: selected.title,
       description: selected.description,
       choices: selected.choices.map((c) => ({
-        id: c.id,
-        text: c.text,
-        riskLabel: c.riskLabel,
-        effects: c.effects,
+        ...c,
         delayEffects: c.delayEffects ?? {},
-        memoryKey: c.memoryKey,
       })),
       resolvedChoiceId: null,
     },

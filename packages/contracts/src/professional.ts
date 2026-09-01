@@ -83,7 +83,11 @@ export const CareerSaveV4Schema = CareerSaveV3Schema.omit({ schemaVersion: true 
 export type CareerSaveV4 = z.infer<typeof CareerSaveV4Schema>;
 
 /** 版本无关的 v4 结构切片：v5 等后续版本同样满足。 */
-export type CareerSaveV4Like = Omit<CareerSaveV4, 'schemaVersion'> & { schemaVersion: number };
+export type CareerSaveV4Like = Omit<CareerSaveV4, 'schemaVersion'> & {
+  schemaVersion: number;
+  /** v5 字段：v4 存档不存在（undefined），职业周按缺失处理 */
+  overseasSince?: string | null;
+};
 
 /**
  * 迁移任意历史存档（v1/v2/v3/v4）为 v4：v4 原样通过，v3 补默认字段，更早版本走既有链路。

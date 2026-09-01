@@ -124,4 +124,28 @@ describe('startNextSeason', () => {
     const save = asV3({ careerPhase: 'youth-season' });
     expect(() => startNextSeason(save, academies[0]!, competition)).toThrow(/阶段/);
   });
+
+  it('下一赛季将满 20 岁时不能继续开启青训赛季', () => {
+    const base = createYouthSave();
+    const save = asV3({
+      player: {
+        ...base.player,
+        age: 19,
+        identity: { ...base.player.identity, dateOfBirth: '2006-01-01' },
+      },
+      offseason: {
+        briefing: {
+          healthClearance: '痊愈',
+          attributeDrift: [],
+          reputationChange: 0,
+          ageUpdate: { from: 19, to: 20 },
+        },
+        graduationEligible: false,
+        eligibilityReport: [],
+        nextSeasonStart: '2026-09-01',
+      },
+    });
+
+    expect(() => startNextSeason(save, academies[0]!, competition)).toThrow(/20 岁/);
+  });
 });

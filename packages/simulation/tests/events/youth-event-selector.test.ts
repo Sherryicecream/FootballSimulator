@@ -250,6 +250,58 @@ describe('weekly youth event flow controls', () => {
     expect(result.save.monthlyAdvance.status).toBe('idle');
   });
 
+  it('preserves authored feedback fields when instantiating a content event', () => {
+    const authored = event('authored-feedback', 'decision', {
+      choices: [
+        {
+          id: 'clarify',
+          text: '把误会说清楚',
+          riskLabel: 'low',
+          effects: { confidence: 1 },
+          response: '你把关键细节解释清楚，训练场的气氛明显松动下来。',
+          responses: [
+            {
+              speakerRole: 'youth-coach',
+              text: '{personName}：“把问题说清楚，下一次才知道怎么改。”',
+            },
+          ],
+          followUp: '教练会在下一场训练观察你是否把这次沟通变成场上的判断。',
+        },
+      ],
+    });
+
+    const result = firstPicked([authored], (base) => ({
+      monthlyAdvance: { ...base.monthlyAdvance, interactiveEventCount: 0 },
+    }));
+    const choice = result.event?.choices[0];
+
+    expect(choice).toEqual(
+      expect.objectContaining({
+        response: authored.choices[0]!.response,
+        responses: authored.choices[0]!.responses,
+        followUp: authored.choices[0]!.followUp,
+      }),
+    );
+  });
+
+  it('keeps an eligible early-month story beat from disappearing into quiet weeks', () => {
+    const storyBeat = event('monthly-story-beat', 'decision');
+    let triggered = 0;
+
+    for (let seed = 1; seed <= 100; seed += 1) {
+      const base = createYouthSave();
+      const save = createYouthSave({
+        story: { ...base.story, activeStorylines: [storyBeat.id] },
+        monthlyAdvance: { ...base.monthlyAdvance, interactiveEventCount: 0 },
+        randomState: { seed, sequencePosition: 0 },
+      });
+      const result = pickYouthEventForWeek([storyBeat], save);
+      if (result.event) triggered += 1;
+    }
+
+    expect(triggered).toBeGreaterThanOrEqual(38);
+  });
+
   it('prioritizes an active follow-up without bypassing its hard conditions', () => {
     const unrelated = event('unrelated', 'automatic', { theme: 'off-pitch' });
     const followUp = event('position-review', 'automatic', {

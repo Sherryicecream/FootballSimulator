@@ -7,14 +7,17 @@ import {
   completeProfessionalSeason,
   declineRenewal,
   startProfessionalSeason,
+  submitNationalTeamDecision,
 } from '../../src/use-cases/pro-flow';
+import { generateFreeAgentOffers, retire, signTransfer } from '../../src/use-cases/transfer-flow';
 import {
   submitAgentPreferences,
   generateContractOffers,
   signContract,
 } from '../../src/use-cases/contract-flow';
-import { completeYouthSeason, enterOffseason } from '../../src/index';
+import { clearEventFeedback, completeYouthSeason, enterOffseason } from '../../src/index';
 import { createSave, content, finishSeason } from '../fixtures/youth-save';
+import { buildCareerReview } from '@football/application';
 
 /** 构造一名已签署职业合同的 v4 存档（1 年短合同便于测试到期分支）。 */
 function signedProSave(overrides: Partial<CareerSaveV4> = {}): CareerSaveV4 {
@@ -56,6 +59,41 @@ function signedProSave(overrides: Partial<CareerSaveV4> = {}): CareerSaveV4 {
 }
 
 describe('职业赛季流程', () => {
+  it('requires event feedback acknowledgement before resuming a professional month', () => {
+    const started = startProfessionalSeason(signedProSave(), content.clubs);
+    const save = {
+      ...started,
+      story: {
+        ...started.story,
+        pendingFeedback: {
+          eventId: 'feedback-1',
+          title: '事件反馈',
+          choiceId: 'choice-1',
+          choiceText: '继续训练',
+          response: '教练记住了你的选择。',
+          participantResponses: [],
+          stateChanges: [],
+          relationshipChanges: [],
+          followUp: '下个月会看到影响。',
+        },
+      },
+    };
+
+    expect(() => advanceProMonth(save, content.clubs)).toThrow('反馈');
+  });
+
+  it('starts the next season with an off-season fitness reset', () => {
+    const base = signedProSave();
+    const initial = {
+      ...base,
+      health: { ...base.health, fitness: 24, fatigue: 92, recentLoad: 80 },
+    };
+    const next = startProfessionalSeason(initial, content.clubs);
+    expect(next.health.fitness).toBeGreaterThanOrEqual(70);
+    expect(next.health.fatigue).toBeLessThanOrEqual(20);
+    expect(next.health.recentLoad).toBe(0);
+  });
+
   it('开启职业赛季：阵容、赛程与积分榜固化，阶段进入 pro-season', () => {
     let save = signedProSave();
     save = startProfessionalSeason(save, content.clubs);
@@ -69,6 +107,36 @@ describe('职业赛季流程', () => {
     expect(save.proSeason!.squad.length).toBeGreaterThanOrEqual(17);
     expect(save.proSeason!.depthChart.FORWARD!.includes('player')).toBe(true);
     expect(save.ledger.some(({ summary }) => summary.includes('开启职业赛季'))).toBe(true);
+  });
+
+  it('builds a playable overseas division when a single tier has fewer than four clubs', () => {
+    const base = signedProSave();
+    const overseasClubs = Array.from({ length: 6 }, (_, index) => ({
+      ...content.clubs[0]!,
+      id: `ov-test-${index + 1}`,
+      name: `Overseas Test ${index + 1}`,
+      tier: index < 2 ? 5 : index < 4 ? 6 : 4,
+      overseas: true,
+    }));
+    const overseasClub = overseasClubs[0]!;
+    const save = {
+      ...base,
+      contract: {
+        ...base.contract!,
+        clubId: overseasClub.id,
+        clubName: overseasClub.name,
+        clubTier: overseasClub.tier,
+        overseas: true,
+      },
+      overseasSince: '2025-07-01',
+    };
+    const started = startProfessionalSeason(save, [...content.clubs, ...overseasClubs]);
+    expect(started.proSeason!.fixtures.length).toBeGreaterThanOrEqual(4);
+    expect(
+      started.proSeason!.fixtures.every(({ homeClubId, awayClubId }) =>
+        [homeClubId, awayClubId].every((id) => id.startsWith('ov-')),
+      ),
+    ).toBe(true);
   });
 
   it('同种子开启的赛季完全一致；非法阶段被拒绝', () => {
@@ -162,5 +230,279 @@ describe('职业赛季流程', () => {
     const freeAgent = declineRenewal(settled);
     expect(freeAgent.careerPhase).toBe('free-agent');
     expect(freeAgent.contract).toBeNull();
+  });
+
+  it('applies visible age decline during professional monthly settlement', () => {
+    const initial = signedProSave();
+    let save = startProfessionalSeason(
+      {
+        ...initial,
+        player: {
+          ...initial.player,
+          age: 32,
+          identity: { ...initial.player.identity, dateOfBirth: '1993-01-01' },
+          attributes: {
+            ...initial.player.attributes,
+            physical: { pace: 40, strength: 40, stamina: 40, agility: 40 },
+          },
+        },
+      },
+      content.clubs,
+    );
+    const declineChanges = [];
+    let guard = 0;
+    while (!save.proSeason!.completed && guard < 20) {
+      const outcome = advanceProMonth(save, content.clubs, []);
+      expect(outcome.status).not.toBe('awaiting-decision');
+      if (outcome.status !== 'awaiting-decision') {
+        declineChanges.push(
+          ...outcome.report.attributeChanges.filter(
+            ({ attribute, oldValue, newValue }) =>
+              ['pace', 'stamina', 'agility', 'strength'].includes(attribute) && newValue < oldValue,
+          ),
+        );
+        save = outcome.save;
+      }
+      guard += 1;
+    }
+    expect(declineChanges.length).toBeGreaterThan(0);
+  });
+
+  it('can sign a domestic free-agent offer and start the next professional season', () => {
+    let save = startProfessionalSeason(signedProSave(), content.clubs);
+    let guard = 0;
+    while (!save.proSeason!.completed && guard < 20) {
+      const outcome = advanceProMonth(save, content.clubs, []);
+      expect(outcome.status).not.toBe('awaiting-decision');
+      if (outcome.status !== 'awaiting-decision') save = outcome.save;
+      guard += 1;
+    }
+    expect(save.proSeason!.completed).toBe(true);
+    const settled = completeProfessionalSeason(save).save;
+    const freeAgent = declineRenewal(settled);
+    const market = generateFreeAgentOffers(freeAgent, content);
+    const offer = market.pendingOffers.find(({ overseas }) => !overseas);
+    expect(offer).toBeDefined();
+    const signed = signTransfer(market, offer!.id);
+    expect(signed.careerPhase).toBe('professional-contract');
+    expect(signed.freeAgentSeasons).toBe(0);
+    const nextSeason = startProfessionalSeason(signed, content.clubs);
+    expect(nextSeason.careerPhase).toBe('pro-season');
+    expect(nextSeason.proSeason!.clubId).toBe(offer!.clubId);
+    expect(nextSeason.proSeason!.startDate).toBe('2026-08-01');
+  });
+
+  it('keeps an overseas career in an overseas-only league schedule', () => {
+    const domesticTierFive = content.clubs.filter(({ tier }) => tier === 5);
+    const overseasLeague = domesticTierFive.slice(0, 4).map((club, index) => ({
+      ...club,
+      id: `overseas-test-${index + 1}`,
+      name: `Overseas Test ${index + 1}`,
+      overseas: true,
+    }));
+    const initial = signedProSave();
+    const save = {
+      ...initial,
+      contract: {
+        ...initial.contract!,
+        clubId: overseasLeague[0]!.id,
+        clubName: overseasLeague[0]!.name,
+        overseas: true,
+      },
+      overseasSince: '2025-07-01',
+    };
+    const next = startProfessionalSeason(save, [...content.clubs, ...overseasLeague]);
+
+    expect(next.proSeason!.competitionId).toBe('pro-overseas-tier-5');
+    expect(next.proSeason!.fixtures).toHaveLength(
+      overseasLeague.length * (overseasLeague.length - 1),
+    );
+    expect(
+      next.proSeason!.fixtures.every(({ homeClubId, awayClubId }) =>
+        [homeClubId, awayClubId].every((id) => id.startsWith('overseas-test-')),
+      ),
+    ).toBe(true);
+  });
+
+  it('turns first national-team eligibility into a decision event', () => {
+    const initial = signedProSave();
+    let save = startProfessionalSeason(
+      {
+        ...initial,
+        player: {
+          ...initial.player,
+          identity: { ...initial.player.identity, dateOfBirth: '2000-01-01' },
+          reputation: 60,
+        },
+      },
+      content.clubs,
+    );
+    let guard = 0;
+    while (!save.proSeason!.completed && guard < 20) {
+      const outcome = advanceProMonth(save, content.clubs, []);
+      expect(outcome.status).not.toBe('awaiting-decision');
+      if (outcome.status !== 'awaiting-decision') save = outcome.save;
+      guard += 1;
+    }
+    expect(save.proSeason!.completed).toBe(true);
+    save = {
+      ...save,
+      player: { ...save.player, reputation: 60 },
+      proSeasonStats: { ...save.proSeasonStats, leagueAppearances: 15 },
+    };
+    const settled = completeProfessionalSeason(save).save;
+    expect(settled.nationalTeam).toBeNull();
+    expect(settled.story.pendingEvent?.eventId).toContain('national');
+    expect(settled.story.pendingEvent?.choices).toHaveLength(2);
+    for (const choice of settled.story.pendingEvent?.choices ?? []) {
+      expect(choice.response).toEqual(expect.any(String));
+      expect(choice.followUp).toEqual(expect.any(String));
+    }
+  });
+
+  it('accepting the first call-up records caps and applies the decision effects', () => {
+    const initial = signedProSave();
+    let save = startProfessionalSeason(
+      {
+        ...initial,
+        player: {
+          ...initial.player,
+          identity: { ...initial.player.identity, dateOfBirth: '2000-01-01' },
+          reputation: 60,
+        },
+      },
+      content.clubs,
+    );
+    let guard = 0;
+    while (!save.proSeason!.completed && guard < 20) {
+      const outcome = advanceProMonth(save, content.clubs, []);
+      expect(outcome.status).not.toBe('awaiting-decision');
+      if (outcome.status !== 'awaiting-decision') save = outcome.save;
+      guard += 1;
+    }
+    save = {
+      ...save,
+      player: { ...save.player, reputation: 60 },
+      proSeasonStats: { ...save.proSeasonStats, leagueAppearances: 15 },
+    };
+    const settled = completeProfessionalSeason(save).save;
+    const accepted = submitNationalTeamDecision(settled, 'accept-national-team');
+
+    expect(accepted.nationalTeam?.capped).toBe(true);
+    expect(accepted.nationalTeam?.caps).toBeGreaterThanOrEqual(1);
+    expect(accepted.currentState.confidence).toBe(settled.currentState.confidence + 3);
+    expect(accepted.health.fatigue).toBe(settled.health.fatigue + 2);
+    expect(accepted.ledger.some(({ type }) => type === 'national-debut')).toBe(true);
+  });
+
+  it('accumulates another international window after a debut', () => {
+    const initial = signedProSave();
+    let first = startProfessionalSeason(
+      {
+        ...initial,
+        player: {
+          ...initial.player,
+          identity: { ...initial.player.identity, dateOfBirth: '2000-01-01' },
+          reputation: 60,
+        },
+      },
+      content.clubs,
+    );
+    let guard = 0;
+    while (!first.proSeason!.completed && guard < 20) {
+      const outcome = advanceProMonth(first, content.clubs, []);
+      expect(outcome.status).not.toBe('awaiting-decision');
+      if (outcome.status !== 'awaiting-decision') first = outcome.save;
+      guard += 1;
+    }
+    first = {
+      ...first,
+      player: { ...first.player, reputation: 60 },
+      proSeasonStats: { ...first.proSeasonStats, leagueAppearances: 15 },
+    };
+    const firstSettled = completeProfessionalSeason(first).save;
+    const debuted = clearEventFeedback(
+      submitNationalTeamDecision(firstSettled, 'accept-national-team'),
+    );
+    const renewed = acceptRenewal(debuted);
+    let second = startProfessionalSeason(renewed, content.clubs);
+    guard = 0;
+    while (!second.proSeason!.completed && guard < 20) {
+      const outcome = advanceProMonth(second, content.clubs, []);
+      expect(outcome.status).not.toBe('awaiting-decision');
+      if (outcome.status !== 'awaiting-decision') second = outcome.save;
+      guard += 1;
+    }
+    second = {
+      ...second,
+      player: { ...second.player, reputation: 60 },
+      proSeasonStats: { ...second.proSeasonStats, leagueAppearances: 15 },
+    };
+    const secondSettled = completeProfessionalSeason(second).save;
+
+    expect(secondSettled.nationalTeam!.caps).toBeGreaterThan(debuted.nationalTeam!.caps);
+    expect(secondSettled.ledger.filter(({ type }) => type === 'decision').length).toBeGreaterThan(
+      0,
+    );
+  });
+
+  it('retirement is terminal and requires the player to be at least 30', () => {
+    const base = signedProSave();
+    expect(() =>
+      retire(
+        { ...base, careerPhase: 'pro-offseason', player: { ...base.player, age: 29 } },
+        '2026-05-31',
+      ),
+    ).toThrow();
+    const retired = retire(
+      { ...base, careerPhase: 'pro-offseason', player: { ...base.player, age: 30 } },
+      '2026-05-31',
+    );
+
+    expect(retired.careerPhase).toBe('retired');
+    expect(() => retire(retired, '2026-05-31')).toThrow();
+    expect(() => startProfessionalSeason(retired, content.clubs)).toThrow();
+  });
+
+  it('forces retirement at 38 after professional season settlement', () => {
+    const initial = signedProSave();
+    let save = startProfessionalSeason(
+      {
+        ...initial,
+        player: {
+          ...initial.player,
+          age: 38,
+          identity: { ...initial.player.identity, dateOfBirth: '1987-01-01' },
+        },
+      },
+      content.clubs,
+    );
+    let guard = 0;
+    while (!save.proSeason!.completed && guard < 20) {
+      const outcome = advanceProMonth(save, content.clubs, []);
+      expect(outcome.status).not.toBe('awaiting-decision');
+      if (outcome.status !== 'awaiting-decision') save = outcome.save;
+      guard += 1;
+    }
+    const settled = completeProfessionalSeason(save).save;
+
+    expect(settled.careerPhase).toBe('retired');
+    expect(settled.retiredOn).toBe('2026-05-31');
+  });
+
+  it('career review includes professional seasons in its timeline', () => {
+    let save = startProfessionalSeason(signedProSave(), content.clubs);
+    let guard = 0;
+    while (!save.proSeason!.completed && guard < 20) {
+      const outcome = advanceProMonth(save, content.clubs, []);
+      expect(outcome.status).not.toBe('awaiting-decision');
+      if (outcome.status !== 'awaiting-decision') save = outcome.save;
+      guard += 1;
+    }
+    const settled = completeProfessionalSeason(save).save;
+    const review = buildCareerReview(settled);
+
+    expect(review.seasons).toBeGreaterThan(0);
+    expect(review.timeline.some(({ seasonId }) => seasonId === 'pro-2025')).toBe(true);
   });
 });

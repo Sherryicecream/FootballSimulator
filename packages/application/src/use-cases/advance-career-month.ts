@@ -11,6 +11,7 @@ import {
   advanceFirstTeamPathway,
   createSeededRandomSource,
   pickYouthEventForWeek,
+  buildMonthlyMomentum,
   settleMonthlyDevelopment,
   simulateYouthWeek,
   type DevelopmentAccrual,
@@ -39,6 +40,9 @@ export const advanceCareerMonth = <
       save: initialSave,
       event: initialSave.story.pendingEvent,
     };
+  }
+  if (initialSave.story.pendingFeedback) {
+    throw new Error('请先确认事件反馈，再继续推进月份');
   }
   if (initialSave.season.completed) throw new Error('青训赛季已经结束');
 
@@ -132,9 +136,10 @@ export const advanceCareerMonth = <
     ledger: [...save.ledger, settlementFact, ...pathway.facts],
     randomState: { ...save.randomState, sequencePosition: pathwayRng.getPosition() },
   };
+  const reportFacts = [...facts, settlementFact, ...pathway.facts];
   const report: MonthlyReport = {
     monthKey,
-    facts: [...facts, settlementFact, ...pathway.facts],
+    facts: reportFacts,
     attributeChanges: settlement.attributeChanges,
     stateSummary: {
       ...save.currentState,
@@ -142,6 +147,7 @@ export const advanceCareerMonth = <
       fatigue: save.health.fatigue,
     },
     matchIds,
+    momentum: buildMonthlyMomentum(reportFacts, settlement.attributeChanges),
   };
   return { status: save.season.completed ? 'season-complete' : 'month-complete', save, report };
 };

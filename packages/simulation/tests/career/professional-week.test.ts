@@ -4,7 +4,7 @@ import { buildDepthChart, depthRank, generateProSquad } from '../../src/career/p
 import { decideAppearance, simulateProfessionalWeek } from '../../src/career/professional-week';
 import { createSeededRandomSource } from '../../src/randomness';
 import { createProSave, proClubs } from '../fixtures/pro-save';
-import type { CareerSaveV4 } from '@football/contracts';
+import { CareerSaveV5Schema, type CareerSaveV4, type CareerSaveV4Like } from '@football/contracts';
 
 describe('createLeagueFixtures', () => {
   const clubIds = proClubs.map(({ id }) => id);
@@ -58,6 +58,18 @@ describe('generateProSquad', () => {
 });
 
 describe('simulateProfessionalWeek', () => {
+  it('keeps overseas morale loss compatible with the integer save contract', () => {
+    const save = {
+      ...createProSave(),
+      schemaVersion: 5,
+      overseasSince: '2027-07-01',
+    } as CareerSaveV4Like;
+    const { save: next } = simulateProfessionalWeek(save, proClubs);
+
+    expect(Number.isInteger(next.currentState.morale)).toBe(true);
+    expect(() => CareerSaveV5Schema.parse(next)).not.toThrow();
+  });
+
   it('同种子同输入结果一致', () => {
     const a = simulateProfessionalWeek(createProSave(), proClubs);
     const b = simulateProfessionalWeek(createProSave(), proClubs);

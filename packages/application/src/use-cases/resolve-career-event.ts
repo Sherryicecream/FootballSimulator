@@ -4,7 +4,7 @@ import {
   type CareerLedgerEntryV2,
   type CareerSaveV2Like,
 } from '@football/contracts';
-import { applyRelationshipEffects } from '@football/simulation';
+import { applyRelationshipEffects, buildEventFeedback } from '@football/simulation';
 
 export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId: string): S => {
   const event = save.story.pendingEvent;
@@ -59,7 +59,7 @@ export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId
   // 按输入版本选择校验 Schema：v4 存档保留 v4 字段，v2/v3 走原路径
   // v3 走原 Schema；v4/v5 归一化为 v5（补默认字段且保留新字段）
   const isV3 = (save as { schemaVersion?: number }).schemaVersion === 3;
-  return (isV3 ? CareerSaveV3Schema : CareerSaveV5Schema).parse({
+  const resolvedSave = {
     ...save,
     schemaVersion: isV3 ? 3 : 5,
     currentState,
@@ -93,6 +93,14 @@ export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId
       factIds: [...save.monthlyAdvance.factIds, fact.id],
     },
     ledger: [...save.ledger, fact],
+  } as S;
+  const feedback = buildEventFeedback(save, resolvedSave, event, choice);
+  return (isV3 ? CareerSaveV3Schema : CareerSaveV5Schema).parse({
+    ...resolvedSave,
+    story: {
+      ...resolvedSave.story,
+      pendingFeedback: event.interaction === 'automatic' ? null : feedback,
+    },
   }) as unknown as S;
 };
 

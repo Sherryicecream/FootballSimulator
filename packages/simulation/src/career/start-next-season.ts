@@ -4,6 +4,7 @@ import type {
   YouthAcademyProfile,
   YouthCompetitionDefinition,
 } from '@football/contracts';
+import { canStartNextYouthSeason } from './youth-age';
 
 /** 固定赛程生成：同一种子与赛季年份生成完全一致的赛程。 */
 export const createYouthFixtures = (
@@ -50,6 +51,9 @@ export const startNextSeason = <S extends CareerSaveV3Like>(
   }
   const seasonStart = save.offseason?.nextSeasonStart;
   if (!seasonStart) throw new Error('休赛期状态缺少新赛季开始日期');
+  if (!canStartNextYouthSeason(save.player.identity.dateOfBirth, seasonStart)) {
+    throw new Error('青训阶段年龄上限：下一赛季开始时已满 20 岁，必须进入职业市场');
+  }
 
   const seasonYear = seasonStart.slice(0, 4);
   const seasonIndex = Number(seasonYear);

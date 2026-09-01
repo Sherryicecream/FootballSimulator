@@ -201,6 +201,44 @@ describe('advanceCareerWeek', () => {
     expect(true).toBe(true);
   });
 
+  it('preserves authored feedback fields in the legacy event snapshot', () => {
+    const base = createMockEvents()[0]!;
+    const authored: EventDefinition = {
+      ...base,
+      choices: [
+        {
+          ...base.choices[0]!,
+          response: '教练当场指出了你处理球时最关键的细节。',
+          responses: [
+            {
+              speakerRole: 'youth-coach',
+              text: '{personName}：“下一次先抬头，再决定是否向前。”',
+            },
+          ],
+          followUp: '下一场训练教练会继续观察你是否把这个细节变成习惯。',
+        },
+      ],
+    };
+
+    for (let seed = 0; seed < 100; seed += 1) {
+      const result = advanceCareerWeek(createMockSave(seed), createSeededRandomSource(seed), [
+        authored,
+      ]);
+      if (result.activity !== 'event') continue;
+
+      expect(result.event?.choices[0]).toEqual(
+        expect.objectContaining({
+          response: authored.choices[0]!.response,
+          responses: authored.choices[0]!.responses,
+          followUp: authored.choices[0]!.followUp,
+        }),
+      );
+      return;
+    }
+
+    throw new Error('测试种子中没有产生事件周');
+  });
+
   it('non-event weeks have no event when events are provided', () => {
     const events = createMockEvents();
     for (let seed = 0; seed < 100; seed++) {

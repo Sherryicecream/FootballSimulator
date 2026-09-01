@@ -3,18 +3,20 @@ import type {
   CareerSaveV5Like,
   YouthContentBundle,
 } from '@football/contracts';
-import { generateTransferOffers } from '@football/simulation';
-import type { SeededRandomSource } from '@football/simulation';
+import { createSeededRandomSource, generateTransferOffers } from '@football/simulation';
 
 const currentDateOf = (save: CareerSaveV5Like): string =>
-  save.proSeason?.endDate ?? save.contract?.signedOn ?? '';
+  save.proSeason?.endDate ??
+  save.contract?.signedOn ??
+  save.offseason?.nextSeasonStart ??
+  save.season.endDate;
 
 /** 自由球员转会要约（设计 §5）：市场降温随自由球员季数递增。 */
 export const generateFreeAgentOffers = (
   save: CareerSaveV5Like,
   content: YouthContentBundle,
-  rng: SeededRandomSource,
 ): CareerSaveV5Like => {
+  const rng = createSeededRandomSource(save.randomState.seed + 4100 + save.freeAgentSeasons * 37);
   if (save.careerPhase !== 'free-agent') {
     throw new Error(`非法阶段转移：当前阶段 ${save.careerPhase} 不能生成转会要约`);
   }
@@ -57,6 +59,10 @@ export const signTransfer = (save: CareerSaveV5Like, offerId: string): CareerSav
   return {
     ...save,
     careerPhase: 'professional-contract',
+    player: {
+      ...save.player,
+      careerStage: 'PROFESSIONAL',
+    },
     contract: {
       ...offer,
       signedOn,

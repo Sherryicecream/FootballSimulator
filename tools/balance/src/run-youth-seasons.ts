@@ -3,6 +3,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   advanceCareerMonth,
+  clearEventFeedback,
   completeYouthSeason,
   createCareerSave,
   createYouthCareerV2,
@@ -19,7 +20,12 @@ import {
   acceptRenewal,
   advanceProMonth,
   completeProfessionalSeason,
+  declineRenewal as declineRenewalUse,
+  generateFreeAgentOffers,
+  retire as retireUse,
+  signTransfer,
   startProfessionalSeason,
+  submitNationalTeamDecision,
 } from '@football/application';
 import {
   migrateCareerSaveV5,
@@ -50,6 +56,11 @@ type LifecycleOutcome = {
   leagueAppearances: number;
   severeInjuries: number;
   freeAgent: boolean;
+  transferCount: number;
+  retireAge: number | null;
+  overseasSpent: boolean;
+  hadCaps: boolean;
+  capCount: number;
 };
 
 export const runYouthSeasons = (runs: number, seedStart = 1): YouthBalanceReport => {
@@ -83,7 +94,9 @@ export const runYouthSeasons = (runs: number, seedStart = 1): YouthBalanceReport
       const outcome = advanceCareerMonth(save, content.academies, content.events);
       save = outcome.save;
       if (outcome.status === 'awaiting-decision') {
-        save = submitCareerDecision(save, outcome.event.eventId, outcome.event.choices[0]!.id);
+        save = clearEventFeedback(
+          submitCareerDecision(save, outcome.event.eventId, outcome.event.choices[0]!.id),
+        );
       }
       guard += 1;
     }
@@ -144,6 +157,7 @@ export const runYouthSeasons = (runs: number, seedStart = 1): YouthBalanceReport
       confidence: final.save.currentState.confidence,
       playerRole: final.save.clubContext.playerRole,
       seasonsPlayed: lifecycle.seasonsPlayed,
+      careerSeasons: lifecycle.seasonsPlayed + lifecycle.proSeasonsPlayed,
       graduated: lifecycle.graduated,
       graduationAge: lifecycle.graduationAge,
       contractTier: lifecycle.contractTier,
@@ -157,6 +171,11 @@ export const runYouthSeasons = (runs: number, seedStart = 1): YouthBalanceReport
       proLeagueAppearances: lifecycle.leagueAppearances,
       proSevereInjuries: lifecycle.severeInjuries,
       freeAgent: lifecycle.freeAgent,
+      transferCount: lifecycle.transferCount,
+      retireAge: lifecycle.retireAge,
+      overseasSpent: lifecycle.overseasSpent,
+      hadCaps: lifecycle.hadCaps,
+      capCount: lifecycle.capCount,
       weightedAbility: weightedAbility(
         final.save.player.identity.primaryPosition,
         final.save.player.attributes,
@@ -258,10 +277,40 @@ export const runYouthSeasons = (runs: number, seedStart = 1): YouthBalanceReport
         0.5,
       ),
       proSevereInjuryRate:
-        metrics.filter(({ proSevereInjuries }) => proSevereInjuries > 0).length /
-        Math.max(1, metrics.filter(({ proSeasonsPlayed }) => proSeasonsPlayed > 0).length),
+        metrics.reduce((sum, { proSevereInjuries }) => sum + proSevereInjuries, 0) /
+        Math.max(
+          1,
+          metrics.reduce((sum, { proSeasonsPlayed }) => sum + proSeasonsPlayed, 0),
+        ),
       proFreeAgentRate: metrics.filter(({ freeAgent }) => freeAgent).length / runs,
+      careerTransferMean:
+        graduatedMetrics.reduce((sum, { transferCount }) => sum + transferCount, 0) /
+        Math.max(1, graduatedMetrics.length),
+      // 留洋只对已签职业合同的球员开放，按职业生涯样本计算，避免青训未毕业样本稀释分母。
+      overseasShare:
+        graduatedMetrics.filter(({ overseasSpent }) => overseasSpent).length /
+        Math.max(1, graduatedMetrics.length),
+      nationalTeamShare: metrics.filter(({ hadCaps }) => hadCaps).length / runs,
+      capsMedian: percentile(
+        metrics.map(({ capCount }) => capCount),
+        0.5,
+      ),
+      retirementAgeMedian: percentile(
+        metrics.filter(({ retireAge }) => retireAge != null).map(({ retireAge }) => retireAge ?? 0),
+        0.5,
+      ),
+      reviewGeneratedRate:
+        metrics.filter(({ retireAge }) => retireAge != null).length /
+        Math.max(1, graduatedMetrics.length),
       promiseShares,
+      careerSeasonsMedian: percentile(
+        metrics.map(({ careerSeasons }) => careerSeasons),
+        0.5,
+      ),
+      proSeasonsPlayedMedian: percentile(
+        graduatedMetrics.map(({ proSeasonsPlayed }) => proSeasonsPlayed),
+        0.5,
+      ),
       seasonsPlayedMedian: percentile(
         metrics.map(({ seasonsPlayed }) => seasonsPlayed),
         0.5,
@@ -289,6 +338,11 @@ const playLifecycle = (
     contractTier: null,
     contractPromiseKind: null,
     rejectedOfferSeasons,
+    transferCount: 0,
+    retireAge: null,
+    overseasSpent: false,
+    hadCaps: false,
+    capCount: 0,
     proSeasonsPlayed: 0,
     promiseKept: false,
     lastCause: 'none',
@@ -335,7 +389,7 @@ const playLifecycle = (
         (weightedAbility(save.player.identity.primaryPosition, save.player.attributes) - 10) / 10,
       );
       // 雄心风格：偶数种子要求报价达到身价层阶，奇数种子只接受高于身价一档的要约。
-      const ambitionFloor = abilityCeiling + (save.randomState.seed % 2);
+      const ambitionFloor = abilityCeiling + (save.randomState.seed % 3 === 0 ? 1 : 0);
       const bestTier =
         attractive.length > 0 ? Math.max(...attractive.map(({ clubTier }) => clubTier)) : 0;
       if (attractive.length === 0 || pool.length === 0 || bestTier < ambitionFloor) {
@@ -353,7 +407,7 @@ const playLifecycle = (
               : left,
         );
         const signed = signContract(withOffers, best.id);
-        const pro = playProfessionalLife(signed, content, 3);
+        const pro = playProfessionalLife(signed, content, 20);
         return {
           seasonsPlayed,
           graduated: true,
@@ -369,6 +423,11 @@ const playLifecycle = (
           leagueAppearances: pro.leagueAppearances,
           severeInjuries: pro.severeInjuries,
           freeAgent: pro.freeAgent,
+          overseasSpent: pro.overseasSpent,
+          transferCount: pro.transferCount,
+          retireAge: pro.retireAge,
+          hadCaps: pro.hadCaps,
+          capCount: pro.capCount,
         };
       }
     }
@@ -390,7 +449,9 @@ const completeNextSeason = (
     const outcome = advanceCareerMonth(save, content.academies, content.events);
     save = outcome.save;
     if (outcome.status === 'awaiting-decision') {
-      save = submitCareerDecision(save, outcome.event.eventId, outcome.event.choices[0]!.id);
+      save = clearEventFeedback(
+        submitCareerDecision(save, outcome.event.eventId, outcome.event.choices[0]!.id),
+      );
     }
     guard += 1;
   }
@@ -436,8 +497,9 @@ const weekKeyToMonth = (startDate: string, weekKey: string): string => {
 };
 
 /**
- * 职业期生命周期（policy v1）：
- * 持续接受续约、推进赛季并记录承诺兑现与出场数据，最多 proSeasons 季。
+ * 全生涯生命周期（policy v1）：
+ * 优先续约；到期后自由球员要约择一签署（含留洋可能）；
+ * 记录承诺兑现、转会次数、国家队与退役年龄，直到退役或 proSeasons 季上限。
  */
 const playProfessionalLife = (
   signed: CareerSaveV5Like,
@@ -452,8 +514,14 @@ const playProfessionalLife = (
   leagueAppearances: number;
   severeInjuries: number;
   freeAgent: boolean;
+  transferCount: number;
+  retireAge: number | null;
+  hadCaps: boolean;
+  capCount: number;
+  overseasSpent: boolean;
 } => {
   let save = signed;
+  const professionalClubs = [...content.clubs, ...(content.overseasClubs ?? [])];
   let seasonsPlayed = 0;
   let promiseKept = false;
   let lastCause = 'none';
@@ -462,47 +530,119 @@ const playProfessionalLife = (
   let leagueAppearances = 0;
   let severeInjuries = 0;
   let freeAgent = false;
+  let transferCount = 0;
+  let retireAge: number | null = null;
+  let hadCaps = false;
+  let capCount = 0;
+  let overseasSpent = signed.overseasSince !== null;
+  let freeAgentWindows = 0;
+  const retirementAgeTarget = 29 + (signed.randomState.seed % 3);
 
-  for (let season = 0; season < proSeasons; season += 1) {
-    if (save.careerPhase !== 'professional-contract' && save.careerPhase !== 'pro-offseason') {
-      freeAgent = save.careerPhase === 'free-agent';
+  while (seasonsPlayed < proSeasons && save.careerPhase !== 'retired') {
+    if (save.careerPhase === 'free-agent') {
+      freeAgent = true;
+      if (save.player.age >= 30 && save.player.age >= retirementAgeTarget) {
+        save = retireUse(save, save.proSeason?.endDate ?? '2040-06-30');
+        continue;
+      }
+      if (save.pendingOffers.length === 0) {
+        save = generateFreeAgentOffers(save, content);
+        freeAgentWindows += 1;
+      }
+      if (save.pendingOffers.length > 0) {
+        transferCount += 1;
+        const overseasOffer = save.pendingOffers.find(({ overseas }) => overseas);
+        const target =
+          overseasOffer ??
+          save.pendingOffers.reduce((left, right) =>
+            right.clubTier > left.clubTier ? right : left,
+          );
+        save = signTransfer(save, target.id);
+        overseasSpent = overseasSpent || save.overseasSince !== null;
+        freeAgentWindows = 0;
+        continue;
+      }
+      if (save.player.age >= 30) {
+        save = retireUse(save, save.proSeason?.endDate ?? '2040-06-30');
+        continue;
+      }
+      if (freeAgentWindows >= 3) break;
+      continue;
+    }
+    const phase = save.careerPhase;
+    if (phase !== 'professional-contract' && phase !== 'pro-offseason') {
       break;
     }
-    save = startProfessionalSeason(save, content.clubs);
+    save = startProfessionalSeason(save, professionalClubs);
+    overseasSpent = overseasSpent || save.overseasSince !== null;
     let guard = 0;
     while (!save.proSeason!.completed && guard < 60) {
-      const outcome = advanceProMonth(save, content.clubs, content.events);
+      const outcome = advanceProMonth(save, professionalClubs, content.events);
       save = outcome.save;
       if (outcome.status === 'awaiting-decision') {
-        save = submitCareerDecision(save, outcome.event.eventId, outcome.event.choices[0]!.id);
+        save = clearEventFeedback(
+          submitCareerDecision(save, outcome.event.eventId, outcome.event.choices[0]!.id),
+        );
       }
       guard += 1;
     }
     if (!save.proSeason!.completed) throw new Error('职业赛季未在保护步数内完成');
     const settled = completeProfessionalSeason(save);
     save = settled.save;
+    if (save.story.pendingEvent?.storyId === 'national-team-debut') {
+      save = clearEventFeedback(submitNationalTeamDecision(save, 'accept-national-team'));
+    }
     seasonsPlayed += 1;
     totalMinutes += save.proSeasonStats.minutes;
     leagueAppearances += save.proSeasonStats.leagueAppearances;
     const review = settled.review;
     if (review) {
-      promiseKept = review.review.status === 'kept';
+      promiseKept = promiseKept || review.review.status === 'kept';
       lastCause = review.review.cause;
+    }
+    if (save.nationalTeam?.capped) {
+      hadCaps = true;
+      capCount = save.nationalTeam.caps;
     }
     const ownPlayed = save.proSeason!.fixtures.filter(
       ({ status, homeClubId, awayClubId }) =>
         status === 'played' &&
         (homeClubId === save.proSeason!.clubId || awayClubId === save.proSeason!.clubId),
     ).length;
-    const shareDebug = save.proSeasonStats.minutes / Math.max(1, ownPlayed * 90);
-    if (shareDebug >= 0.5) {
+    if (save.proSeasonStats.minutes / Math.max(1, ownPlayed * 90) >= 0.5) {
       starterReached = true;
     }
     if (save.pendingOffers.length > 0) {
-      save = acceptRenewal(save);
+      if (save.player.age >= 30 && save.player.age >= retirementAgeTarget) {
+        save = declineRenewalUse(save);
+        continue;
+      }
+      const contractEndYear = Number(save.proSeason?.endDate.slice(0, 4) ?? 0);
+      // 到期合同约半数续留、半数进入市场，避免批量政策把转会和留洋压得过低。
+      const shouldStay = (contractEndYear + save.player.age) % 3 !== 0;
+      if (shouldStay) {
+        save = acceptRenewal(save);
+        continue;
+      }
+      // 合同到期：拒绝续约，下一轮进入自由球员市场。
+      save = declineRenewalUse(save);
+      continue;
     }
+    if (save.player.age >= 30 && save.player.age >= retirementAgeTarget) {
+      save = retireUse(save, save.proSeason?.endDate ?? '2040-06-30');
+      continue;
+    }
+    // 合同未到期：直接留队
+  }
+  if (
+    save.careerPhase === 'pro-offseason' &&
+    save.player.age >= 30 &&
+    save.player.age >= retirementAgeTarget
+  ) {
+    save = retireUse(save, save.proSeason?.endDate ?? '2040-06-30');
   }
   freeAgent = save.careerPhase === 'free-agent';
+  if (save.careerPhase === 'retired') retireAge = save.player.age;
   severeInjuries =
     save.health.previousInjuries.filter(({ kind }) => kind === 'severe').length +
     (save.health.activeInjury?.kind === 'severe' ? 1 : 0);
@@ -515,21 +655,28 @@ const playProfessionalLife = (
     leagueAppearances,
     severeInjuries,
     freeAgent,
+    overseasSpent,
+    transferCount,
+    retireAge,
+    hadCaps,
+    capCount,
   };
 };
 
 const isMain = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isMain) {
-  const readArg = (name: string, fallback: string) => {
-    const index = process.argv.indexOf(name);
-    if (index < 0) return fallback;
-    return process.argv[index + 1] ?? fallback;
-  };
-  const runs = Number(readArg('--runs', '1000'));
-  const seedStart = Number(readArg('--seed-start', '1'));
-  const output = resolve(readArg('--output', 'artifacts/youth-balance.json'));
-  const report = runYouthSeasons(runs, seedStart);
-  await mkdir(dirname(output), { recursive: true });
-  await writeFile(output, JSON.stringify(report, null, 2), 'utf8');
-  console.log(JSON.stringify(report.summary, null, 2));
+  void (async () => {
+    const readArg = (name: string, fallback: string) => {
+      const index = process.argv.indexOf(name);
+      if (index < 0) return fallback;
+      return process.argv[index + 1] ?? fallback;
+    };
+    const runs = Number(readArg('--runs', '1000'));
+    const seedStart = Number(readArg('--seed-start', '1'));
+    const output = resolve(readArg('--output', 'artifacts/youth-balance.json'));
+    const report = runYouthSeasons(runs, seedStart);
+    await mkdir(dirname(output), { recursive: true });
+    await writeFile(output, JSON.stringify(report, null, 2), 'utf8');
+    console.log(JSON.stringify(report.summary, null, 2));
+  })();
 }

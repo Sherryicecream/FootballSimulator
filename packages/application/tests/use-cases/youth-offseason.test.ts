@@ -106,6 +106,16 @@ describe('休赛期阶段机', () => {
       true,
     );
   });
+
+  it('19 岁青训赛季结算后后续方向为职业市场', () => {
+    const finished = finishSeason(createSave(42));
+    const save = { ...finished, player: { ...finished.player, age: 19 } };
+
+    const completed = completeYouthSeason(save);
+
+    expect(completed.outcome.nextPath).toBe('professional-market');
+    expect(completed.outcome.summary).toContain('职业市场');
+  });
 });
 
 function finishSeason(initial: CareerSaveV2) {
