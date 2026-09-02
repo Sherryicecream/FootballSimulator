@@ -29,11 +29,14 @@ export const ProCupStateSchema = z.strictObject({
   id: IdSchema,
   name: z.string().min(1).max(80),
   competitionId: IdSchema,
-  entrants: z.array(IdSchema).length(8).superRefine((entrants, ctx) => {
-    if (new Set(entrants).size !== entrants.length) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: '杯赛参赛队伍不能重复' });
-    }
-  }),
+  entrants: z
+    .array(IdSchema)
+    .length(8)
+    .superRefine((entrants, ctx) => {
+      if (new Set(entrants).size !== entrants.length) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: '杯赛参赛队伍不能重复' });
+      }
+    }),
   fixtures: z.array(ProFixtureSchema),
   currentRound: z.enum(['quarterfinal', 'semifinal', 'final', 'complete']),
   winnerClubId: IdSchema.nullable(),
