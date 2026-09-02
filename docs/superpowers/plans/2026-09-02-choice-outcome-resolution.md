@@ -264,3 +264,12 @@ Expected: all commands pass; monthly event density, injury rate, career completi
 Run: `git add docs/ROADMAP.md docs/superpowers/plans/2026-09-02-choice-outcome-resolution.md artifacts/youth-balance-m10-choice-outcomes.json`
 
 Run: `git commit -m "docs: close choice outcome module"`
+
+## 执行记录（2026-09-02）
+
+- Task 1–4 已完成并分别保存提交：契约/内容、simulation 判定器、application 账本反馈、web 结果展示。
+- 首批内容覆盖“训练场上的误会 / 当面澄清误会”，结果分为“沟通奏效”“误会缓和”“解释被误解”；旧选择继续使用 legacy 静态效果。
+- 聚焦回归 7 个文件/14 个测试通过；domain 79/379、local-ai 1/7、web 22/76；架构 10/10、E2E 16/16、typecheck、lint、format、build 通过。
+- 直接执行 `pnpm balance:youth -- --runs 1000 --seed-start 1 --output artifacts/youth-balance-m10-choice-outcomes.json` 通过，报告保存在本地生成物目录。
+- 根 `pnpm test` 的 balance Vitest 用例仍受 600 秒单测超时限制；同一 1,000 样本逻辑的直接命令已完成，需在后续验证性能模块中处理 runner 耗时边界。
+- 模块提交检查点：`a26d556 feat: show explainable choice outcomes`。
