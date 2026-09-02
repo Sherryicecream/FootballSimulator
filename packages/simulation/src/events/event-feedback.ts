@@ -6,6 +6,7 @@ import type {
 } from '@football/contracts';
 import { renderTemplate } from './narrative';
 import { selectEventNarrativeVariant } from './narrative-variants';
+import type { ChoiceOutcomeResolution } from './choice-resolution';
 
 const RELATIONSHIP_DIMENSIONS = ['trust', 'respect', 'closeness'] as const;
 
@@ -14,6 +15,7 @@ export const buildEventFeedback = (
   after: CareerSaveV2Like,
   event: YouthEventInstance,
   choice: EventChoice,
+  outcome?: ChoiceOutcomeResolution,
 ): EventFeedback => {
   const participants = event.participantIds
     .map((personId) => before.relationships.persons.find((person) => person.id === personId))
@@ -27,6 +29,7 @@ export const buildEventFeedback = (
       })
     : undefined;
 
+  const authoredOutcome = outcome?.outcome === 'legacy' ? undefined : outcome;
   return {
     eventId: event.eventId,
     title: event.title,
@@ -34,12 +37,13 @@ export const buildEventFeedback = (
     choiceText: renderTemplate(choice.text, variables),
     response: renderTemplate(
       selectedNarrative?.variant.response ??
+        authoredOutcome?.response ??
         choice.response ??
         `${before.player.identity.name}的处理方式让事件暂时告一段落。`,
       variables,
     ),
     participantResponses: buildParticipantResponses(
-      selectedNarrative?.variant.responses ?? choice.responses,
+      selectedNarrative?.variant.responses ?? authoredOutcome?.responses ?? choice.responses,
       participants,
       variables,
     ),
@@ -47,11 +51,13 @@ export const buildEventFeedback = (
     relationshipChanges: buildRelationshipChanges(before, after, event.participantIds),
     followUp: renderTemplate(
       selectedNarrative?.variant.followUp ??
+        authoredOutcome?.followUp ??
         choice.followUp ??
         '真正的影响会在接下来的训练和比赛中显现。',
       variables,
     ),
-    nextEventIds: choice.nextEventIds ?? event.nextEventIds,
+    nextEventIds: authoredOutcome?.nextEventIds ?? choice.nextEventIds ?? event.nextEventIds,
+    ...(authoredOutcome?.summary ? { outcome: authoredOutcome.summary } : {}),
     ...(selectedNarrative ? { narrativeVariantIndex: selectedNarrative.index } : {}),
   };
 };

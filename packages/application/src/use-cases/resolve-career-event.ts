@@ -4,7 +4,7 @@ import {
   type CareerLedgerEntryV2,
   type CareerSaveV2Like,
 } from '@football/contracts';
-import { applyRelationshipEffects, buildEventFeedback } from '@football/simulation';
+import { applyRelationshipEffects, buildEventFeedback, resolveChoiceOutcome } from '@football/simulation';
 
 export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId: string): S => {
   const event = save.story.pendingEvent;
@@ -13,7 +13,13 @@ export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId
   const choice = event.choices.find(({ id }) => id === choiceId);
   if (!choice) throw new Error(`无效的选择 ID：${choiceId}`);
 
-  const effects = choice.effects;
+  const resolvedChoice = resolveChoiceOutcome({
+    save,
+    choice,
+    eventId: event.eventId,
+    seed: save.randomState.seed,
+  });
+  const effects = resolvedChoice.effects;
   const currentState = {
     morale: applyScore(save.currentState.morale, effects.morale),
     form: applyScore(save.currentState.form, effects.form),
@@ -51,11 +57,14 @@ export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId
     id: `${automatic ? 'event' : 'decision'}-${event.eventId}-${save.season.currentWeek}`,
     weekKey: `${save.season.startDate.slice(0, 4)}-W${String(save.season.currentWeek).padStart(2, '0')}`,
     type: automatic ? 'event' : 'decision',
-    summary: `[${event.title}] ${choice.text}`,
+    summary: resolvedChoice.summary
+      ? `[${event.title}] ${choice.text}（${resolvedChoice.summary.label}：${resolvedChoice.summary.reason}）`
+      : `[${event.title}] ${choice.text}`,
     participantIds: event.participantIds,
+    outcome: resolvedChoice.summary ?? undefined,
   };
   const activeStorylines = save.story.activeStorylines.filter((id) => id !== event.eventId);
-  const nextEventIds = choice.nextEventIds ?? event.nextEventIds;
+  const nextEventIds = resolvedChoice.nextEventIds ?? choice.nextEventIds ?? event.nextEventIds;
 
   // 按输入版本选择校验 Schema：v4 存档保留 v4 字段，v2/v3 走原路径
   // v3 走原 Schema；v4/v5 归一化为 v5（补默认字段且保留新字段）
@@ -74,7 +83,7 @@ export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId
         event.storyId && !save.story.completedStoryIds.includes(event.storyId)
           ? [...save.story.completedStoryIds, event.storyId]
           : save.story.completedStoryIds,
-      pendingDelayedEffects: choice.delayEffects
+      pendingDelayedEffects: resolvedChoice.delayEffects
         ? [
             ...save.story.pendingDelayedEffects,
             {
@@ -95,7 +104,7 @@ export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId
     },
     ledger: [...save.ledger, fact],
   } as S;
-  const feedback = buildEventFeedback(save, resolvedSave, event, choice);
+  const feedback = buildEventFeedback(save, resolvedSave, event, choice, resolvedChoice);
   return (isV3 ? CareerSaveV3Schema : CareerSaveV5Schema).parse({
     ...resolvedSave,
     story: {
