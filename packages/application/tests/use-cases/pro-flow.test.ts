@@ -55,7 +55,17 @@ function signedProSave(overrides: Partial<CareerSaveV4> = {}): CareerSaveV4 {
   const target =
     save.pendingOffers.find(({ clubId }) => clubId === 'river-club') ?? save.pendingOffers[0]!;
   save = signContract(save, target.id);
-  const v4 = migrateCareerSaveV5({ ...save, contract: { ...save.contract!, contractYears: 1 } });
+  const v4 = migrateCareerSaveV5({
+    ...save,
+    contract: {
+      ...save.contract!,
+      clubId: 'river-club',
+      clubName: '闽江渔火',
+      clubTier: 5,
+      overseas: false,
+      contractYears: 1,
+    },
+  });
   return { ...v4, ...overrides };
 }
 
@@ -198,6 +208,22 @@ describe('职业赛季流程', () => {
     expect(next.health.recentLoad).toBe(0);
   });
 
+  it('职业联赛最多固化 12 支球队，升级降级不会额外制造第 13 队', () => {
+    const expandedClubs = [
+      ...content.clubs,
+      ...Array.from({ length: 8 }, (_, index) => ({
+        ...content.clubs[1]!,
+        id: `expanded-tier5-${index + 1}`,
+        name: `扩展五级俱乐部${index + 1}`,
+        tier: 5,
+      })),
+    ];
+    const started = startProfessionalSeason(signedProSave(), expandedClubs);
+
+    expect(started.proSeason!.standings).toHaveLength(12);
+    expect(new Set(started.proSeason!.standings.map(({ clubId }) => clubId)).size).toBe(12);
+  });
+
   it('开启职业赛季：阵容、赛程与积分榜固化，阶段进入 pro-season', () => {
     let save = signedProSave();
     save = startProfessionalSeason(save, content.clubs);
@@ -231,6 +257,7 @@ describe('职业赛季流程', () => {
     );
 
     expect(next.proSeason!.competitionId).toBe('pro-tier-7');
+    expect(next.contract!.clubTier).toBe(7);
     expect(next.proSeason!.domesticCup?.entrants).toContain(next.proSeason!.clubId);
   });
 
@@ -456,12 +483,17 @@ describe('职业赛季流程', () => {
     const market = generateFreeAgentOffers(freeAgent, content);
     const offer = market.pendingOffers.find(({ overseas }) => !overseas);
     expect(offer).toBeDefined();
-    const signed = signTransfer(market, offer!.id);
+    const signed = signTransfer(
+      { ...market, proSeason: { ...market.proSeason!, nextClubTier: 8 } },
+      offer!.id,
+    );
     expect(signed.careerPhase).toBe('professional-contract');
     expect(signed.freeAgentSeasons).toBe(0);
+    expect(signed.proSeason).toBeNull();
     const nextSeason = startProfessionalSeason(signed, content.clubs);
     expect(nextSeason.careerPhase).toBe('pro-season');
     expect(nextSeason.proSeason!.clubId).toBe(offer!.clubId);
+    expect(nextSeason.proSeason!.competitionId).toBe(`pro-tier-${offer!.clubTier}`);
     expect(nextSeason.proSeason!.startDate).toBe('2026-08-01');
   });
 

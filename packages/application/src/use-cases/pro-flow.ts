@@ -74,7 +74,15 @@ export const startProfessionalSeason = <S extends CareerSaveV4Like>(
       : nearbyClubs.length >= 4
         ? nearbyClubs
         : eligibleClubs;
-  const leagueClubs = [club, ...preferredClubs.filter(({ id }) => id !== club.id)];
+  const leagueOpponents = preferredClubs
+    .filter(({ id }) => id !== club.id)
+    .sort(
+      (left, right) =>
+        Math.abs(left.tier - effectiveTier) - Math.abs(right.tier - effectiveTier) ||
+        left.tier - right.tier ||
+        left.id.localeCompare(right.id),
+    );
+  const leagueClubs = [club, ...leagueOpponents.slice(0, 11)];
   if (leagueClubs.length < 4) throw new Error(`层级 ${effectiveTier} 俱乐部不足，无法组成联赛`);
 
   const rng = createSeededRandomSource(save.randomState.seed + 5500 + year);
@@ -129,6 +137,7 @@ export const startProfessionalSeason = <S extends CareerSaveV4Like>(
 
   return {
     ...save,
+    contract: { ...contract, clubTier: effectiveTier },
     careerPhase: 'pro-season',
     proPhase: 'preseason',
     proSeason: {

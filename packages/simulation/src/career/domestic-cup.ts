@@ -26,17 +26,13 @@ export const createDomesticCup = (
     ({ id, tier, overseas }) =>
       id !== playerClubId && !overseas && Math.abs(tier - effectiveTier) <= 1,
   );
-  const fallbackCandidates =
-    candidates.length >= 7
-      ? candidates
-      : clubs.filter(({ id, overseas }) => id !== playerClubId && !overseas);
-  if (fallbackCandidates.length < 7) {
+  if (candidates.length < 7) {
     throw new Error(`有效层级 ${effectiveTier} 附近国内俱乐部不足，无法组成国内杯`);
   }
 
   const rng = createSeededRandomSource(seed + Number(seasonYear) * 31 + 7400);
   const entrants = rng
-    .shuffle([playerClubId, ...fallbackCandidates.map(({ id }) => id)])
+    .shuffle([playerClubId, ...candidates.map(({ id }) => id)])
     .slice(0, 8);
   const fixtures = [
     ...makeRoundFixtures('qf', QUARTERFINAL_WEEK, seasonYear, entrants),
@@ -78,6 +74,9 @@ export const advanceDomesticCup = (
 
   const fixture = cup.fixtures.find(({ id }) => id === fixtureId);
   if (!fixture) throw new Error(`杯赛赛程不存在：${fixtureId}`);
+  if (fixture.competitionId !== cup.competitionId) {
+    throw new Error(`杯赛赛事不匹配：${fixtureId}`);
+  }
   if (fixture.status !== 'scheduled') throw new Error(`杯赛赛程已经结算：${fixtureId}`);
   const fixtureRound = roundForFixture(fixture);
   if (fixtureRound !== cup.currentRound) {
@@ -85,6 +84,17 @@ export const advanceDomesticCup = (
   }
   if (isCupSlot(fixture.homeClubId) || isCupSlot(fixture.awayClubId)) {
     throw new Error(`杯赛赛程尚未确定对阵：${fixtureId}`);
+  }
+  const entrants = new Set(cup.entrants);
+  if (cup.entrants.length !== 8 || entrants.size !== 8) {
+    throw new Error('杯赛参赛队名单非法');
+  }
+  if (
+    fixture.homeClubId === fixture.awayClubId ||
+    !entrants.has(fixture.homeClubId) ||
+    !entrants.has(fixture.awayClubId)
+  ) {
+    throw new Error(`杯赛参赛队非法：${fixtureId}`);
   }
 
   const winnerClubId =
@@ -105,10 +115,10 @@ export const advanceDomesticCup = (
   if (roundFixtures.some(({ status }) => status !== 'played')) return settled;
 
   if (fixtureRound === 'quarterfinal') {
-    return populateNextRound(settled, 'semifinal', roundWinners(roundFixtures));
+    return populateNextRound(settled, 'semifinal', roundWinners(roundFixtures, entrants));
   }
   if (fixtureRound === 'semifinal') {
-    return populateNextRound(settled, 'final', roundWinners(roundFixtures));
+    return populateNextRound(settled, 'final', roundWinners(roundFixtures, entrants));
   }
 
   return {
@@ -150,13 +160,20 @@ const roundForFixture = (fixture: ProFixture): Exclude<CupRound, 'complete'> => 
 
 const isCupSlot = (clubId: string): boolean => clubId.startsWith(CUP_SLOT_PREFIX);
 
-const roundWinners = (fixtures: readonly ProFixture[]): string[] =>
+const roundWinners = (fixtures: readonly ProFixture[], entrants: ReadonlySet<string>): string[] =>
   fixtures
     .slice()
     .sort((left, right) => left.id.localeCompare(right.id))
-    .map(({ resultId }) => {
+    .map(({ resultId, homeClubId, awayClubId }) => {
       if (!resultId?.startsWith('cup-winner-')) throw new Error('已结算杯赛缺少赢家引用');
-      return resultId.slice('cup-winner-'.length);
+      const winnerClubId = resultId.slice('cup-winner-'.length);
+      if (
+        !entrants.has(winnerClubId) ||
+        (winnerClubId !== homeClubId && winnerClubId !== awayClubId)
+      ) {
+        throw new Error('已结算杯赛赢家引用非法');
+      }
+      return winnerClubId;
     });
 
 const populateNextRound = (

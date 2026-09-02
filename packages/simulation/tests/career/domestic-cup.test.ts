@@ -92,4 +92,38 @@ describe('国内杯赛 bracket', () => {
     const settled = advanceDomesticCup(cup, fixture.id, 1, 0, 0);
     expect(() => advanceDomesticCup(settled, fixture.id, 1, 0, 0)).toThrow();
   });
+
+  it('只接受有效层级附近的国内俱乐部，不用远层级球队补位', () => {
+    const farClubs = clubs.map((club, index) => ({
+      ...club,
+      tier: index === 0 ? 5 : 8,
+    }));
+
+    expect(() => createDomesticCup(farClubs, farClubs[0]!.id, 5, '2030', 99)).toThrow(
+      '有效层级 5 附近国内俱乐部不足',
+    );
+  });
+
+  it('拒绝跨赛事或包含非参赛队的非法杯赛对阵', () => {
+    const cup = createDomesticCup(clubs, 'club-tier-5-1', 5, '2030', 99);
+    const fixture = cup.fixtures[0]!;
+
+    const wrongCompetition = {
+      ...cup,
+      fixtures: cup.fixtures.map((item) =>
+        item.id === fixture.id ? { ...item, competitionId: 'other-cup' } : item,
+      ),
+    };
+    expect(() => advanceDomesticCup(wrongCompetition, fixture.id, 1, 0, 0)).toThrow(
+      '杯赛赛事不匹配',
+    );
+
+    const outsider = {
+      ...cup,
+      fixtures: cup.fixtures.map((item) =>
+        item.id === fixture.id ? { ...item, homeClubId: 'outsider-club' } : item,
+      ),
+    };
+    expect(() => advanceDomesticCup(outsider, fixture.id, 1, 0, 0)).toThrow('杯赛参赛队非法');
+  });
 });

@@ -257,6 +257,65 @@ describe('decideAppearance', () => {
         }),
       );
     });
+
+    it('同周同时有联赛和杯赛时分别记录两场比赛与球员统计', () => {
+      const base = createProSave();
+      const cupClubs = [
+        ...proClubs,
+        { ...proClubs[0]!, id: 'pro-club-7' },
+        { ...proClubs[0]!, id: 'pro-club-8' },
+      ];
+      const cup = createDomesticCup(cupClubs, 'pro-club-1', 5, '2027', 7);
+      const ownLeagueFixture = base.proSeason!.fixtures.find(
+        ({ homeClubId, awayClubId }) =>
+          homeClubId === 'pro-club-1' || awayClubId === 'pro-club-1',
+      )!;
+      const fixtures = base.proSeason!.fixtures.map((fixture) =>
+        fixture.id === ownLeagueFixture.id
+          ? { ...fixture, weekKey: '2027-W27' }
+          : fixture.weekKey === '2027-W27'
+            ? { ...fixture, weekKey: '2027-W26' }
+            : fixture,
+      );
+      const strongAttributes = {
+        technical: Object.fromEntries(
+          Object.keys(base.player.attributes.technical).map((key) => [key, 95]),
+        ) as typeof base.player.attributes.technical,
+        physical: Object.fromEntries(
+          Object.keys(base.player.attributes.physical).map((key) => [key, 95]),
+        ) as typeof base.player.attributes.physical,
+        mental: Object.fromEntries(
+          Object.keys(base.player.attributes.mental).map((key) => [key, 95]),
+        ) as typeof base.player.attributes.mental,
+      };
+      const save = createProSave({
+        player: { ...base.player, attributes: strongAttributes },
+        health: { ...base.health, fitness: 95, fatigue: 0, recentLoad: 0 },
+        currentState: { ...base.currentState, form: 90, confidence: 90 },
+        clubContext: { ...base.clubContext, coachEvaluation: 90 },
+        proSeason: {
+          ...base.proSeason!,
+          currentWeek: 26,
+          fixtures,
+          domesticCup: cup,
+        },
+      });
+
+      const { save: next } = simulateProfessionalWeek(save, cupClubs);
+      const matchFacts = next.ledger.filter(
+        ({ type, weekKey }) => type === 'pro-match' && weekKey === '2027-W27',
+      );
+
+      expect(matchFacts).toHaveLength(2);
+      expect(matchFacts.map(({ matchContext }) => matchContext?.competitionId)).toEqual(
+        expect.arrayContaining(['pro-league', 'domestic-cup']),
+      );
+      expect(matchFacts.every(({ participantIds }) => participantIds.includes('player'))).toBe(
+        true,
+      );
+      expect(next.proSeasonStats.leagueAppearances).toBeGreaterThanOrEqual(1);
+      expect(next.proSeasonStats.cupAppearances).toBeGreaterThanOrEqual(1);
+    });
   });
   const base = createProSave();
   const healthy = base.health;

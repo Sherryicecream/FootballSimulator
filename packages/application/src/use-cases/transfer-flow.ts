@@ -69,6 +69,7 @@ export const signTransfer = (save: CareerSaveV5Like, offerId: string): CareerSav
       seasonsCompleted: 0,
       promiseStatus: 'pending',
     },
+    proSeason: null,
     pendingOffers: [],
     overseasSince: offer.overseas ? signedOn : null,
     freeAgentSeasons: 0,

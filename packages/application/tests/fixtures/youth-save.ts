@@ -31,6 +31,8 @@ export const content: YouthContentBundle = {
   events: [] as EventDefinition[],
   clubs: [
     club('county-club', '云梦泽畔', 4, 'hubei-hunan', ['MIDFIELDER', 'FORWARD'], 'rebuilding', 36),
+    club('lake-club', '镜湖潮汐', 4, 'jiangsu-zhejiang', ['FULL_BACK', 'WINGER'], 'stable', 34),
+    club('county-club-b', '云梦泽畔二队', 4, 'henan', ['CENTER_BACK', 'WINGER'], 'stable', 33),
     club('river-club', '闽江渔火', 5, 'fujian', ['FORWARD', 'WINGER'], 'stable', 44),
     club(
       'city-club',
@@ -42,6 +44,13 @@ export const content: YouthContentBundle = {
       55,
     ),
     club('top-club', '申海港联', 8, 'shanghai', ['FORWARD', 'WINGER'], 'contending', 90),
+    club('tier7-a', '七级俱乐部甲', 7, 'shanghai', ['FORWARD', 'WINGER'], 'stable', 52),
+    club('tier7-b', '七级俱乐部乙', 7, 'beijing-tianjin', ['MIDFIELDER', 'FULL_BACK'], 'stable', 51),
+    club('tier7-c', '七级俱乐部丙', 7, 'shandong', ['CENTER_BACK', 'WINGER'], 'rebuilding', 50),
+    club('tier7-d', '七级俱乐部丁', 7, 'henan', ['FORWARD', 'MIDFIELDER'], 'stable', 49),
+    club('tier7-e', '七级俱乐部戊', 7, 'fujian', ['FULL_BACK', 'CENTER_BACK'], 'rebuilding', 48),
+    club('tier7-f', '七级俱乐部己', 7, 'guangdong', ['WINGER', 'FORWARD'], 'stable', 47),
+    club('tier7-g', '七级俱乐部庚', 7, 'sichuan-chongqing', ['MIDFIELDER', 'CENTER_BACK'], 'rebuilding', 46),
     club('tier5-a', '澜溪叠石', 5, 'jiangsu-zhejiang', ['WINGER', 'MIDFIELDER'], 'stable', 41),
     club('tier5-b', '青沼池塘', 5, 'hubei-hunan', ['CENTER_BACK', 'WINGER'], 'rebuilding', 39),
     club('tier5-c', '燕山炉匠', 5, 'beijing-tianjin', ['MIDFIELDER', 'FORWARD'], 'stable', 37),

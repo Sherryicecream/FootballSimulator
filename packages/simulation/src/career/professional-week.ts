@@ -29,6 +29,13 @@ export interface ProWeekTransition<S = CareerSaveV4Like> {
   developmentAccrual: DevelopmentAccrual;
 }
 
+type PlayerProfessionalMatch = {
+  match: YouthMatchResultV2;
+  competitionId: string;
+  opponentStrength: number;
+  teamImpact: number;
+};
+
 const clamp = (value: number) => Math.min(100, Math.max(0, value));
 const addDays = (isoDate: string, days: number): string => {
   const date = new Date(`${isoDate}T00:00:00Z`);
@@ -86,13 +93,13 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
   const leagueFixtures = pro.fixtures.filter(({ weekKey: key }) => key === weekKey);
   const cupFixtures = pro.domesticCup?.fixtures.filter(({ weekKey: key }) => key === weekKey) ?? [];
   const weekFixtures = [...leagueFixtures, ...cupFixtures];
-  const ownFixture = weekFixtures.find(
+  const ownFixtures = weekFixtures.filter(
     ({ homeClubId, awayClubId }) => homeClubId === pro.clubId || awayClubId === pro.clubId,
   );
 
   const load =
     (trainingLoad(save.trainingPlan.intensity) + 8) * 1.15 +
-    (ownFixture ? 12 : 0) * (save.trainingPlan.intensity === 'light' ? 0.5 : 1);
+    (ownFixtures.length * 12) * (save.trainingPlan.intensity === 'light' ? 0.5 : 1);
   const recoveredInjury = advanceInjury(save.health.activeInjury);
   let health = {
     ...save.health,
@@ -115,12 +122,9 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
     weeklyAccrual,
   );
 
-  const selection = decideAppearance(save, health, rng, Boolean(ownFixture));
+  const selection = decideAppearance(save, health, rng, ownFixtures.length > 0);
 
-  let matchResult: YouthMatchResultV2 | null = null;
-  let opponentStrength: number | undefined;
-  let matchCompetitionId: string | undefined;
-  let teamImpact = 0;
+  const playerMatches: PlayerProfessionalMatch[] = [];
   let domesticCup = pro.domesticCup;
   let standings: LeagueStanding[] = pro.standings;
   const clubById = new Map(clubs.map((club) => [club.id, club]));
@@ -148,10 +152,7 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
     );
     standings = updateStandings(standings, fixture, result.homeScore, result.awayScore);
     if (isOwn && selection.appearance !== 'unavailable') {
-      teamImpact = impact;
-      matchCompetitionId = fixture.competitionId;
-      opponentStrength = opponent;
-      matchResult = {
+      const match: YouthMatchResultV2 = {
         id: `pro-${fixture.id}`,
         fixtureId: fixture.id,
         opponentId: isHome ? fixture.awayClubId : fixture.homeClubId,
@@ -168,6 +169,12 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
         goals: playerGoals(selection, rng),
         assists: playerAssists(selection, rng),
       };
+      playerMatches.push({
+        match,
+        competitionId: fixture.competitionId,
+        opponentStrength: opponent,
+        teamImpact: impact,
+      });
     }
   }
 
@@ -196,10 +203,7 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
       cupRng,
     );
     if (isOwn && selection.appearance !== 'unavailable') {
-      teamImpact = impact;
-      matchCompetitionId = fixture.competitionId;
-      opponentStrength = opponent;
-      matchResult = {
+      const match: YouthMatchResultV2 = {
         id: `pro-${fixture.id}`,
         fixtureId: fixture.id,
         opponentId: isHome ? fixture.awayClubId : fixture.homeClubId,
@@ -216,6 +220,12 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
         goals: playerGoals(selection, cupRng),
         assists: playerAssists(selection, cupRng),
       };
+      playerMatches.push({
+        match,
+        competitionId: fixture.competitionId,
+        opponentStrength: opponent,
+        teamImpact: impact,
+      });
     }
     domesticCup = advanceDomesticCup(
       cup,
@@ -225,16 +235,14 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
       cupRng.nextInt(0, 1_000_000),
     );
   }
+  const matchResult = playerMatches.at(-1)?.match ?? null;
   const facts = createProFacts(
     save,
     weekKey,
     load,
-    matchResult,
+    playerMatches,
     selection,
     injury,
-    opponentStrength,
-    matchCompetitionId,
-    teamImpact,
   );
   const nextDate = addDays(pro.currentDate, 7);
   const playedIds = new Set(leagueFixtures.map(({ id }) => id));
@@ -243,7 +251,7 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
       ? {
           ...fixture,
           status: 'played' as const,
-          resultId: fixture.id === matchResult?.fixtureId ? matchResult.id : `pro-${fixture.id}`,
+          resultId: `pro-${fixture.id}`,
         }
       : fixture,
   );
@@ -254,36 +262,35 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
     cupGoals: save.proSeasonStats.cupGoals ?? 0,
     cupAssists: save.proSeasonStats.cupAssists ?? 0,
   };
-  const isCupMatch = matchCompetitionId === 'domestic-cup';
+  const leagueMatches = playerMatches.filter(
+    ({ competitionId }) => competitionId !== 'domestic-cup',
+  );
+  const cupMatches = playerMatches.filter(({ competitionId }) => competitionId === 'domestic-cup');
+  const playedLeagueMatches = leagueMatches.filter(({ match }) => match.played);
+  const playedCupMatches = cupMatches.filter(({ match }) => match.played);
+  const sumMatchField = (
+    matches: readonly PlayerProfessionalMatch[],
+    field: 'minutesPlayed' | 'goals' | 'assists',
+  ) => matches.reduce((sum, { match }) => sum + match[field], 0);
+  const ratingMatches = leagueMatches.filter(({ match }) => match.rating != null);
 
-  const proStats = matchResult
-    ? {
-        leagueAppearances:
-          save.proSeasonStats.leagueAppearances + (!isCupMatch && matchResult.played ? 1 : 0),
-        reserveAppearances:
-          save.proSeasonStats.reserveAppearances + (!isCupMatch && !matchResult.played ? 1 : 0),
-        minutes:
-          save.proSeasonStats.minutes +
-          (!isCupMatch && matchResult.played ? matchResult.minutesPlayed : 0),
-        goals: save.proSeasonStats.goals + (!isCupMatch ? matchResult.goals : 0),
-        assists: save.proSeasonStats.assists + (!isCupMatch ? matchResult.assists : 0),
-        ratingSum:
-          save.proSeasonStats.ratingSum +
-          (!isCupMatch && matchResult.rating != null ? matchResult.rating : 0),
-        ratingCount:
-          save.proSeasonStats.ratingCount + (!isCupMatch && matchResult.rating != null ? 1 : 0),
-        cupAppearances:
-          normalizedProStats.cupAppearances + (isCupMatch && matchResult.played ? 1 : 0),
-        cupMinutes:
-          normalizedProStats.cupMinutes +
-          (isCupMatch && matchResult.played ? matchResult.minutesPlayed : 0),
-        cupGoals:
-          normalizedProStats.cupGoals + (isCupMatch && matchResult.played ? matchResult.goals : 0),
-        cupAssists:
-          normalizedProStats.cupAssists +
-          (isCupMatch && matchResult.played ? matchResult.assists : 0),
-      }
-    : normalizedProStats;
+  const proStats = {
+    leagueAppearances: save.proSeasonStats.leagueAppearances + playedLeagueMatches.length,
+    reserveAppearances:
+      save.proSeasonStats.reserveAppearances +
+      leagueMatches.filter(({ match }) => !match.played).length,
+    minutes: save.proSeasonStats.minutes + sumMatchField(playedLeagueMatches, 'minutesPlayed'),
+    goals: save.proSeasonStats.goals + sumMatchField(leagueMatches, 'goals'),
+    assists: save.proSeasonStats.assists + sumMatchField(leagueMatches, 'assists'),
+    ratingSum:
+      save.proSeasonStats.ratingSum +
+      ratingMatches.reduce((sum, { match }) => sum + (match.rating ?? 0), 0),
+    ratingCount: save.proSeasonStats.ratingCount + ratingMatches.length,
+    cupAppearances: normalizedProStats.cupAppearances + playedCupMatches.length,
+    cupMinutes: normalizedProStats.cupMinutes + sumMatchField(playedCupMatches, 'minutesPlayed'),
+    cupGoals: normalizedProStats.cupGoals + sumMatchField(playedCupMatches, 'goals'),
+    cupAssists: normalizedProStats.cupAssists + sumMatchField(playedCupMatches, 'assists'),
+  };
 
   const nextSave: S = {
     ...save,
@@ -472,12 +479,9 @@ const createProFacts = (
   save: CareerSaveV4Like,
   weekKey: string,
   load: number,
-  match: YouthMatchResultV2 | null,
+  playerMatches: readonly PlayerProfessionalMatch[],
   selection: ProAppearanceDecision,
   injury: CareerSaveV4Like['health']['activeInjury'],
-  opponentStrength: number | undefined,
-  competitionId: string | undefined,
-  teamImpact: number,
 ): CareerLedgerEntryV2[] => {
   const facts: CareerLedgerEntryV2[] = [
     {
@@ -488,7 +492,7 @@ const createProFacts = (
       participantIds: [],
     },
   ];
-  if (match) {
+  for (const { match, competitionId, opponentStrength, teamImpact } of playerMatches) {
     const appearanceText =
       match.played && selection.appearance === 'starter'
         ? `首发 ${match.minutesPlayed} 分钟`
@@ -500,9 +504,9 @@ const createProFacts = (
       weekKey,
       type: 'pro-match',
       matchContext: {
-        competitionId: competitionId ?? 'pro-league',
+        competitionId,
         teamImpact,
-        opponentStrength: opponentStrength ?? 55,
+        opponentStrength,
         isHome: match.isHome,
         played: match.played,
         minutesPlayed: match.minutesPlayed,
@@ -511,7 +515,7 @@ const createProFacts = (
         assists: match.assists,
       },
       summary: `${competitionId === 'domestic-cup' ? '国内杯' : '联赛'}：${match.opponentName} ${match.homeScore}:${match.awayScore}；${appearanceText}${match.rating != null ? `，评分 ${match.rating}` : ''}${match.goals + match.assists > 0 ? `；${match.goals} 球 ${match.assists} 助攻` : ''}`,
-      participantIds: [],
+      participantIds: ['player'],
     });
   }
   if (injury) {
