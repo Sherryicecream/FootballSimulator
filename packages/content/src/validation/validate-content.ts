@@ -178,6 +178,10 @@ const validateEvents = (events: EventDefinition[]): void => {
       for (const effectKey of [
         ...Object.keys(choice.effects),
         ...Object.keys(choice.delayEffects ?? {}),
+        ...Object.values(choice.resolution?.outcomes ?? {}).flatMap((outcome) => [
+          ...Object.keys(outcome.effects),
+          ...Object.keys(outcome.delayEffects ?? {}),
+        ]),
       ]) {
         if (!allowedEffectKeys.has(effectKey)) {
           throw new Error(`未知事件效果：${event.id}.${effectKey}`);

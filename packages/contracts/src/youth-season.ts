@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { PositionSchema } from './primitives';
-import { EventChoiceSchema, EventDefinitionSchema, EventInteractionSchema } from './event';
+import { ChoiceOutcomeSummarySchema, EventChoiceSchema, EventDefinitionSchema, EventInteractionSchema } from './event';
 import { ClubProfileSchema, AgentArchetypeSchema } from './clubs';
 
 const IdSchema = z.string().min(1).max(60);
@@ -183,6 +183,7 @@ export const EventFeedbackSchema = z.strictObject({
   stateChanges: z.array(EventFeedbackStateChangeSchema).max(8),
   relationshipChanges: z.array(EventFeedbackRelationshipChangeSchema).max(24),
   followUp: z.string().min(1).max(300),
+  outcome: ChoiceOutcomeSummarySchema.optional(),
   nextEventIds: z.array(IdSchema).max(8).optional(),
   narrativeVariantIndex: z.number().int().min(0).max(3).optional(),
 });
@@ -235,6 +236,7 @@ export const CareerLedgerEntryV2Schema = z.strictObject({
   ]),
   summary: z.string().min(1).max(500),
   participantIds: z.array(IdSchema),
+  outcome: ChoiceOutcomeSummarySchema.optional(),
   matchContext: MatchContextSchema.optional(),
 });
 export type CareerLedgerEntryV2 = z.infer<typeof CareerLedgerEntryV2Schema>;

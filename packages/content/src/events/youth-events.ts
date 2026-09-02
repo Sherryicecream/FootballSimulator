@@ -27,6 +27,32 @@ const legacyYouthEvents: EventDefinition[] = [
         text: '当面澄清误会，把训练中的情况说清楚',
         riskLabel: 'medium',
         effects: { respect: 3, trust: 2, confidence: 2 },
+        resolution: {
+          attribute: 'decision',
+          difficulty: 58,
+          volatility: 7,
+          stateModifiers: { confidence: 0.2, fatigue: -0.1, coachTrust: 0.15 },
+          outcomes: {
+            success: {
+              label: '沟通奏效',
+              effects: { respect: 4, trust: 3, confidence: 3, coachTrust: 2 },
+              response: '你把事实、感受和下一次配合分开说清楚，教练没有再追问，队友也主动把误会放下。',
+              followUp: '教练会把这次沟通记在心里；下一场比赛，你们的默契会成为新的观察点。',
+            },
+            partial: {
+              label: '误会缓和',
+              effects: { respect: 2, trust: 1, confidence: 1 },
+              response: '你的解释让气氛缓和下来，但队友仍需要几次训练确认你们能否真正配合。',
+              followUp: '下一场比赛的第一次沟通将决定这次澄清能否留下来。',
+            },
+            failure: {
+              label: '解释被误解',
+              effects: { respect: -1, trust: -2, confidence: -2, coachTrust: -2 },
+              response: '你试图把话说清楚，却被听成了推责；教练让你们先回到训练，不再继续争辩。',
+              followUp: '下一次训练你需要用行动证明自己愿意承担沟通责任。',
+            },
+          },
+        },
         response: '你把事情说清楚了，训练场的空气终于松动下来。',
         responses: [
           {

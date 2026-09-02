@@ -37,6 +37,77 @@ export const EventChoiceNarrativeVariantSchema = z.strictObject({
 });
 export type EventChoiceNarrativeVariant = z.infer<typeof EventChoiceNarrativeVariantSchema>;
 
+export const ChoiceResolutionAttributeSchema = z.enum([
+  'firstTouch',
+  'dribbling',
+  'passing',
+  'shooting',
+  'defending',
+  'aerialAbility',
+  'pace',
+  'strength',
+  'stamina',
+  'agility',
+  'offTheBall',
+  'vision',
+  'decision',
+  'composure',
+  'determination',
+  'discipline',
+]);
+export type ChoiceResolutionAttribute = z.infer<typeof ChoiceResolutionAttributeSchema>;
+
+export const ChoiceResolutionOutcomeSchema = z.object({
+  label: z.string().min(1).max(40),
+  effects: z.record(z.string(), z.number().int()).default({}),
+  delayEffects: z.record(z.string(), z.number().int()).optional(),
+  memoryKey: z.string().optional(),
+  response: z.string().min(1).max(500).optional(),
+  responses: z.array(EventChoiceResponseSchema).max(6).optional(),
+  followUp: z.string().min(1).max(300).optional(),
+  nextEventIds: z.array(z.string().min(1).max(60)).max(8).optional(),
+  narrativeVariants: z.array(EventChoiceNarrativeVariantSchema).min(2).max(4).optional(),
+});
+export type ChoiceResolutionOutcome = z.infer<typeof ChoiceResolutionOutcomeSchema>;
+
+export const ChoiceResolutionSchema = z.strictObject({
+  attribute: ChoiceResolutionAttributeSchema,
+  difficulty: z.number().int().min(0).max(100),
+  volatility: z.number().int().min(0).max(20).default(8),
+  stateModifiers: z
+    .strictObject({
+      morale: z.number().min(-1).max(1).default(0),
+      form: z.number().min(-1).max(1).default(0),
+      confidence: z.number().min(-1).max(1).default(0),
+      fitness: z.number().min(-1).max(1).default(0),
+      fatigue: z.number().min(-1).max(1).default(0),
+      coachTrust: z.number().min(-1).max(1).default(0),
+    })
+    .default({}),
+  outcomes: z.strictObject({
+    success: ChoiceResolutionOutcomeSchema,
+    partial: ChoiceResolutionOutcomeSchema,
+    failure: ChoiceResolutionOutcomeSchema,
+  }),
+});
+export type ChoiceResolution = z.infer<typeof ChoiceResolutionSchema>;
+
+export const ChoiceOutcomeKindSchema = z.enum(['success', 'partial', 'failure', 'legacy']);
+export type ChoiceOutcomeKind = z.infer<typeof ChoiceOutcomeKindSchema>;
+
+export const ChoiceOutcomeSummarySchema = z.strictObject({
+  outcome: z.enum(['success', 'partial', 'failure']),
+  label: z.string().min(1).max(40),
+  attribute: ChoiceResolutionAttributeSchema,
+  attributeValue: z.number().int().min(0).max(100),
+  score: z.number().int().min(0).max(120),
+  target: z.number().int().min(0).max(100),
+  stateModifier: z.number().int().min(-100).max(100),
+  variance: z.number().int().min(-20).max(20),
+  reason: z.string().min(1).max(220),
+});
+export type ChoiceOutcomeSummary = z.infer<typeof ChoiceOutcomeSummarySchema>;
+
 export const EventCategorySchema = z.enum([
   'china-youth',
   'dressing-room',
@@ -51,6 +122,7 @@ export const EventChoiceSchema = z.object({
   text: z.string().min(1).max(200),
   riskLabel: z.string().min(1).max(10),
   effects: z.record(z.string(), z.number().int()).default({}),
+  resolution: ChoiceResolutionSchema.optional(),
   delayEffects: z.record(z.string(), z.number().int()).optional(),
   memoryKey: z.string().optional(),
   response: z.string().min(1).max(500).optional(),
