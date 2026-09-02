@@ -83,7 +83,14 @@ export const ChoiceResolutionSchema = z.strictObject({
       fatigue: z.number().min(-1).max(1).default(0),
       coachTrust: z.number().min(-1).max(1).default(0),
     })
-    .default({}),
+    .default({
+      morale: 0,
+      form: 0,
+      confidence: 0,
+      fitness: 0,
+      fatigue: 0,
+      coachTrust: 0,
+    }),
   outcomes: z.strictObject({
     success: ChoiceResolutionOutcomeSchema,
     partial: ChoiceResolutionOutcomeSchema,

@@ -4,7 +4,11 @@ import {
   type CareerLedgerEntryV2,
   type CareerSaveV2Like,
 } from '@football/contracts';
-import { applyRelationshipEffects, buildEventFeedback, resolveChoiceOutcome } from '@football/simulation';
+import {
+  applyRelationshipEffects,
+  buildEventFeedback,
+  resolveChoiceOutcome,
+} from '@football/simulation';
 
 export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId: string): S => {
   const event = save.story.pendingEvent;

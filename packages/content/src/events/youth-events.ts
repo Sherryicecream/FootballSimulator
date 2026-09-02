@@ -31,12 +31,20 @@ const legacyYouthEvents: EventDefinition[] = [
           attribute: 'decision',
           difficulty: 58,
           volatility: 7,
-          stateModifiers: { confidence: 0.2, fatigue: -0.1, coachTrust: 0.15 },
+          stateModifiers: {
+            morale: 0,
+            form: 0,
+            confidence: 0.2,
+            fitness: 0,
+            fatigue: -0.1,
+            coachTrust: 0.15,
+          },
           outcomes: {
             success: {
               label: '沟通奏效',
               effects: { respect: 4, trust: 3, confidence: 3, coachTrust: 2 },
-              response: '你把事实、感受和下一次配合分开说清楚，教练没有再追问，队友也主动把误会放下。',
+              response:
+                '你把事实、感受和下一次配合分开说清楚，教练没有再追问，队友也主动把误会放下。',
               followUp: '教练会把这次沟通记在心里；下一场比赛，你们的默契会成为新的观察点。',
             },
             partial: {

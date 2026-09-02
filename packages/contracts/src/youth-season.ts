@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { PositionSchema } from './primitives';
-import { ChoiceOutcomeSummarySchema, EventChoiceSchema, EventDefinitionSchema, EventInteractionSchema } from './event';
+import {
+  ChoiceOutcomeSummarySchema,
+  EventChoiceSchema,
+  EventDefinitionSchema,
+  EventInteractionSchema,
+} from './event';
 import { ClubProfileSchema, AgentArchetypeSchema } from './clubs';
 
 const IdSchema = z.string().min(1).max(60);

@@ -18,13 +18,13 @@ export interface ResolveChoiceOutcomeInput {
 export interface ChoiceOutcomeResolution {
   outcome: ChoiceOutcomeKind;
   effects: Record<string, number>;
-  delayEffects?: Record<string, number>;
-  memoryKey?: string;
-  response?: string;
-  responses?: ChoiceResolutionOutcome['responses'];
-  followUp?: string;
-  nextEventIds?: string[];
-  narrativeVariants?: ChoiceResolutionOutcome['narrativeVariants'];
+  delayEffects?: Record<string, number> | undefined;
+  memoryKey?: string | undefined;
+  response?: string | undefined;
+  responses?: ChoiceResolutionOutcome['responses'] | undefined;
+  followUp?: string | undefined;
+  nextEventIds?: string[] | undefined;
+  narrativeVariants?: ChoiceResolutionOutcome['narrativeVariants'] | undefined;
   summary: ChoiceOutcomeSummary | null;
   score: number | null;
   target: number | null;
@@ -90,7 +90,14 @@ export const resolveChoiceOutcome = ({
     target: resolution.difficulty,
     stateModifier,
     variance,
-    reason: buildReason(resolution.attribute, attributeValue, stateModifier, variance, score, resolution.difficulty),
+    reason: buildReason(
+      resolution.attribute,
+      attributeValue,
+      stateModifier,
+      variance,
+      score,
+      resolution.difficulty,
+    ),
   };
 
   return {
@@ -142,7 +149,10 @@ const calculateStateModifier = (
   return clamp(Math.round(total), -20, 20);
 };
 
-const outcomeForScore = (score: number, difficulty: number): Exclude<ChoiceOutcomeKind, 'legacy'> => {
+const outcomeForScore = (
+  score: number,
+  difficulty: number,
+): Exclude<ChoiceOutcomeKind, 'legacy'> => {
   if (score >= difficulty + 8) return 'success';
   if (score >= difficulty - 8) return 'partial';
   return 'failure';

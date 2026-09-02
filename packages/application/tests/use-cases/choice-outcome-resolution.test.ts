@@ -68,7 +68,6 @@ const withDecision = (save: ReturnType<typeof createSave>, decision: number) => 
 });
 
 const withPendingEvent = (save: ReturnType<typeof createSave>, configuredResolution?: object) => ({
-
   ...save,
   story: {
     ...save.story,

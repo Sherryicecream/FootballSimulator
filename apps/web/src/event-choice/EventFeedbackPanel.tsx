@@ -39,6 +39,24 @@ const RELATIONSHIP_LABELS: Record<string, string> = {
   respect: '尊重',
   closeness: '亲近度',
 };
+const ATTRIBUTE_LABELS: Record<string, string> = {
+  firstTouch: '停球',
+  dribbling: '盘带',
+  passing: '传球',
+  shooting: '射门',
+  defending: '防守',
+  aerialAbility: '空中能力',
+  pace: '速度',
+  strength: '力量',
+  stamina: '耐力',
+  agility: '灵活',
+  offTheBall: '跑位',
+  vision: '视野',
+  decision: '决策',
+  composure: '镇定',
+  determination: '意志',
+  discipline: '纪律',
+};
 
 export function EventFeedbackPanel({
   feedback,
@@ -59,6 +77,37 @@ export function EventFeedbackPanel({
         <span className="event-feedback-kicker">选择回放</span>
         <p>你已经做出决定，下面是这次选择在场内外留下的回应与影响。</p>
       </header>
+
+      {feedback.outcome && (
+        <section
+          className={`event-feedback-outcome event-feedback-outcome--${feedback.outcome.outcome}`}
+          aria-label="选择结果"
+        >
+          <div className="event-feedback-outcome-heading">
+            <span className="event-feedback-kicker">结果</span>
+            <strong>{feedback.outcome.label}</strong>
+          </div>
+          <div className="event-feedback-outcome-reason" aria-label="判定依据">
+            <span className="event-feedback-kicker">判定依据</span>
+            <p>{feedback.outcome.reason}</p>
+          </div>
+          <dl className="event-feedback-outcome-stats">
+            <div>
+              <dt>主能力</dt>
+              <dd>
+                {ATTRIBUTE_LABELS[feedback.outcome.attribute] ?? feedback.outcome.attribute}{' '}
+                {feedback.outcome.attributeValue}
+              </dd>
+            </div>
+            <div>
+              <dt>综合判定</dt>
+              <dd>
+                综合 {feedback.outcome.score} / 难度 {feedback.outcome.target}
+              </dd>
+            </div>
+          </dl>
+        </section>
+      )}
 
       <article className="event-feedback-result">
         <span className="event-feedback-kicker">现场结果</span>
