@@ -7,7 +7,7 @@ const IsoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 export const SeasonHonourSchema = z.strictObject({
   id: IdSchema,
-  kind: z.enum(['league-champion', 'cup-champion', 'promotion']),
+  kind: z.enum(['league-champion', 'cup-champion', 'promotion', 'relegation']),
   label: z.string().min(1).max(100),
   seasonId: IdSchema,
   clubId: IdSchema,

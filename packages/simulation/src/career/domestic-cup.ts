@@ -26,12 +26,18 @@ export const createDomesticCup = (
     ({ id, tier, overseas }) =>
       id !== playerClubId && !overseas && Math.abs(tier - effectiveTier) <= 1,
   );
-  if (candidates.length < 7) {
+  const fallbackCandidates =
+    candidates.length >= 7
+      ? candidates
+      : clubs.filter(({ id, overseas }) => id !== playerClubId && !overseas);
+  if (fallbackCandidates.length < 7) {
     throw new Error(`有效层级 ${effectiveTier} 附近国内俱乐部不足，无法组成国内杯`);
   }
 
   const rng = createSeededRandomSource(seed + Number(seasonYear) * 31 + 7400);
-  const entrants = rng.shuffle([playerClubId, ...candidates.map(({ id }) => id)]).slice(0, 8);
+  const entrants = rng
+    .shuffle([playerClubId, ...fallbackCandidates.map(({ id }) => id)])
+    .slice(0, 8);
   const fixtures = [
     ...makeRoundFixtures('qf', QUARTERFINAL_WEEK, seasonYear, entrants),
     ...makeRoundFixtures('sf', SEMIFINAL_WEEK, seasonYear, [

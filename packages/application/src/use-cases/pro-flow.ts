@@ -5,7 +5,9 @@ import type {
   CareerSaveV5Like,
   ClubProfile,
   EventDefinition,
+  LeagueStanding,
   Position,
+  SeasonHonour,
   SeasonHistorySummary,
 } from '@football/contracts';
 import { retire as retireCareer } from './transfer-flow';
@@ -18,6 +20,7 @@ import {
   buildDepthChart,
   buildRenewalOffer,
   createLeagueFixtures,
+  createDomesticCup,
   createLeagueStandings,
   createSeededRandomSource,
   generateProSquad,
@@ -58,15 +61,21 @@ export const startProfessionalSeason = <S extends CareerSaveV4Like>(
         : 0;
   if (!Number.isFinite(year) || year <= 0) throw new Error('无法确定职业赛季年份');
   const startDate = `${year}-08-01`;
-  const competitionId = `${club.overseas ? 'pro-overseas-tier' : 'pro-tier'}-${club.tier}`;
-  const sameTierClubs = clubs.filter(
-    ({ tier, overseas }) => tier === club.tier && Boolean(overseas) === Boolean(club.overseas),
+  const effectiveTier = save.proSeason?.nextClubTier ?? contract.clubTier;
+  const competitionId = `${club.overseas ? 'pro-overseas-tier' : 'pro-tier'}-${effectiveTier}`;
+  const eligibleClubs = clubs.filter(
+    ({ overseas }) => Boolean(overseas) === Boolean(club.overseas),
   );
-  const leagueClubs =
-    sameTierClubs.length >= 4 || !club.overseas
+  const sameTierClubs = eligibleClubs.filter(({ tier }) => tier === effectiveTier);
+  const nearbyClubs = eligibleClubs.filter(({ tier }) => Math.abs(tier - effectiveTier) <= 1);
+  const preferredClubs =
+    sameTierClubs.length >= 4
       ? sameTierClubs
-      : clubs.filter(({ tier, overseas }) => Boolean(overseas) && Math.abs(tier - club.tier) <= 1);
-  if (leagueClubs.length < 4) throw new Error(`层级 ${club.tier} 俱乐部不足，无法组成联赛`);
+      : nearbyClubs.length >= 4
+        ? nearbyClubs
+        : eligibleClubs;
+  const leagueClubs = [club, ...preferredClubs.filter(({ id }) => id !== club.id)];
+  if (leagueClubs.length < 4) throw new Error(`层级 ${effectiveTier} 俱乐部不足，无法组成联赛`);
 
   const rng = createSeededRandomSource(save.randomState.seed + 5500 + year);
   const playerAbility = weightedAbility(
@@ -99,11 +108,22 @@ export const startProfessionalSeason = <S extends CareerSaveV4Like>(
     String(year),
   );
 
+  const domesticCup = club.overseas
+    ? null
+    : createDomesticCup(
+        clubs,
+        club.id,
+        effectiveTier,
+        String(year),
+        save.randomState.seed + 7600 + year * 17,
+      );
+  const cupSummary = domesticCup ? '，国内杯 7 场' : '';
+
   const fact: CareerLedgerEntryV2 = {
     id: `pro-season-start-${year}`,
     weekKey: `${year}-W31`,
     type: 'decision',
-    summary: `开启职业赛季：${club.name}（层级 ${club.tier}），阵容 ${squad.length} 人，联赛 ${fixtures.length} 场`,
+    summary: `开启职业赛季：${club.name}（层级 ${effectiveTier}），阵容 ${squad.length} 人，联赛 ${fixtures.length} 场${cupSummary}`,
     participantIds: [],
   };
 
@@ -120,6 +140,8 @@ export const startProfessionalSeason = <S extends CareerSaveV4Like>(
       currentMonth: `${year}-08`,
       clubId: club.id,
       competitionId,
+      domesticCup,
+      nextClubTier: null,
       fixtures,
       standings: createLeagueStandings(leagueClubs.map(({ id }) => id)),
       squad,
@@ -134,6 +156,10 @@ export const startProfessionalSeason = <S extends CareerSaveV4Like>(
       assists: 0,
       ratingSum: 0,
       ratingCount: 0,
+      cupAppearances: 0,
+      cupMinutes: 0,
+      cupGoals: 0,
+      cupAssists: 0,
     },
     monthlyAdvance: {
       monthKey: `${year}-08`,
@@ -308,6 +334,108 @@ export const advanceProMonth = <S extends CareerSaveV4Like>(
   };
 };
 
+type SeasonOutcome = {
+  nextClubTier: number;
+  honours: SeasonHonour[];
+  evidenceId: string;
+  summary: string;
+};
+
+const sortStandingsForSeason = (standings: readonly LeagueStanding[]): LeagueStanding[] =>
+  [...standings].sort((left, right) => {
+    const goalDifference =
+      right.goalsFor - right.goalsAgainst - (left.goalsFor - left.goalsAgainst);
+    return (
+      right.points - left.points ||
+      goalDifference ||
+      right.goalsFor - left.goalsFor ||
+      left.clubId.localeCompare(right.clubId)
+    );
+  });
+
+const buildSeasonOutcome = (
+  save: CareerSaveV5Like,
+  contract: NonNullable<CareerSaveV5Like['contract']>,
+): SeasonOutcome => {
+  const pro = save.proSeason!;
+  const sorted = sortStandingsForSeason(pro.standings);
+  const playerRank = sorted.findIndex(({ clubId }) => clubId === pro.clubId) + 1;
+  if (playerRank === 0) throw new Error('赛季积分榜缺少球员所在俱乐部');
+
+  const currentTier = pro.nextClubTier ?? contract.clubTier;
+  const isPromoted = playerRank <= 2 && currentTier < 8;
+  const isRelegated =
+    playerRank >= Math.max(1, sorted.length - 1) && currentTier > 3 && !isPromoted;
+  const nextClubTier = isPromoted ? currentTier + 1 : isRelegated ? currentTier - 1 : currentTier;
+  const evidenceId = 'pro-season-outcome-' + pro.id;
+  const honours: SeasonHonour[] = [];
+  if (playerRank === 1) {
+    honours.push({
+      id: pro.id + '-league-champion',
+      kind: 'league-champion',
+      label: '联赛冠军',
+      seasonId: pro.id,
+      clubId: pro.clubId,
+      evidenceId,
+    });
+  }
+  if (pro.domesticCup?.completed && pro.domesticCup.winnerClubId === pro.clubId) {
+    honours.push({
+      id: pro.id + '-cup-champion',
+      kind: 'cup-champion',
+      label: '国内杯冠军',
+      seasonId: pro.id,
+      clubId: pro.clubId,
+      evidenceId,
+    });
+  }
+  if (isPromoted) {
+    honours.push({
+      id: pro.id + '-promotion',
+      kind: 'promotion',
+      label: '升级',
+      seasonId: pro.id,
+      clubId: pro.clubId,
+      evidenceId,
+    });
+  }
+  if (isRelegated) {
+    honours.push({
+      id: pro.id + '-relegation',
+      kind: 'relegation',
+      label: '降级',
+      seasonId: pro.id,
+      clubId: pro.clubId,
+      evidenceId,
+    });
+  }
+  const cupSummary = !pro.domesticCup
+    ? '国内杯未参赛'
+    : pro.domesticCup.completed
+      ? pro.domesticCup.winnerClubId === pro.clubId
+        ? '国内杯冠军'
+        : '国内杯止步'
+      : '国内杯进行至' +
+        ({
+          quarterfinal: '四分之一决赛',
+          semifinal: '半决赛',
+          final: '决赛',
+          complete: '结束',
+        }[pro.domesticCup.currentRound] ?? pro.domesticCup.currentRound);
+  const tierSummary =
+    nextClubTier > currentTier
+      ? '升级至层级 ' + nextClubTier
+      : nextClubTier < currentTier
+        ? '降级至层级 ' + nextClubTier
+        : '层级保持 ' + currentTier;
+  return {
+    nextClubTier,
+    honours,
+    evidenceId,
+    summary: '赛季结算：联赛第' + playerRank + '名；' + cupSummary + '；' + tierSummary,
+  };
+};
+
 /** 职业赛季结算：承诺对照、角色评估、合同年限递减、续约要约。 */
 export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
   save: S,
@@ -328,7 +456,18 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
     contractAfter.promiseStatus = outcome.review.status;
   }
 
+  const seasonOutcome = buildSeasonOutcome(save, contract);
+  const outcomeFactAlreadyRecorded = save.ledger.some(({ id }) => id === seasonOutcome.evidenceId);
   const facts: CareerLedgerEntryV2[] = [];
+  if (!outcomeFactAlreadyRecorded) {
+    facts.push({
+      id: seasonOutcome.evidenceId,
+      weekKey: save.proSeason!.startDate.slice(0, 4) + '-W53',
+      type: 'season-outcome',
+      summary: seasonOutcome.summary,
+      participantIds: ['player'],
+    });
+  }
   if (outcome) {
     facts.push({
       id: `promise-review-${save.proSeason!.id}`,
@@ -339,17 +478,23 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
     });
   }
 
+  const leagueAppearances = save.proSeasonStats.leagueAppearances;
+  const reserveAppearances = save.proSeasonStats.reserveAppearances;
+  const cupAppearances = save.proSeasonStats.cupAppearances ?? 0;
+  const cupGoals = save.proSeasonStats.cupGoals ?? 0;
+  const cupAssists = save.proSeasonStats.cupAssists ?? 0;
+  const cupMinutes = save.proSeasonStats.cupMinutes ?? 0;
+  const seasonAppearances = leagueAppearances + reserveAppearances + cupAppearances;
+  const seasonGoals = save.proSeasonStats.goals + cupGoals;
+  const seasonAssists = save.proSeasonStats.assists + cupAssists;
+  const seasonMinutes = save.proSeasonStats.minutes + cupMinutes;
   const totals = {
-    appearances:
-      save.totals.appearances +
-      save.proSeasonStats.leagueAppearances +
-      save.proSeasonStats.reserveAppearances,
-    goals: save.totals.goals + save.proSeasonStats.goals,
-    assists: save.totals.assists + save.proSeasonStats.assists,
-    minutes: save.totals.minutes + save.proSeasonStats.minutes,
+    appearances: save.totals.appearances + seasonAppearances,
+    goals: save.totals.goals + seasonGoals,
+    assists: save.totals.assists + seasonAssists,
+    minutes: save.totals.minutes + seasonMinutes,
   };
-  const seasonApps = save.proSeasonStats.leagueAppearances;
-  const seasonGoals = save.proSeasonStats.goals;
+  const seasonApps = leagueAppearances;
   const averageRating =
     save.proSeasonStats.ratingCount > 0
       ? save.proSeasonStats.ratingSum / save.proSeasonStats.ratingCount
@@ -365,7 +510,7 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
     clubHistory[existingClubIndex] = {
       ...entry,
       seasons: entry.seasons + 1,
-      appearances: entry.appearances + seasonApps,
+      appearances: entry.appearances + seasonAppearances,
       goals: entry.goals + seasonGoals,
     };
   } else {
@@ -375,7 +520,7 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
       from: contract.signedOn,
       to: null,
       seasons: 1,
-      appearances: seasonApps,
+      appearances: seasonAppearances,
       goals: seasonGoals,
     });
   }
@@ -385,6 +530,10 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
     proPhase: 'settled',
     totals,
     clubHistory,
+    proSeason: {
+      ...save.proSeason!,
+      nextClubTier: seasonOutcome.nextClubTier,
+    },
     contract: contractAfter,
     seasonHistory: save.seasonHistory.some(({ seasonId }) => seasonId === save.proSeason!.id)
       ? save.seasonHistory
@@ -394,10 +543,9 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
             seasonId: save.proSeason!.id,
             age: save.player.age,
             status: 'retained',
-            appearances:
-              save.proSeasonStats.leagueAppearances + save.proSeasonStats.reserveAppearances,
-            goals: save.proSeasonStats.goals,
-            assists: save.proSeasonStats.assists,
+            appearances: seasonAppearances,
+            goals: seasonGoals,
+            assists: seasonAssists,
             avgRating:
               save.proSeasonStats.ratingCount > 0
                 ? Math.round(
@@ -406,7 +554,7 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
                 : null,
             signals: ['professional-season'],
             endedOn: save.proSeason!.endDate,
-            honours: [],
+            honours: seasonOutcome.honours,
           } satisfies SeasonHistorySummary,
         ],
     promiseReviews: outcome ? [...save.promiseReviews, outcome.review] : save.promiseReviews,

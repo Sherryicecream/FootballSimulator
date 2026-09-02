@@ -18,6 +18,7 @@ import {
 import { clearEventFeedback, completeYouthSeason, enterOffseason } from '../../src/index';
 import { createSave, content, finishSeason } from '../fixtures/youth-save';
 import { buildCareerReview } from '@football/application';
+import { advanceDomesticCup, createDomesticCup } from '@football/simulation';
 
 /** 构造一名已签署职业合同的 v4 存档（1 年短合同便于测试到期分支）。 */
 function signedProSave(overrides: Partial<CareerSaveV4> = {}): CareerSaveV4 {
@@ -56,6 +57,109 @@ function signedProSave(overrides: Partial<CareerSaveV4> = {}): CareerSaveV4 {
   save = signContract(save, target.id);
   const v4 = migrateCareerSaveV5({ ...save, contract: { ...save.contract!, contractYears: 1 } });
   return { ...v4, ...overrides };
+}
+
+function standingsWithPlayerRank(
+  standings: ReturnType<typeof startProfessionalSeason>['proSeason']['standings'],
+  playerClubId: string,
+  playerRank: number,
+) {
+  const orderedIds = standings
+    .map(({ clubId }) => clubId)
+    .filter((clubId) => clubId !== playerClubId);
+  orderedIds.splice(Math.max(0, Math.min(playerRank - 1, orderedIds.length)), 0, playerClubId);
+  const records = [
+    { won: 3, drawn: 0, lost: 0, points: 9 },
+    { won: 2, drawn: 1, lost: 0, points: 7 },
+    { won: 2, drawn: 0, lost: 1, points: 6 },
+    { won: 1, drawn: 2, lost: 0, points: 5 },
+    { won: 1, drawn: 1, lost: 1, points: 4 },
+    { won: 1, drawn: 0, lost: 2, points: 3 },
+    { won: 0, drawn: 2, lost: 1, points: 2 },
+    { won: 0, drawn: 0, lost: 3, points: 0 },
+  ];
+  return orderedIds.map((clubId, index) => {
+    const record = records[index] ?? records.at(-1)!;
+    return {
+      clubId,
+      played: 3,
+      won: record.won,
+      drawn: record.drawn,
+      lost: record.lost,
+      goalsFor: 10 - index,
+      goalsAgainst: index,
+      points: record.points,
+    };
+  });
+}
+
+function cupWonBy(cup: NonNullable<ReturnType<typeof createDomesticCup>>, championId: string) {
+  let current = cup;
+  while (!current.completed) {
+    const pending = current.fixtures.filter(
+      ({ status, homeClubId, awayClubId }) =>
+        status === 'scheduled' &&
+        !homeClubId.startsWith('cup-slot-') &&
+        !awayClubId.startsWith('cup-slot-'),
+    );
+    if (pending.length === 0) throw new Error('测试杯赛没有可结算的对阵');
+    for (const fixture of pending) {
+      const homeScore = fixture.homeClubId === championId ? 1 : 0;
+      const awayScore = fixture.awayClubId === championId ? 1 : 0;
+      current = advanceDomesticCup(
+        current,
+        fixture.id,
+        homeScore || awayScore ? homeScore : 1,
+        homeScore || awayScore ? awayScore : 0,
+        0,
+      );
+    }
+  }
+  return current;
+}
+
+function saveWithCompletedLeagueAndCup(options: {
+  playerRank: number;
+  cupChampion?: boolean;
+}): CareerSaveV4 {
+  const started = startProfessionalSeason(signedProSave(), content.clubs);
+  const playerClubId = started.proSeason!.clubId;
+  const cup =
+    options.cupChampion === false
+      ? null
+      : cupWonBy(createDomesticCup(content.clubs, playerClubId, 5, '2025', 42), playerClubId);
+  return {
+    ...started,
+    proSeason: {
+      ...started.proSeason!,
+      currentDate: started.proSeason!.endDate,
+      currentMonth: started.proSeason!.endDate.slice(0, 7),
+      currentWeek: 52,
+      standings: standingsWithPlayerRank(
+        started.proSeason!.standings,
+        playerClubId,
+        options.playerRank,
+      ),
+      domesticCup: cup,
+      completed: true,
+    },
+    proSeasonStats: {
+      ...started.proSeasonStats,
+      leagueAppearances: 15,
+      cupAppearances: cup ? 3 : 0,
+      cupMinutes: cup ? 180 : 0,
+      cupGoals: 1,
+      cupAssists: 1,
+    },
+  };
+}
+
+function saveAtTierBoundary(tier: number, playerRank: number): CareerSaveV4 {
+  const completed = saveWithCompletedLeagueAndCup({ playerRank, cupChampion: false });
+  return {
+    ...completed,
+    contract: { ...completed.contract!, clubTier: tier, overseas: false },
+  };
 }
 
 describe('职业赛季流程', () => {
@@ -107,6 +211,75 @@ describe('职业赛季流程', () => {
     expect(save.proSeason!.squad.length).toBeGreaterThanOrEqual(17);
     expect(save.proSeason!.depthChart.FORWARD!.includes('player')).toBe(true);
     expect(save.ledger.some(({ summary }) => summary.includes('开启职业赛季'))).toBe(true);
+  });
+
+  it('creates a domestic cup containing the player club when a new professional season starts', () => {
+    const started = startProfessionalSeason(signedProSave(), content.clubs);
+    expect(started.proSeason?.domesticCup?.entrants).toContain(started.proSeason?.clubId);
+    expect(started.proSeason?.domesticCup?.fixtures).toHaveLength(7);
+  });
+
+  it('uses the persisted next club tier when creating the following season', () => {
+    const first = startProfessionalSeason(signedProSave(), content.clubs);
+    const next = startProfessionalSeason(
+      {
+        ...first,
+        careerPhase: 'pro-offseason',
+        proSeason: { ...first.proSeason!, nextClubTier: 7 },
+      },
+      content.clubs,
+    );
+
+    expect(next.proSeason!.competitionId).toBe('pro-tier-7');
+    expect(next.proSeason!.domesticCup?.entrants).toContain(next.proSeason!.clubId);
+  });
+
+  it('settles cup and league honours and promotion into season history and ledger', () => {
+    const completed = saveWithCompletedLeagueAndCup({ playerRank: 2, cupChampion: true });
+    const settled = completeProfessionalSeason(completed).save;
+    const honours = settled.seasonHistory.at(-1)!.honours;
+    expect(honours.map(({ kind }) => kind)).toEqual(
+      expect.arrayContaining(['cup-champion', 'promotion']),
+    );
+    expect(settled.proSeason?.nextClubTier).toBe((completed.contract?.clubTier ?? 5) + 1);
+    expect(
+      settled.ledger.some(
+        ({ type, summary }) => type === 'season-outcome' && summary.includes('升级'),
+      ),
+    ).toBe(true);
+    expect(settled.seasonHistory.at(-1)?.appearances).toBe(18);
+    expect(settled.totals.appearances).toBe(completed.totals.appearances + 18);
+    const outcomeFact = settled.ledger.find(
+      ({ id }) => id === 'pro-season-outcome-' + completed.proSeason!.id,
+    );
+    expect(outcomeFact?.participantIds).toContain('player');
+    expect(outcomeFact?.id).toBe(honours[0]?.evidenceId);
+  });
+
+  it('protects tier 8 from promotion and tier 3 from relegation', () => {
+    expect(completeProfessionalSeason(saveAtTierBoundary(8, 1)).save.proSeason?.nextClubTier).toBe(
+      8,
+    );
+    expect(completeProfessionalSeason(saveAtTierBoundary(3, 8)).save.proSeason?.nextClubTier).toBe(
+      3,
+    );
+    const relegated = completeProfessionalSeason(saveAtTierBoundary(5, 8)).save;
+    expect(relegated.proSeason?.nextClubTier).toBe(4);
+    expect(relegated.seasonHistory.at(-1)?.honours).toEqual(
+      expect.arrayContaining([expect.objectContaining({ kind: 'relegation', label: '降级' })]),
+    );
+  });
+
+  it('writes one season history entry and one league honour for a reloaded completed season', () => {
+    const first = completeProfessionalSeason(
+      saveWithCompletedLeagueAndCup({ playerRank: 1, cupChampion: false }),
+    ).save;
+    expect(
+      first.seasonHistory.filter(({ seasonId }) => seasonId === first.proSeason?.id),
+    ).toHaveLength(1);
+    expect(
+      first.seasonHistory.at(-1)?.honours.filter(({ kind }) => kind === 'league-champion'),
+    ).toHaveLength(1);
   });
 
   it('builds a playable overseas division when a single tier has fewer than four clubs', () => {
