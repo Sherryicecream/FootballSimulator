@@ -5,6 +5,16 @@ import { AttributeChangeSchema } from './career';
 const IdSchema = z.string().min(1).max(60);
 const IsoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
+export const SeasonHonourSchema = z.strictObject({
+  id: IdSchema,
+  kind: z.enum(['league-champion', 'cup-champion', 'promotion']),
+  label: z.string().min(1).max(100),
+  seasonId: IdSchema,
+  clubId: IdSchema,
+  evidenceId: IdSchema,
+});
+export type SeasonHonour = z.infer<typeof SeasonHonourSchema>;
+
 export const CareerPhaseSchema = z.enum([
   'youth-season',
   'offseason',
@@ -56,6 +66,7 @@ export const SeasonHistorySummarySchema = z.strictObject({
   avgRating: z.number().min(0).max(10).nullable(),
   signals: z.array(z.string().min(1).max(40)),
   endedOn: IsoDateSchema,
+  honours: z.array(SeasonHonourSchema).default([]),
 });
 export type SeasonHistorySummary = z.infer<typeof SeasonHistorySummarySchema>;
 

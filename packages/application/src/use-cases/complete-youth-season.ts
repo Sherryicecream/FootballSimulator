@@ -95,6 +95,7 @@ const buildSeasonSummary = (
     assists,
     avgRating: ratingCount > 0 ? Math.round((ratingSum / ratingCount) * 10) / 10 : null,
     signals,
+    honours: [],
     endedOn: save.season.endDate,
   };
 };

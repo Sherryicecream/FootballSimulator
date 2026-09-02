@@ -7,6 +7,7 @@ import { ScheduledYouthFixtureSchema } from './youth-season';
 const IdSchema = z.string().min(1).max(60);
 const ScoreSchema = z.number().int().min(0).max(100);
 const IsoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const DomesticTierSchema = z.number().int().min(3).max(8);
 
 export const ProSquadMemberSchema = z.strictObject({
   personId: IdSchema,
@@ -24,6 +25,21 @@ export type ProSquadMember = z.infer<typeof ProSquadMemberSchema>;
 export const ProFixtureSchema = ScheduledYouthFixtureSchema;
 export type ProFixture = z.infer<typeof ProFixtureSchema>;
 
+export const ProCupStateSchema = z.strictObject({
+  id: IdSchema,
+  name: z.string().min(1).max(80),
+  competitionId: IdSchema,
+  entrants: z.array(IdSchema).length(8).superRefine((entrants, ctx) => {
+    if (new Set(entrants).size !== entrants.length) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: '杯赛参赛队伍不能重复' });
+    }
+  }),
+  fixtures: z.array(ProFixtureSchema),
+  currentRound: z.enum(['quarterfinal', 'semifinal', 'final', 'complete']),
+  winnerClubId: IdSchema.nullable(),
+  completed: z.boolean(),
+});
+export type ProCupState = z.infer<typeof ProCupStateSchema>;
 export const ProSeasonStateSchema = z.strictObject({
   id: IdSchema,
   startDate: IsoDateSchema,
@@ -33,6 +49,8 @@ export const ProSeasonStateSchema = z.strictObject({
   currentMonth: z.string().regex(/^\d{4}-\d{2}$/),
   clubId: IdSchema,
   competitionId: IdSchema,
+  domesticCup: ProCupStateSchema.nullable().default(null),
+  nextClubTier: DomesticTierSchema.nullable().default(null),
   fixtures: z.array(ProFixtureSchema),
   standings: z.array(LeagueStandingSchema),
   squad: z.array(ProSquadMemberSchema).min(10).max(24),
@@ -59,6 +77,10 @@ export const ProSeasonStatsSchema = z.strictObject({
   assists: z.number().int().min(0).default(0),
   ratingSum: z.number().min(0).default(0),
   ratingCount: z.number().int().min(0).default(0),
+  cupAppearances: z.number().int().min(0).default(0),
+  cupMinutes: z.number().int().min(0).default(0),
+  cupGoals: z.number().int().min(0).default(0),
+  cupAssists: z.number().int().min(0).default(0),
 });
 export type ProSeasonStats = z.infer<typeof ProSeasonStatsSchema>;
 
@@ -76,6 +98,10 @@ export const CareerSaveV4Schema = CareerSaveV3Schema.omit({ schemaVersion: true 
     assists: 0,
     ratingSum: 0,
     ratingCount: 0,
+    cupAppearances: 0,
+    cupMinutes: 0,
+    cupGoals: 0,
+    cupAssists: 0,
   }),
   promiseReviews: z.array(PromiseReviewSchema).default([]),
   proPhase: ProPhaseSchema.default('preseason'),

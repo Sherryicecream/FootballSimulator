@@ -406,6 +406,7 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
                 : null,
             signals: ['professional-season'],
             endedOn: save.proSeason!.endDate,
+            honours: [],
           } satisfies SeasonHistorySummary,
         ],
     promiseReviews: outcome ? [...save.promiseReviews, outcome.review] : save.promiseReviews,
