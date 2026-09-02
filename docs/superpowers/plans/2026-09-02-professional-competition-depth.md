@@ -65,7 +65,7 @@
 
 
 Define `createProSaveWithoutCompetitionDepthFields` in the test file as the result of copying `createProSave()` and deleting `domesticCup`, `nextClubTier`, the four cup-stat fields, and each history entry's `honours`; define `validCup` and `validProSeason` from the complete objects shown above.
-- [ ] **Step 1: Write the failing contract tests**
+- [x] **Step 1: Write the failing contract tests**
 
 ```ts
 it('accepts a complete eight-team domestic cup and preserves its round state', () => {
@@ -91,23 +91,23 @@ it('rejects duplicate cup entrants and out-of-range next club tiers', () => {
 });
 ```
 
-- [ ] **Step 2: Run the contract tests and verify they fail because the fields/schema do not exist**
+- [x] **Step 2: Run the contract tests and verify they fail because the fields/schema do not exist**
 
 Run: `pnpm exec vitest run packages/contracts/tests/professional-competition.test.ts --pool=threads --maxWorkers=1`
 
 Expected: FAIL with missing exports/default fields or the duplicate-entrant validation not being present.
 
-- [ ] **Step 3: Add the minimum Zod schemas and defaults**
+- [x] **Step 3: Add the minimum Zod schemas and defaults**
 
 Implement `SeasonHonourSchema`, `ProCupStateSchema` with an array-level uniqueness refinement, and extend v4 schemas with nullable/default fields. Keep `ProFixtureSchema` unchanged so league fixtures remain the whole league schedule. Use `CareerSaveV4Schema` defaults that explicitly include every existing stats field plus the four cup fields.
 
-- [ ] **Step 4: Run focused and existing contract tests**
+- [x] **Step 4: Run focused and existing contract tests**
 
 Run: `pnpm exec vitest run packages/contracts/tests/professional-competition.test.ts packages/contracts/tests/career-v4.test.ts --pool=threads --maxWorkers=1`
 
 Expected: PASS, including old v4 migration defaults and existing v4 assertions.
 
-- [ ] **Step 5: Commit the contract slice**
+- [x] **Step 5: Commit the contract slice**
 
 ```bash
 git add packages/contracts/src/professional.ts packages/contracts/src/graduation.ts packages/contracts/src/youth-season.ts packages/contracts/tests/professional-competition.test.ts
@@ -129,7 +129,7 @@ git commit -m "feat: add professional competition save contracts"
 The `clubs` constant is `youthClubs.filter(({ overseas }) => !overseas)`; choose `club-tier-5-1` from that content list and define `validCup` immediately before the tests. Define `invalidCup` in the rejection test by copying the first fixture and changing only its `homeClubId` to `missing-club`.
 - 候选队只从有效层级及相邻国内层级选择，球员俱乐部强制进入；不足时抛出领域错误。对 `overseas` 俱乐部直接拒绝国内杯生成。
 
-- [ ] **Step 1: Write failing scheduling and transition tests**
+- [x] **Step 1: Write failing scheduling and transition tests**
 
 ```ts
 it('creates the same eight entrants and seven fixed cup fixtures for the same inputs', () => {
@@ -159,23 +159,23 @@ it('does not silently accept unknown or repeated entrants', () => {
 });
 ```
 
-- [ ] **Step 2: Run the cup tests and verify the expected missing-function/behavior failure**
+- [x] **Step 2: Run the cup tests and verify the expected missing-function/behavior failure**
 
 Run: `pnpm exec vitest run packages/simulation/tests/career/domestic-cup.test.ts --pool=threads --maxWorkers=1`
 
 Expected: FAIL because the new module and exports do not exist.
 
-- [ ] **Step 3: Implement the minimal pure bracket generator and transition function**
+- [x] **Step 3: Implement the minimal pure bracket generator and transition function**
 
 Use a local derived random source or integer shuffle seeded by `seed + seasonYear`; do not mutate a save random cursor. Validate club existence, domestic status, unique entrants, exact round fixture ownership, and one-time fixture settlement. Give every fixture a stable id containing competition, round, and index; mark results with `resultId` only when settled. Keep future-round fixture participants explicit and update them only after the preceding round is complete.
 
-- [ ] **Step 4: Run focused tests and determinism checks**
+- [x] **Step 4: Run focused tests and determinism checks**
 
 Run: `pnpm exec vitest run packages/simulation/tests/career/domestic-cup.test.ts --pool=threads --maxWorkers=1`
 
 Expected: PASS with seven fixtures, fixed week separation, stable repeat output, and domain errors for invalid input.
 
-- [ ] **Step 5: Commit the pure simulation slice**
+- [x] **Step 5: Commit the pure simulation slice**
 
 ```bash
 git add packages/simulation/src/career/domestic-cup.ts packages/simulation/src/index.ts packages/simulation/tests/career/domestic-cup.test.ts
@@ -197,7 +197,7 @@ git commit -m "feat: generate deterministic domestic cup brackets"
 Define `saveWithOwnLeagueFixture` by taking the existing valid professional fixture and setting `currentWeek` to the week before it; define `strongStarterSaveWithSameSeed` by copying it with the same seed, high visible abilities, fitness 95, fatigue 0, form 90, confidence 90, and coach evaluation 90. Define `injuredSave` with an active injury, `unavailableSave` with fitness 20, `reserveSelectionSave` with a depth/coach state that produces reserve appearance, and `saveAtCupQuarterfinalWeek` with a schema-valid cup whose player fixture is at week 27. Each builder starts from `createProSave()` and changes only the named fields.
 - Existing `matchResult`/promise-review league semantics remain compatible; cup player appearances contribute to cup fields and overall totals at season settlement without being counted as league appearances.
 
-- [ ] **Step 1: Write failing professional-week regression tests**
+- [x] **Step 1: Write failing professional-week regression tests**
 
 ```ts
 it('lets a strong in-form starter create a bounded team-strength advantage', () => {
@@ -229,23 +229,23 @@ it('settles a cup week without changing league standings and increments cup stat
 
 Because the existing `MatchContextSchema` is strict, first extend it with an optional `competitionId`/`teamImpact` only if these assertions are part of the persisted contract; otherwise assert on the returned fixture/result and preserve facts through a dedicated summary. The test must fail because current code has no cup settlement and ignores player strength in `simulateMatch`.
 
-- [ ] **Step 2: Run the focused tests and verify each failure is behavioral**
+- [x] **Step 2: Run the focused tests and verify each failure is behavioral**
 
 Run: `pnpm exec vitest run packages/simulation/tests/career/professional-week.test.ts --pool=threads --maxWorkers=1`
 
 Expected: FAIL on missing cup updates or zero/absent team impact, not on malformed test fixtures.
 
-- [ ] **Step 3: Implement bounded player impact and competition-specific settlement**
+- [x] **Step 3: Implement bounded player impact and competition-specific settlement**
 
 Compute impact from weighted ability, form, confidence, fitness, fatigue, selection minutes and opponent strength; clamp to `[-4, 4]`. Apply it only to the player club’s attack/midfield/defence before calling `simulateMatch`. Keep base club strength, home advantage and seeded match randomness dominant. Use a derived cup seed based on `save.randomState.seed`, season id and fixture id, so cup processing does not consume the existing league RNG position. Update cup fixture status and pass final scores to `advanceDomesticCup`; create a `pro-match` fact with cup competition context; update cup stats only for actual cup appearances.
 
-- [ ] **Step 4: Run the focused, simulation-wide and type checks**
+- [x] **Step 4: Run the focused, simulation-wide and type checks**
 
 Run: `pnpm exec vitest run packages/simulation/tests/career/professional-week.test.ts packages/simulation/tests/career/domestic-cup.test.ts --pool=threads --maxWorkers=1`; then `pnpm typecheck`.
 
 Expected: PASS; existing league tests retain their standings, random-position and save/reload expectations.
 
-- [ ] **Step 5: Commit the weekly simulation slice**
+- [x] **Step 5: Commit the weekly simulation slice**
 
 ```bash
 git add packages/simulation/src/career/professional-week.ts packages/simulation/tests/career/professional-week.test.ts packages/contracts/src/youth-season.ts
@@ -267,7 +267,7 @@ Implement `saveWithCompletedLeagueAndCup` by copying the existing completed-save
 - `completeProfessionalSeason` writes exactly one season-history entry, exactly one set of honour facts, and exactly one `nextClubTier` result for a completed `proSeason`.
 - Honour evidence ids point to real fixture/standing/season facts. League champion is rank 1; promotion/relegation applies only to the player’s club and respects tiers 3 and 8.
 
-- [ ] **Step 1: Write failing application tests**
+- [x] **Step 1: Write failing application tests**
 
 ```ts
 it('creates a domestic cup containing the player club when a new professional season starts', () => {
@@ -297,27 +297,27 @@ it('does not duplicate honours if season settlement is reloaded and called again
 });
 ```
 
-- [ ] **Step 2: Run application tests and verify they fail on missing cup/settlement fields**
+- [x] **Step 2: Run application tests and verify they fail on missing cup/settlement fields**
 
 Run: `pnpm exec vitest run packages/application/tests/use-cases/pro-flow.test.ts --pool=threads --maxWorkers=1`
 
 Expected: FAIL because season creation has no cup and settlement has no honours/next tier.
 
-- [ ] **Step 3: Add cup creation to `startProfessionalSeason`**
+- [x] **Step 3: Add cup creation to `startProfessionalSeason`**
 
 Select the effective domestic tier from `save.proSeason?.nextClubTier ?? contract.clubTier` for a next season, generate the same-tier league candidates with the player club forced into the list, then call `createDomesticCup` using the same season seed derivation family but a separate cup seed. Set cup stats to zero and `domesticCup` to the generated state. Keep overseas contracts on the existing overseas path and set `domesticCup: null`.
 
-- [ ] **Step 4: Add settlement helpers and persist season outcomes**
+- [x] **Step 4: Add settlement helpers and persist season outcomes**
 
 Implement focused helpers inside the application use case (or a domain-specific application file if the function exceeds 50 lines): sort standings with the existing points/goal-difference order; find the player club rank; derive next tier with boundary clamps; identify league/cup champions only from completed persisted results; create stable `SeasonHonour` ids/evidence ids; append a `season-outcome` fact only once. Add cup stats to season totals where the existing totals represent all professional appearances, but keep `seasonHistory.appearances` as league plus reserve plus cup appearances.
 
-- [ ] **Step 5: Run application regression tests and the contract/type checks**
+- [x] **Step 5: Run application regression tests and the contract/type checks**
 
 Run: `pnpm exec vitest run packages/application/tests/use-cases/pro-flow.test.ts packages/contracts/tests/professional-competition.test.ts --pool=threads --maxWorkers=1`; then `pnpm typecheck`.
 
 Expected: PASS, including renewal, national-team, promise-review, old v4 and existing professional-flow tests.
 
-- [ ] **Step 6: Commit the application slice**
+- [x] **Step 6: Commit the application slice**
 
 ```bash
 git add packages/application/src/use-cases/pro-flow.ts packages/application/tests/use-cases/pro-flow.test.ts packages/contracts/src/professional.ts packages/contracts/src/graduation.ts
@@ -341,7 +341,7 @@ Implement `saveWithCompetitionDepth` by extending the existing dashboard fixture
 - Dashboard and offseason show league/cup appearances and minutes separately while keeping existing national-team, promise and role cards.
 - Offseason adds “球队赛季” and “本赛季荣誉”; empty/legacy cup state renders a neutral “本赛季暂无杯赛记录” message without crashing.
 
-- [ ] **Step 1: Write failing rendering tests**
+- [x] **Step 1: Write failing rendering tests**
 
 ```tsx
 it('shows league position, cup round, cup result and tier movement on the professional dashboard', () => {
@@ -361,23 +361,23 @@ it('shows honours in the professional offseason and remains safe for a legacy sa
 });
 ```
 
-- [ ] **Step 2: Run the web tests and verify they fail because the regions/copy are absent**
+- [x] **Step 2: Run the web tests and verify they fail because the regions/copy are absent**
 
 Run: `pnpm exec vitest run apps/web/tests/career-dashboard/ProDashboard.test.tsx apps/web/tests/career-dashboard/pro-dashboard.test.tsx --pool=threads --maxWorkers=1`
 
 Expected: FAIL on missing “本赛季赛事” or “本赛季荣誉” regions.
 
-- [ ] **Step 3: Render the persisted competition data with existing visual primitives**
+- [x] **Step 3: Render the persisted competition data with existing visual primitives**
 
 Add small presentation-only label maps for cup round and honour kind. Derive the current league rank by reading the already persisted standings order only for display, render `FootballGlyph`/`StatusBadge`/`SceneBanner` where the existing dashboard uses them, and do not introduce an event or simulation calculation in React. Add responsive grid rules that keep the new card within the existing mobile one-column layout and do not create horizontal overflow.
 
-- [ ] **Step 4: Run focused web tests and E2E**
+- [x] **Step 4: Run focused web tests and E2E**
 
 Run: `pnpm exec vitest run apps/web/tests/career-dashboard/ProDashboard.test.tsx apps/web/tests/career-dashboard/pro-dashboard.test.tsx --pool=threads --maxWorkers=1`; then `pnpm test:e2e -- apps/web/tests/e2e/professional-season.spec.ts`.
 
 Expected: PASS on desktop and mobile snapshots/locators, with legacy saves rendering without exceptions.
 
-- [ ] **Step 5: Commit the presentation slice**
+- [x] **Step 5: Commit the presentation slice**
 
 ```bash
 git add apps/web/src/career-dashboard/ProDashboard.tsx apps/web/src/career-dashboard/ProOffseasonPanel.tsx apps/web/src/app/app.css apps/web/tests/career-dashboard/ProDashboard.test.tsx apps/web/tests/career-dashboard/pro-dashboard.test.tsx
@@ -395,17 +395,17 @@ git commit -m "feat: show professional competitions and honours"
 - E2E must exercise monthly UI flow through a cup week, verify cup state is visible, verify a completed cup/season summary, and cover at least one promotion or elimination path without adding weekly player controls.
 - Roadmap records exact command results, test counts, build status, and any balance-runner timeout separately from semantic balance results.
 
-- [ ] **Step 1: Add the failing E2E assertions for cup and honours**
+- [x] **Step 1: Add the failing E2E assertions for cup and honours**
 
 Add locators for `本赛季赛事`, `杯赛`, `本赛季荣誉` and the completed-season summary to the existing professional-season journey. The test must initially fail because the UI and simulation have not yet exposed these states.
 
-- [ ] **Step 2: Run the targeted E2E and verify the failure is a missing user-visible feature**
+- [x] **Step 2: Run the targeted E2E and verify the failure is a missing user-visible feature**
 
 Run: `pnpm test:e2e -- apps/web/tests/e2e/professional-season.spec.ts`
 
 Expected: FAIL only on the new cup/honour assertions before Tasks 3–5 are implemented.
 
-- [ ] **Step 3: Run the complete required verification suite**
+- [x] **Step 3: Run the complete required verification suite**
 
 Run exactly:
 
@@ -421,11 +421,11 @@ pnpm balance:youth -- --runs 1000 --seed-start 1 --output artifacts/youth-balanc
 
 If the monorepo balance Vitest project exceeds its configured 600-second test timeout, run the documented direct balance command, preserve its output path and metrics, and record the runner timeout without replacing the 1,000-season evidence with a smaller sample.
 
-- [ ] **Step 4: Review the diff and update roadmap**
+- [x] **Step 4: Review the diff and update roadmap**
 
 Check `git diff --check`, `git status --short`, and the staged diff for secrets, generated output, accidental weekly controls, duplicate facts, or UI-only rules. Append to `docs/ROADMAP.md` the module status, exact validation counts/results, balance metrics path, compatibility notes, and the next module (transfer/loan market).
 
-- [ ] **Step 5: Commit the verification/documentation checkpoint**
+- [x] **Step 5: Commit the verification/documentation checkpoint**
 
 ```bash
 git add apps/web/tests/e2e/professional-season.spec.ts docs/ROADMAP.md

@@ -52,7 +52,9 @@ const leagueRankFor = (save: CareerSaveV4Like): number | null => {
   const sorted = [...pro.standings].sort(
     (left, right) =>
       right.points - left.points ||
-      right.goalsFor - right.goalsAgainst - (left.goalsFor - left.goalsAgainst),
+      right.goalsFor - right.goalsAgainst - (left.goalsFor - left.goalsAgainst) ||
+      right.goalsFor - left.goalsFor ||
+      left.clubId.localeCompare(right.clubId),
   );
   const index = sorted.findIndex(({ clubId }) => clubId === pro.clubId);
   return index >= 0 ? index + 1 : null;

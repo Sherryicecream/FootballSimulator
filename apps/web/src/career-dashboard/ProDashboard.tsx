@@ -61,7 +61,9 @@ export function ProDashboard({
   const standings = [...pro.standings].sort(
     (left, right) =>
       right.points - left.points ||
-      right.goalsFor - right.goalsAgainst - (left.goalsFor - left.goalsAgainst),
+      right.goalsFor - right.goalsAgainst - (left.goalsFor - left.goalsAgainst) ||
+      right.goalsFor - left.goalsFor ||
+      left.clubId.localeCompare(right.clubId),
   );
   const position = save.player.identity.primaryPosition;
   const depthList = pro.depthChart[position] ?? [];

@@ -146,6 +146,8 @@ test.describe('职业赛季流程', () => {
     await expect(page.getByRole('region', { name: '职业仪表盘' })).toBeVisible();
     await expect(page.getByText('联赛积分榜')).toBeVisible();
     await expect(page.getByText('位置深度图')).toBeVisible();
+    await expect(page.getByRole('region', { name: '本赛季赛事' })).toBeVisible();
+    await expect(page.getByText('国内杯')).toBeVisible();
     await expect(page.getByTestId('scene-art')).toBeVisible();
     await expect(page.getByRole('status', { name: /体能/ })).toBeVisible();
     await expect(page.getByRole('status', { name: /教练评价/ })).toBeVisible();
@@ -172,6 +174,8 @@ test.describe('职业赛季流程', () => {
     await expect(page.getByTestId('scene-art')).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
+    await expect(page.getByRole('region', { name: '球队赛季' })).toBeVisible();
+    await expect(page.getByRole('region', { name: '本赛季荣誉' })).toBeVisible();
     await page.reload();
     await expect(page.getByText('职业赛季总结')).toBeVisible();
 
