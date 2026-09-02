@@ -59,6 +59,8 @@ export { applyRelationshipEffects } from './relationships/relationship-effects';
 export type { RelationshipEffects } from './relationships/relationship-effects';
 export { renderTemplate, generateEventNarrative } from './events/narrative';
 export { buildEventFeedback } from './events/event-feedback';
+export { resolveChoiceOutcome } from './events/choice-resolution';
+export type { ChoiceOutcomeResolution, ResolveChoiceOutcomeInput } from './events/choice-resolution';
 export { selectEventNarrativeVariant } from './events/narrative-variants';
 export type { NarrativeVariantKey, SelectedNarrativeVariant } from './events/narrative-variants';
 export { buildMonthlyMomentum } from './career/monthly-momentum';
