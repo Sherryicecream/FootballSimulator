@@ -2226,3 +2226,199 @@ fieldset {
   color: var(--color-text-primary);
   font-weight: 700;
 }
+.competition-card {
+  grid-column: 1 / -1;
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(125deg, rgba(25, 59, 42, 0.94), rgba(8, 18, 13, 0.98)), var(--color-card);
+}
+
+.competition-card::after {
+  position: absolute;
+  right: -54px;
+  bottom: -72px;
+  width: 220px;
+  height: 220px;
+  border: 1px solid rgba(184, 240, 68, 0.14);
+  border-radius: 50%;
+  content: '';
+  box-shadow:
+    0 0 0 28px rgba(184, 240, 68, 0.03),
+    0 0 0 56px rgba(184, 240, 68, 0.02);
+  pointer-events: none;
+}
+
+.competition-heading h3,
+.season-briefing-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.competition-heading h3 .football-glyph,
+.season-briefing-heading .football-glyph {
+  color: var(--color-accent);
+}
+
+.competition-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.competition-stat {
+  display: grid;
+  gap: 5px;
+  min-height: 102px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(7, 16, 13, 0.45);
+}
+
+.competition-stat--accent {
+  border-color: rgba(184, 240, 68, 0.44);
+  background: linear-gradient(145deg, rgba(184, 240, 68, 0.14), rgba(7, 16, 13, 0.45));
+}
+
+.competition-stat-label,
+.season-briefing-grid span {
+  color: var(--color-text-muted);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.competition-stat strong {
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+.competition-stat small,
+.season-briefing-grid small,
+.honour-item small {
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+}
+
+.competition-recent {
+  position: relative;
+  z-index: 1;
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-left: 2px solid var(--color-accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.offseason-overview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.season-briefing,
+.honours-card {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(7, 16, 13, 0.42);
+}
+
+.season-briefing-heading {
+  margin-bottom: 14px;
+}
+
+.season-briefing-heading > div {
+  display: grid;
+  gap: 2px;
+}
+
+.season-briefing-heading h3 {
+  margin: 0;
+}
+
+.season-briefing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.season-briefing-grid > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.season-briefing-grid strong {
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+}
+
+.honours-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.honour-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid rgba(184, 240, 68, 0.25);
+  border-radius: var(--radius-sm);
+  background: rgba(184, 240, 68, 0.08);
+}
+
+.honour-item .football-glyph {
+  color: var(--color-accent);
+}
+
+.honour-item span {
+  color: var(--color-ink);
+  font-weight: 700;
+}
+
+.honours-empty {
+  margin: 0;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 720px) {
+  .competition-grid,
+  .season-briefing-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .offseason-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .honour-item {
+    grid-template-columns: auto 1fr;
+  }
+
+  .honour-item small {
+    grid-column: 2;
+  }
+}

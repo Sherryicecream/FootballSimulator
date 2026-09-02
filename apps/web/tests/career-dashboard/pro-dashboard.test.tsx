@@ -202,6 +202,153 @@ const baseV4 = CareerSaveV4Schema.parse({
 
 const save = baseV4;
 
+const competitionCup = {
+  id: 'domestic-cup-2027',
+  name: '国内杯',
+  competitionId: 'domestic-cup',
+  entrants: Array.from({ length: 8 }, (_, index) => 'pro-club-' + (index + 1)),
+  fixtures: [
+    {
+      id: 'domestic-cup-qf-1',
+      weekKey: '2027-W27',
+      competitionId: 'domestic-cup',
+      homeClubId: 'pro-club-1',
+      awayClubId: 'pro-club-2',
+      status: 'played' as const,
+      resultId: 'cup-winner-pro-club-1',
+    },
+    {
+      id: 'domestic-cup-qf-2',
+      weekKey: '2027-W27',
+      competitionId: 'domestic-cup',
+      homeClubId: 'pro-club-3',
+      awayClubId: 'pro-club-4',
+      status: 'played' as const,
+      resultId: 'cup-winner-pro-club-3',
+    },
+    {
+      id: 'domestic-cup-qf-3',
+      weekKey: '2027-W27',
+      competitionId: 'domestic-cup',
+      homeClubId: 'pro-club-5',
+      awayClubId: 'pro-club-6',
+      status: 'played' as const,
+      resultId: 'cup-winner-pro-club-5',
+    },
+    {
+      id: 'domestic-cup-qf-4',
+      weekKey: '2027-W27',
+      competitionId: 'domestic-cup',
+      homeClubId: 'pro-club-7',
+      awayClubId: 'pro-club-8',
+      status: 'played' as const,
+      resultId: 'cup-winner-pro-club-7',
+    },
+    {
+      id: 'domestic-cup-sf-1',
+      weekKey: '2027-W33',
+      competitionId: 'domestic-cup',
+      homeClubId: 'pro-club-1',
+      awayClubId: 'pro-club-3',
+      status: 'scheduled' as const,
+      resultId: null,
+    },
+    {
+      id: 'domestic-cup-sf-2',
+      weekKey: '2027-W33',
+      competitionId: 'domestic-cup',
+      homeClubId: 'pro-club-5',
+      awayClubId: 'pro-club-7',
+      status: 'scheduled' as const,
+      resultId: null,
+    },
+    {
+      id: 'domestic-cup-final-1',
+      weekKey: '2027-W39',
+      competitionId: 'domestic-cup',
+      homeClubId: 'cup-slot-sf-1-winner',
+      awayClubId: 'cup-slot-sf-2-winner',
+      status: 'scheduled' as const,
+      resultId: null,
+    },
+  ],
+  currentRound: 'semifinal' as const,
+  winnerClubId: null,
+  completed: false,
+};
+
+const saveWithCompetitionDepth = CareerSaveV4Schema.parse({
+  ...save,
+  proSeason: {
+    ...save.proSeason!,
+    nextClubTier: 6,
+    domesticCup: competitionCup,
+    standings: save.proSeason!.standings.map((standing, index) => ({
+      ...standing,
+      played: 3,
+      won: index === 1 ? 3 : index === 0 ? 2 : 0,
+      drawn: index === 0 ? 1 : 0,
+      lost: index < 2 ? 0 : 3,
+      points: index === 1 ? 9 : index === 0 ? 7 : 0,
+    })),
+  },
+  proSeasonStats: {
+    ...save.proSeasonStats,
+    cupAppearances: 2,
+    cupMinutes: 150,
+    cupGoals: 1,
+    cupAssists: 1,
+  },
+});
+
+const settledSaveWithHonours = CareerSaveV4Schema.parse({
+  ...saveWithCompetitionDepth,
+  careerPhase: 'pro-offseason',
+  proSeason: {
+    ...saveWithCompetitionDepth.proSeason!,
+    completed: true,
+    domesticCup: {
+      ...competitionCup,
+      currentRound: 'complete' as const,
+      winnerClubId: 'pro-club-1',
+      completed: true,
+    },
+  },
+  seasonHistory: [
+    {
+      seasonId: 'pro-2027',
+      age: 19,
+      status: 'retained',
+      appearances: 10,
+      goals: 2,
+      assists: 3,
+      avgRating: 7.1,
+      signals: ['稳定轮换'],
+      endedOn: '2028-05-31',
+      honours: [
+        {
+          id: 'honour-cup-2027',
+          kind: 'cup-champion',
+          label: '国内杯冠军',
+          seasonId: 'pro-2027',
+          clubId: 'pro-club-1',
+          evidenceId: 'pro-season-outcome-pro-2027',
+        },
+      ],
+    },
+  ],
+});
+
+const legacySettledSave = CareerSaveV4Schema.parse({
+  ...save,
+  careerPhase: 'pro-offseason',
+  proSeason: {
+    ...save.proSeason!,
+    completed: true,
+    domesticCup: null,
+    nextClubTier: null,
+  },
+});
 describe('ProDashboard', () => {
   it('展示俱乐部、深度图排位、积分榜与合同剩余年限', () => {
     render(
@@ -246,6 +393,24 @@ describe('ProDashboard', () => {
     );
     const rows = screen.getAllByRole('row');
     expect(rows.length).toBe(7);
+  });
+  it('展示联赛排名、杯赛轮次、最近结果与层级变化', () => {
+    render(
+      <ProDashboard
+        save={saveWithCompetitionDepth}
+        report={null}
+        advancing={false}
+        onAdvance={() => {}}
+        onNewCareer={() => {}}
+      />,
+    );
+    const region = screen.getByRole('region', { name: '本赛季赛事' });
+    expect(region).toHaveTextContent('联赛第 2 名');
+    expect(region).toHaveTextContent('半决赛');
+    expect(region).toHaveTextContent('升级');
+    expect(region).toHaveTextContent('最近杯赛');
+    expect(screen.getByText('联赛出场')).toBeVisible();
+    expect(screen.getByText('杯赛出场')).toBeVisible();
   });
 });
 
@@ -324,5 +489,29 @@ describe('ProOffseasonPanel', () => {
     expect(onAccept).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole('button', { name: '拒绝续约，成为自由球员' }));
     expect(onDecline).toHaveBeenCalledTimes(1);
+  });
+  it('展示本赛季球队表现与荣誉，并兼容没有杯赛和荣誉的旧存档', () => {
+    const { rerender } = render(
+      <ProOffseasonPanel
+        save={settledSaveWithHonours}
+        onStartNextSeason={() => {}}
+        onAcceptRenewal={() => {}}
+        onDeclineRenewal={() => {}}
+        onRetire={() => {}}
+      />,
+    );
+    expect(screen.getByRole('region', { name: '球队赛季' })).toHaveTextContent('联赛第 2 名');
+    expect(screen.getByRole('region', { name: '本赛季荣誉' })).toHaveTextContent('国内杯冠军');
+    rerender(
+      <ProOffseasonPanel
+        save={legacySettledSave}
+        onStartNextSeason={() => {}}
+        onAcceptRenewal={() => {}}
+        onDeclineRenewal={() => {}}
+        onRetire={() => {}}
+      />,
+    );
+    expect(screen.getByText('本赛季暂无荣誉')).toBeVisible();
+    expect(screen.getByText('本赛季暂无杯赛记录')).toBeVisible();
   });
 });

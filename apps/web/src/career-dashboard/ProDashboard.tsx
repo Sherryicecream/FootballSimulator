@@ -8,6 +8,8 @@ import { SceneBanner } from '../design-system/SceneBanner';
 import { CurrentStateBadges } from './CurrentStateBadges';
 import { StoryProgressPanel } from './StoryProgressPanel';
 import { MatchdayRhythmPanel } from './MatchdayRhythmPanel';
+import { FootballGlyph } from '../design-system/FootballGlyph';
+import type { ProCupState } from '@football/contracts';
 
 interface ProDashboardProps {
   save: CareerSaveV5Like;
@@ -32,6 +34,20 @@ const ROLE_LABELS: Record<string, string> = {
   'first-team-rotation': '一线队轮换',
   'highlighted-prospect': '重点培养新星',
 };
+const CUP_ROUND_LABELS: Record<ProCupState['currentRound'], string> = {
+  quarterfinal: '四分之一决赛',
+  semifinal: '半决赛',
+  final: '决赛',
+  complete: '已结束',
+};
+
+const tierMovementLabel = (currentTier: number | undefined, nextTier: number | null): string => {
+  if (nextTier === null) return '赛季进行中';
+  if (currentTier === undefined) return '下一季层级 ' + nextTier;
+  if (nextTier > currentTier) return '升级';
+  if (nextTier < currentTier) return '降级';
+  return '层级保持';
+};
 
 export function ProDashboard({
   save,
@@ -52,6 +68,23 @@ export function ProDashboard({
   const stats = save.proSeasonStats;
   const avgRating =
     stats.ratingCount > 0 ? Math.round((stats.ratingSum / stats.ratingCount) * 10) / 10 : null;
+  const playerRank = standings.findIndex(({ clubId }) => clubId === pro.clubId) + 1;
+  const cup = pro.domesticCup;
+  const cupFixtures = cup?.fixtures ?? [];
+  const cupPlayed = cupFixtures.filter(({ status }) => status === 'played').length;
+  const cupRound = cup ? CUP_ROUND_LABELS[cup.currentRound] : '暂无杯赛记录';
+  const recentCupFact = [...save.ledger]
+    .reverse()
+    .find(
+      ({ type, matchContext }) =>
+        type === 'pro-match' && matchContext?.competitionId === 'domestic-cup',
+    );
+  const cupRecent =
+    recentCupFact?.summary ??
+    (cup
+      ? '最近杯赛：已完成 ' + cupPlayed + ' 场，当前轮次为' + cupRound
+      : '最近杯赛：本赛季暂无杯赛记录');
+  const tierMovement = tierMovementLabel(save.contract?.clubTier, pro.nextClubTier);
   const leadBeat = pickLeadBeat(report?.momentum?.beats ?? []);
   const sceneKind = leadBeat ? sceneKindForBeat(leadBeat.kind) : 'neutral';
   const sceneTitle = leadBeat?.title ?? report?.momentum?.title ?? '职业赛季进行中';
@@ -96,6 +129,39 @@ export function ProDashboard({
             injuryWeeks={save.health.activeInjury?.expectedRecoveryWeeks}
           />
         </section>
+        <section className="dashboard-card competition-card" aria-label="本赛季赛事">
+          <div className="card-heading competition-heading">
+            <span className="card-kicker">赛季走势</span>
+            <h3>
+              <FootballGlyph name="match" size={19} />
+              本赛季赛事
+            </h3>
+          </div>
+          <div className="competition-grid">
+            <div className="competition-stat competition-stat--accent">
+              <span className="competition-stat-label">联赛排名</span>
+              <strong>联赛第 {playerRank > 0 ? playerRank : '—'} 名</strong>
+              <small>积分榜随每月比赛实时变化</small>
+            </div>
+            <div className="competition-stat">
+              <span className="competition-stat-label">国内杯</span>
+              <strong>{cupRound}</strong>
+              <small>
+                {cup
+                  ? '已完成 ' + cupPlayed + '/' + cupFixtures.length + ' 场'
+                  : '本赛季暂无杯赛记录'}
+              </small>
+            </div>
+            <div className="competition-stat">
+              <span className="competition-stat-label">层级变化</span>
+              <strong>{tierMovement}</strong>
+              <small>
+                {pro.nextClubTier === null ? '赛季结算后更新' : '下一赛季层级 ' + pro.nextClubTier}
+              </small>
+            </div>
+          </div>
+          <p className="competition-recent">{cupRecent}</p>
+        </section>
         <section className="dashboard-card">
           <h3>赛季数据</h3>
           <dl className="profile-facts">
@@ -108,8 +174,22 @@ export function ProDashboard({
               <dd>{stats.reserveAppearances}</dd>
             </div>
             <div>
-              <dt>出场分钟</dt>
+              <dt>联赛分钟</dt>
               <dd>{stats.minutes}</dd>
+            </div>
+            <div>
+              <dt>杯赛出场</dt>
+              <dd>{stats.cupAppearances ?? 0}</dd>
+            </div>
+            <div>
+              <dt>杯赛分钟</dt>
+              <dd>{stats.cupMinutes ?? 0}</dd>
+            </div>
+            <div>
+              <dt>杯赛进球 / 助攻</dt>
+              <dd>
+                {stats.cupGoals ?? 0} / {stats.cupAssists ?? 0}
+              </dd>
             </div>
             <div>
               <dt>进球 / 助攻</dt>
