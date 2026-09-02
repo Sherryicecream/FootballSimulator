@@ -213,6 +213,8 @@ export const MatchContextSchema = z.strictObject({
   rating: z.number().min(1).max(10).nullable(),
   goals: z.number().int().min(0).max(50),
   assists: z.number().int().min(0).max(50),
+  competitionId: IdSchema.optional(),
+  teamImpact: z.number().int().min(-4).max(4).optional(),
 });
 export type MatchContext = z.infer<typeof MatchContextSchema>;
 

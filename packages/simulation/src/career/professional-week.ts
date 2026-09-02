@@ -5,6 +5,7 @@ import type {
   LeagueStanding,
   YouthMatchResultV2,
 } from '@football/contracts';
+import { advanceDomesticCup } from './domestic-cup';
 import {
   accrueWeeklyDevelopment,
   mergeDevelopmentAccrual,
@@ -12,6 +13,9 @@ import {
 } from '../player-development/development';
 import { simulateInjuryRisk } from '../health/injury-model';
 import { simulateMatch } from '../match/match-engine';
+import { calculatePlayerTeamImpact } from './player-team-impact';
+
+export { calculatePlayerTeamImpact } from './player-team-impact';
 import type { Position, TeamStrength } from '@football/contracts';
 import { createSeededRandomSource } from '../randomness';
 import { deriveAge } from './simulate-youth-week';
@@ -47,6 +51,20 @@ const clubStrength = (club: ClubProfile): TeamStrength => {
   };
 };
 
+const applyPlayerImpact = (strength: TeamStrength, impact: number): TeamStrength => ({
+  attack: clamp(strength.attack + impact),
+  midfield: clamp(strength.midfield + impact),
+  defence: clamp(strength.defence + impact),
+  overall: clamp(strength.overall + impact),
+});
+
+const deriveFixtureSeed = (seed: number, competitionId: string, fixtureId: string): number => {
+  let hash = seed | 0;
+  for (const character of `${competitionId}:${fixtureId}`) {
+    hash = Math.imul(hash ^ character.charCodeAt(0), 16777619);
+  }
+  return (hash + 0x6d2b79f5) | 0;
+};
 /**
  * 职业周转移：负荷 → 登场决策 → 比赛（本队 + 同轮其他场次并更新积分榜）→ 健康 → 发展积累。
  * 与青训周共享训练、伤病与比赛引擎；同种子同输入结果完全一致。
@@ -65,7 +83,9 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
 
   const nextWeek = pro.currentWeek + 1;
   const weekKey = `${pro.startDate.slice(0, 4)}-W${String(nextWeek).padStart(2, '0')}`;
-  const weekFixtures = pro.fixtures.filter(({ weekKey: key }) => key === weekKey);
+  const leagueFixtures = pro.fixtures.filter(({ weekKey: key }) => key === weekKey);
+  const cupFixtures = pro.domesticCup?.fixtures.filter(({ weekKey: key }) => key === weekKey) ?? [];
+  const weekFixtures = [...leagueFixtures, ...cupFixtures];
   const ownFixture = weekFixtures.find(
     ({ homeClubId, awayClubId }) => homeClubId === pro.clubId || awayClubId === pro.clubId,
   );
@@ -99,29 +119,38 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
 
   let matchResult: YouthMatchResultV2 | null = null;
   let opponentStrength: number | undefined;
+  let matchCompetitionId: string | undefined;
+  let teamImpact = 0;
+  let domesticCup = pro.domesticCup;
   let standings: LeagueStanding[] = pro.standings;
   const clubById = new Map(clubs.map((club) => [club.id, club]));
   const ownClub = clubById.get(pro.clubId);
   if (!ownClub) throw new Error(`俱乐部 ${pro.clubId} 不在内容包中`);
 
-  for (const fixture of weekFixtures) {
+  for (const fixture of leagueFixtures) {
     const home = clubById.get(fixture.homeClubId);
     const away = clubById.get(fixture.awayClubId);
     if (!home || !away) throw new Error(`固定赛程引用了未知俱乐部：${fixture.id}`);
     const isOwn = fixture.homeClubId === pro.clubId || fixture.awayClubId === pro.clubId;
+    const isHome = fixture.homeClubId === pro.clubId;
+    const opponent = clubStrength(isHome ? away : home).overall;
+    const impact = isOwn ? calculatePlayerTeamImpact(save, health, selection, opponent) : 0;
+    const homeStrength = applyPlayerImpact(clubStrength(home), isOwn && isHome ? impact : 0);
+    const awayStrength = applyPlayerImpact(clubStrength(away), isOwn && !isHome ? impact : 0);
     const result = simulateMatch(
       home.name,
       away.name,
-      clubStrength(home),
-      clubStrength(away),
+      homeStrength,
+      awayStrength,
       nextWeek,
       Number(pro.startDate.slice(0, 4)),
       rng,
     );
     standings = updateStandings(standings, fixture, result.homeScore, result.awayScore);
     if (isOwn && selection.appearance !== 'unavailable') {
-      const isHome = fixture.homeClubId === pro.clubId;
-      opponentStrength = clubStrength(isHome ? away : home).overall;
+      teamImpact = impact;
+      matchCompetitionId = fixture.competitionId;
+      opponentStrength = opponent;
       matchResult = {
         id: `pro-${fixture.id}`,
         fixtureId: fixture.id,
@@ -142,6 +171,60 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
     }
   }
 
+  for (const fixture of cupFixtures) {
+    const cup = domesticCup;
+    if (!cup) throw new Error('杯赛赛程存在但职业杯赛状态缺失');
+    const home = clubById.get(fixture.homeClubId);
+    const away = clubById.get(fixture.awayClubId);
+    if (!home || !away) throw new Error(`杯赛赛程引用了未知俱乐部：${fixture.id}`);
+    const isOwn = fixture.homeClubId === pro.clubId || fixture.awayClubId === pro.clubId;
+    const isHome = fixture.homeClubId === pro.clubId;
+    const opponent = clubStrength(isHome ? away : home).overall;
+    const impact = isOwn ? calculatePlayerTeamImpact(save, health, selection, opponent) : 0;
+    const homeStrength = applyPlayerImpact(clubStrength(home), isOwn && isHome ? impact : 0);
+    const awayStrength = applyPlayerImpact(clubStrength(away), isOwn && !isHome ? impact : 0);
+    const cupRng = createSeededRandomSource(
+      deriveFixtureSeed(save.randomState.seed, fixture.competitionId, fixture.id),
+    );
+    const result = simulateMatch(
+      home.name,
+      away.name,
+      homeStrength,
+      awayStrength,
+      nextWeek,
+      Number(pro.startDate.slice(0, 4)),
+      cupRng,
+    );
+    if (isOwn && selection.appearance !== 'unavailable') {
+      teamImpact = impact;
+      matchCompetitionId = fixture.competitionId;
+      opponentStrength = opponent;
+      matchResult = {
+        id: `pro-${fixture.id}`,
+        fixtureId: fixture.id,
+        opponentId: isHome ? fixture.awayClubId : fixture.homeClubId,
+        opponentName: isHome ? away.name : home.name,
+        isHome,
+        homeScore: result.homeScore,
+        awayScore: result.awayScore,
+        played: selection.appearance === 'starter' || selection.appearance === 'bench',
+        minutesPlayed: selection.minutes,
+        rating:
+          selection.appearance === 'reserve'
+            ? reserveRating(cupRng)
+            : matchRating(cupRng, selection.minutes, result, isHome),
+        goals: playerGoals(selection, cupRng),
+        assists: playerAssists(selection, cupRng),
+      };
+    }
+    domesticCup = advanceDomesticCup(
+      cup,
+      fixture.id,
+      result.homeScore,
+      result.awayScore,
+      cupRng.nextInt(0, 1_000_000),
+    );
+  }
   const facts = createProFacts(
     save,
     weekKey,
@@ -150,9 +233,11 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
     selection,
     injury,
     opponentStrength,
+    matchCompetitionId,
+    teamImpact,
   );
   const nextDate = addDays(pro.currentDate, 7);
-  const playedIds = new Set(weekFixtures.map(({ id }) => id));
+  const playedIds = new Set(leagueFixtures.map(({ id }) => id));
   const fixtures = pro.fixtures.map((fixture) =>
     playedIds.has(fixture.id)
       ? {
@@ -162,19 +247,43 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
         }
       : fixture,
   );
+  const normalizedProStats = {
+    ...save.proSeasonStats,
+    cupAppearances: save.proSeasonStats.cupAppearances ?? 0,
+    cupMinutes: save.proSeasonStats.cupMinutes ?? 0,
+    cupGoals: save.proSeasonStats.cupGoals ?? 0,
+    cupAssists: save.proSeasonStats.cupAssists ?? 0,
+  };
+  const isCupMatch = matchCompetitionId === 'domestic-cup';
 
   const proStats = matchResult
     ? {
-        leagueAppearances: save.proSeasonStats.leagueAppearances + (matchResult.played ? 1 : 0),
-        reserveAppearances: save.proSeasonStats.reserveAppearances + (matchResult.played ? 0 : 1),
-        minutes: save.proSeasonStats.minutes + (matchResult.played ? matchResult.minutesPlayed : 0),
-        goals: save.proSeasonStats.goals + matchResult.goals,
-        assists: save.proSeasonStats.assists + matchResult.assists,
+        leagueAppearances:
+          save.proSeasonStats.leagueAppearances + (!isCupMatch && matchResult.played ? 1 : 0),
+        reserveAppearances:
+          save.proSeasonStats.reserveAppearances + (!isCupMatch && !matchResult.played ? 1 : 0),
+        minutes:
+          save.proSeasonStats.minutes +
+          (!isCupMatch && matchResult.played ? matchResult.minutesPlayed : 0),
+        goals: save.proSeasonStats.goals + (!isCupMatch ? matchResult.goals : 0),
+        assists: save.proSeasonStats.assists + (!isCupMatch ? matchResult.assists : 0),
         ratingSum:
-          save.proSeasonStats.ratingSum + (matchResult.rating != null ? matchResult.rating : 0),
-        ratingCount: save.proSeasonStats.ratingCount + (matchResult.rating != null ? 1 : 0),
+          save.proSeasonStats.ratingSum +
+          (!isCupMatch && matchResult.rating != null ? matchResult.rating : 0),
+        ratingCount:
+          save.proSeasonStats.ratingCount + (!isCupMatch && matchResult.rating != null ? 1 : 0),
+        cupAppearances:
+          normalizedProStats.cupAppearances + (isCupMatch && matchResult.played ? 1 : 0),
+        cupMinutes:
+          normalizedProStats.cupMinutes +
+          (isCupMatch && matchResult.played ? matchResult.minutesPlayed : 0),
+        cupGoals:
+          normalizedProStats.cupGoals + (isCupMatch && matchResult.played ? matchResult.goals : 0),
+        cupAssists:
+          normalizedProStats.cupAssists +
+          (isCupMatch && matchResult.played ? matchResult.assists : 0),
       }
-    : save.proSeasonStats;
+    : normalizedProStats;
 
   const nextSave: S = {
     ...save,
@@ -199,6 +308,7 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
       currentMonth: nextDate.slice(0, 7),
       fixtures,
       standings,
+      domesticCup,
       completed: nextDate >= pro.endDate,
     },
     proSeasonStats: proStats,
@@ -366,6 +476,8 @@ const createProFacts = (
   selection: ProAppearanceDecision,
   injury: CareerSaveV4Like['health']['activeInjury'],
   opponentStrength: number | undefined,
+  competitionId: string | undefined,
+  teamImpact: number,
 ): CareerLedgerEntryV2[] => {
   const facts: CareerLedgerEntryV2[] = [
     {
@@ -388,6 +500,8 @@ const createProFacts = (
       weekKey,
       type: 'pro-match',
       matchContext: {
+        competitionId: competitionId ?? 'pro-league',
+        teamImpact,
         opponentStrength: opponentStrength ?? 55,
         isHome: match.isHome,
         played: match.played,
@@ -396,7 +510,7 @@ const createProFacts = (
         goals: match.goals,
         assists: match.assists,
       },
-      summary: `${match.opponentName} ${match.homeScore}:${match.awayScore}；${appearanceText}${match.rating != null ? `，评分 ${match.rating}` : ''}${match.goals + match.assists > 0 ? `；${match.goals} 球 ${match.assists} 助攻` : ''}`,
+      summary: `${competitionId === 'domestic-cup' ? '国内杯' : '联赛'}：${match.opponentName} ${match.homeScore}:${match.awayScore}；${appearanceText}${match.rating != null ? `，评分 ${match.rating}` : ''}${match.goals + match.assists > 0 ? `；${match.goals} 球 ${match.assists} 助攻` : ''}`,
       participantIds: [],
     });
   }

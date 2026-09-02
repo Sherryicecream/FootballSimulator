@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { createLeagueFixtures } from '../../src/career/league-fixtures';
+import { createDomesticCup } from '../../src/career/domestic-cup';
 import { buildDepthChart, depthRank, generateProSquad } from '../../src/career/pro-squad';
-import { decideAppearance, simulateProfessionalWeek } from '../../src/career/professional-week';
+import {
+  calculatePlayerTeamImpact,
+  decideAppearance,
+  simulateProfessionalWeek,
+} from '../../src/career/professional-week';
 import { createSeededRandomSource } from '../../src/randomness';
 import { createProSave, proClubs } from '../fixtures/pro-save';
 import { CareerSaveV5Schema, type CareerSaveV4, type CareerSaveV4Like } from '@football/contracts';
@@ -128,6 +133,131 @@ describe('simulateProfessionalWeek', () => {
 });
 
 describe('decideAppearance', () => {
+  const attributesWithValue = (value: number) => ({
+    technical: {
+      firstTouch: value,
+      dribbling: value,
+      passing: value,
+      shooting: value,
+      defending: value,
+      aerialAbility: value,
+    },
+    physical: {
+      pace: value,
+      strength: value,
+      stamina: value,
+      agility: value,
+    },
+    mental: {
+      offTheBall: value,
+      vision: value,
+      decision: value,
+      composure: value,
+      determination: value,
+      discipline: value,
+    },
+  });
+
+  describe('player team impact', () => {
+    const base = createProSave();
+    const selection = {
+      appearance: 'starter' as const,
+      minutes: 90,
+      selectionScore: 90,
+      threshold: 50,
+    };
+
+    const saveWithAbilityAndState = (ability: number) => ({
+      ...base,
+      player: {
+        ...base.player,
+        attributes: attributesWithValue(ability),
+      },
+      currentState: {
+        ...base.currentState,
+        form: 90,
+        confidence: 90,
+      },
+      health: {
+        ...base.health,
+        fitness: 95,
+        fatigue: 0,
+      },
+      clubContext: {
+        ...base.clubContext,
+        coachEvaluation: 90,
+      },
+    });
+
+    it('能力和状态影响球队强度且影响值限制在正负四以内', () => {
+      const strongImpact = calculatePlayerTeamImpact(
+        saveWithAbilityAndState(95),
+        saveWithAbilityAndState(95).health,
+        selection,
+        55,
+      );
+      const weakImpact = calculatePlayerTeamImpact(
+        saveWithAbilityAndState(35),
+        saveWithAbilityAndState(35).health,
+        selection,
+        75,
+      );
+
+      expect(strongImpact).toBeGreaterThan(weakImpact);
+      expect(strongImpact).toBeGreaterThan(0);
+      expect(strongImpact).toBeLessThanOrEqual(4);
+      expect(weakImpact).toBeGreaterThanOrEqual(-4);
+      expect(
+        calculatePlayerTeamImpact(
+          saveWithAbilityAndState(95),
+          base.health,
+          { ...selection, appearance: 'reserve' },
+          55,
+        ),
+      ).toBe(0);
+    });
+
+    it('杯赛周只更新杯赛，不污染联赛积分榜并留下赛事上下文', () => {
+      const cupClubs = [
+        ...proClubs,
+        { ...proClubs[0]!, id: 'pro-club-7' },
+        { ...proClubs[0]!, id: 'pro-club-8' },
+      ];
+      const cup = createDomesticCup(cupClubs, 'pro-club-1', 5, '2027', 7);
+      const save = {
+        ...saveWithAbilityAndState(95),
+        proSeason: {
+          ...base.proSeason!,
+          currentWeek: 26,
+          domesticCup: cup,
+        },
+        contract: base.contract
+          ? { ...base.contract, squadRole: 'highlighted-prospect' as const }
+          : base.contract,
+      };
+      const { save: next } = simulateProfessionalWeek(save, cupClubs);
+      const ownCupFixture = cup.fixtures.find(
+        ({ weekKey, homeClubId, awayClubId }) =>
+          weekKey.endsWith('W27') && (homeClubId === 'pro-club-1' || awayClubId === 'pro-club-1'),
+      )!;
+      const fact = next.ledger.find(({ id }) => id === `pro-${ownCupFixture.id}`);
+
+      expect(next.proSeason!.standings).toEqual(save.proSeason!.standings);
+      expect(
+        next.proSeason!.domesticCup!.fixtures.filter(
+          ({ weekKey, status }) => weekKey.endsWith('W27') && status === 'played',
+        ),
+      ).toHaveLength(4);
+      expect(next.proSeasonStats.cupAppearances).toBe(1);
+      expect(next.proSeasonStats.cupMinutes).toBeGreaterThan(0);
+      expect(fact?.matchContext).toEqual(
+        expect.objectContaining({
+          competitionId: 'domestic-cup',
+          teamImpact: expect.any(Number),
+        }),
+      );
+    });
+  });
   const base = createProSave();
   const healthy = base.health;
   const rng = () => createSeededRandomSource(11);
