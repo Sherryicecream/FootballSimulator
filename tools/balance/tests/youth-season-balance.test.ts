@@ -68,5 +68,12 @@ describe('youth balance runner', () => {
     expect(report.summary.nationalTeamShare).toBeGreaterThanOrEqual(0.25);
     expect(report.summary.nationalTeamShare).toBeLessThanOrEqual(0.5);
     expect(report.summary.reviewGeneratedRate).toBe(1);
+    expect(report.summary.proCupAppearanceRate).toBeGreaterThan(0);
+    expect(report.summary.proCupHonourRate).toBeGreaterThanOrEqual(0);
+    expect(report.summary.proPromotionRate).toBeGreaterThanOrEqual(0);
+    expect(report.summary.proRelegationRate).toBeGreaterThanOrEqual(0);
+    expect(report.metrics[0]).toEqual(
+      expect.objectContaining({ proCupAppearances: expect.any(Number) }),
+    );
   }, 600_000);
 });

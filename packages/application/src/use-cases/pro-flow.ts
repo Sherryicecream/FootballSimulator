@@ -254,11 +254,13 @@ export const advanceProMonth = <S extends CareerSaveV4Like>(
           ...transition.save.monthlyAdvance.factIds,
           ...transition.facts.map(({ id }) => id),
         ],
-        matchIds: transition.matchResult
-          ? [...transition.save.monthlyAdvance.matchIds, transition.matchResult.id]
-          : transition.save.monthlyAdvance.matchIds,
+        matchIds: [
+          ...transition.save.monthlyAdvance.matchIds,
+          ...transition.facts.filter(({ type }) => type === 'pro-match').map(({ id }) => id),
+        ],
       },
     };
+    matchIds = save.monthlyAdvance.matchIds;
     const canInterrupt = save.proSeason!.currentMonth === monthKey && !save.proSeason!.completed;
     factsDuringMonth.push(...transition.facts.map(({ id }) => id));
     const eventPick = pickYouthEventForWeek(canInterrupt ? [...events] : [], save);

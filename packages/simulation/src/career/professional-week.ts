@@ -99,7 +99,7 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
 
   const load =
     (trainingLoad(save.trainingPlan.intensity) + 8) * 1.15 +
-    (ownFixtures.length * 12) * (save.trainingPlan.intensity === 'light' ? 0.5 : 1);
+    ownFixtures.length * 12 * (save.trainingPlan.intensity === 'light' ? 0.5 : 1);
   const recoveredInjury = advanceInjury(save.health.activeInjury);
   let health = {
     ...save.health,
@@ -236,14 +236,7 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
     );
   }
   const matchResult = playerMatches.at(-1)?.match ?? null;
-  const facts = createProFacts(
-    save,
-    weekKey,
-    load,
-    playerMatches,
-    selection,
-    injury,
-  );
+  const facts = createProFacts(save, weekKey, load, playerMatches, selection, injury);
   const nextDate = addDays(pro.currentDate, 7);
   const playedIds = new Set(leagueFixtures.map(({ id }) => id));
   const fixtures = pro.fixtures.map((fixture) =>

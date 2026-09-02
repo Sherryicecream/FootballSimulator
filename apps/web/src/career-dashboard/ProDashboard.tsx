@@ -10,6 +10,7 @@ import { StoryProgressPanel } from './StoryProgressPanel';
 import { MatchdayRhythmPanel } from './MatchdayRhythmPanel';
 import { FootballGlyph } from '../design-system/FootballGlyph';
 import type { ProCupState } from '@football/contracts';
+import { professionalLeagueRank, sortProfessionalStandings } from './pro-presentation';
 
 interface ProDashboardProps {
   save: CareerSaveV5Like;
@@ -58,28 +59,25 @@ export function ProDashboard({
 }: ProDashboardProps) {
   const pro = save.proSeason;
   if (!pro) return null;
-  const standings = [...pro.standings].sort(
-    (left, right) =>
-      right.points - left.points ||
-      right.goalsFor - right.goalsAgainst - (left.goalsFor - left.goalsAgainst) ||
-      right.goalsFor - left.goalsFor ||
-      left.clubId.localeCompare(right.clubId),
-  );
+  const standings = sortProfessionalStandings(pro.standings);
   const position = save.player.identity.primaryPosition;
   const depthList = pro.depthChart[position] ?? [];
   const stats = save.proSeasonStats;
   const avgRating =
     stats.ratingCount > 0 ? Math.round((stats.ratingSum / stats.ratingCount) * 10) / 10 : null;
-  const playerRank = standings.findIndex(({ clubId }) => clubId === pro.clubId) + 1;
+  const playerRank = professionalLeagueRank(standings, pro.clubId) ?? 0;
   const cup = pro.domesticCup;
   const cupFixtures = cup?.fixtures ?? [];
   const cupPlayed = cupFixtures.filter(({ status }) => status === 'played').length;
   const cupRound = cup ? CUP_ROUND_LABELS[cup.currentRound] : '暂无杯赛记录';
+  const currentSeasonPrefix = pro.startDate.slice(0, 4) + '-';
   const recentCupFact = [...save.ledger]
     .reverse()
     .find(
-      ({ type, matchContext }) =>
-        type === 'pro-match' && matchContext?.competitionId === 'domestic-cup',
+      ({ type, matchContext, weekKey }) =>
+        type === 'pro-match' &&
+        weekKey.startsWith(currentSeasonPrefix) &&
+        matchContext?.competitionId === 'domestic-cup',
     );
   const cupRecent =
     recentCupFact?.summary ??

@@ -156,6 +156,15 @@ test.describe('职业赛季流程', () => {
     await page.getByRole('button', { name: '推进到下个月' }).click();
     await resolveUntilProDashboard(page);
 
+    for (let month = 0; month < 7; month += 1) {
+      await page.getByRole('button', { name: '推进到下个月' }).click();
+      await resolveUntilProDashboard(page);
+    }
+    await expect(page.getByRole('region', { name: '本赛季赛事' })).toContainText('国内杯');
+    await expect(page.getByRole('region', { name: '本赛季赛事' })).toContainText(
+      /已完成 [467]\/7 场/,
+    );
+
     await page.reload();
     await expect(page.getByText('联赛积分榜')).toBeVisible();
     await expect(page.getByRole('button', { name: '推进到下个月' })).toBeVisible();

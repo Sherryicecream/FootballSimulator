@@ -61,6 +61,10 @@ type LifecycleOutcome = {
   overseasSpent: boolean;
   hadCaps: boolean;
   capCount: number;
+  cupAppearances: number;
+  cupHonours: number;
+  promotions: number;
+  relegations: number;
 };
 
 export const runYouthSeasons = (runs: number, seedStart = 1): YouthBalanceReport => {
@@ -176,6 +180,10 @@ export const runYouthSeasons = (runs: number, seedStart = 1): YouthBalanceReport
       overseasSpent: lifecycle.overseasSpent,
       hadCaps: lifecycle.hadCaps,
       capCount: lifecycle.capCount,
+      proCupAppearances: lifecycle.cupAppearances,
+      proCupHonours: lifecycle.cupHonours,
+      proPromotions: lifecycle.promotions,
+      proRelegations: lifecycle.relegations,
       weightedAbility: weightedAbility(
         final.save.player.identity.primaryPosition,
         final.save.player.attributes,
@@ -315,6 +323,18 @@ export const runYouthSeasons = (runs: number, seedStart = 1): YouthBalanceReport
         metrics.map(({ seasonsPlayed }) => seasonsPlayed),
         0.5,
       ),
+      proCupAppearanceRate:
+        graduatedMetrics.filter(({ proCupAppearances }) => proCupAppearances > 0).length /
+        Math.max(1, graduatedMetrics.length),
+      proCupHonourRate:
+        graduatedMetrics.filter(({ proCupHonours }) => proCupHonours > 0).length /
+        Math.max(1, graduatedMetrics.length),
+      proPromotionRate:
+        graduatedMetrics.filter(({ proPromotions }) => proPromotions > 0).length /
+        Math.max(1, graduatedMetrics.length),
+      proRelegationRate:
+        graduatedMetrics.filter(({ proRelegations }) => proRelegations > 0).length /
+        Math.max(1, graduatedMetrics.length),
     },
   };
 };
@@ -343,6 +363,10 @@ const playLifecycle = (
     overseasSpent: false,
     hadCaps: false,
     capCount: 0,
+    cupAppearances: 0,
+    cupHonours: 0,
+    promotions: 0,
+    relegations: 0,
     proSeasonsPlayed: 0,
     promiseKept: false,
     lastCause: 'none',
@@ -428,6 +452,10 @@ const playLifecycle = (
           retireAge: pro.retireAge,
           hadCaps: pro.hadCaps,
           capCount: pro.capCount,
+          cupAppearances: pro.cupAppearances,
+          cupHonours: pro.cupHonours,
+          promotions: pro.promotions,
+          relegations: pro.relegations,
         };
       }
     }
@@ -518,6 +546,10 @@ const playProfessionalLife = (
   retireAge: number | null;
   hadCaps: boolean;
   capCount: number;
+  cupAppearances: number;
+  cupHonours: number;
+  promotions: number;
+  relegations: number;
   overseasSpent: boolean;
 } => {
   let save = signed;
@@ -534,6 +566,10 @@ const playProfessionalLife = (
   let retireAge: number | null = null;
   let hadCaps = false;
   let capCount = 0;
+  let cupAppearances = 0;
+  let cupHonours = 0;
+  let promotions = 0;
+  let relegations = 0;
   let overseasSpent = signed.overseasSince !== null;
   let freeAgentWindows = 0;
   const retirementAgeTarget = 29 + (signed.randomState.seed % 3);
@@ -589,6 +625,11 @@ const playProfessionalLife = (
     if (!save.proSeason!.completed) throw new Error('职业赛季未在保护步数内完成');
     const settled = completeProfessionalSeason(save);
     save = settled.save;
+    cupAppearances += save.proSeasonStats.cupAppearances ?? 0;
+    const honours = save.seasonHistory.at(-1)?.honours ?? [];
+    cupHonours += honours.filter(({ kind }) => kind === 'cup-champion').length;
+    promotions += honours.filter(({ kind }) => kind === 'promotion').length;
+    relegations += honours.filter(({ kind }) => kind === 'relegation').length;
     if (save.story.pendingEvent?.storyId === 'national-team-debut') {
       save = clearEventFeedback(submitNationalTeamDecision(save, 'accept-national-team'));
     }
@@ -660,6 +701,10 @@ const playProfessionalLife = (
     retireAge,
     hadCaps,
     capCount,
+    cupAppearances,
+    cupHonours,
+    promotions,
+    relegations,
   };
 };
 

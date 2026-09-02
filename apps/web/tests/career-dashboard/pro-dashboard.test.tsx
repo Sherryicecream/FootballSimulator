@@ -368,6 +368,45 @@ describe('ProDashboard', () => {
     expect(screen.getByRole('button', { name: '推进到下个月' })).toBeEnabled();
   });
 
+  it('不把上一赛季的杯赛事实误显示为本赛季最近结果', () => {
+    const previousSeason = CareerSaveV4Schema.parse({
+      ...save,
+      ledger: [
+        {
+          id: 'old-cup-match',
+          weekKey: '2026-W39',
+          type: 'pro-match' as const,
+          summary: '上一赛季杯赛：旧对手 9:9',
+          participantIds: ['player'],
+          matchContext: {
+            competitionId: 'domestic-cup',
+            teamImpact: 0,
+            opponentStrength: 55,
+            isHome: true,
+            played: true,
+            minutesPlayed: 90,
+            rating: 7,
+            goals: 0,
+            assists: 0,
+          },
+        },
+      ],
+    });
+    render(
+      <ProDashboard
+        save={previousSeason}
+        report={null}
+        advancing={false}
+        onAdvance={() => {}}
+        onNewCareer={() => {}}
+      />,
+    );
+
+    const region = screen.getByRole('region', { name: '本赛季赛事' });
+    expect(region).not.toHaveTextContent('上一赛季杯赛');
+    expect(region).toHaveTextContent('本赛季暂无杯赛记录');
+  });
+
   it('积分榜表头加六支球队', () => {
     const withTable = CareerSaveV4Schema.parse({
       ...save,

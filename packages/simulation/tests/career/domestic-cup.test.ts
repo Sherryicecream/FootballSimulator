@@ -104,6 +104,12 @@ describe('国内杯赛 bracket', () => {
     );
   });
 
+  it('rejects duplicate candidate club IDs', () => {
+    const duplicateIdClubs = [...clubs, { ...clubs[1]!, id: clubs[2]!.id }];
+    expect(() => createDomesticCup(duplicateIdClubs, clubs[0]!.id, 5, '2030', 99)).toThrow(
+      'domestic cup candidate club IDs must be unique',
+    );
+  });
   it('拒绝跨赛事或包含非参赛队的非法杯赛对阵', () => {
     const cup = createDomesticCup(clubs, 'club-tier-5-1', 5, '2030', 99);
     const fixture = cup.fixtures[0]!;
@@ -124,6 +130,14 @@ describe('国内杯赛 bracket', () => {
         item.id === fixture.id ? { ...item, homeClubId: 'outsider-club' } : item,
       ),
     };
-    expect(() => advanceDomesticCup(outsider, fixture.id, 1, 0, 0)).toThrow('杯赛参赛队非法');
+    expect(() => advanceDomesticCup(outsider, fixture.id, 1, 0, 0)).toThrow(/杯赛.*参赛队非法/);
+
+    const repeatedTeam = {
+      ...cup,
+      fixtures: cup.fixtures.map((item, index) =>
+        index === 1 ? { ...item, homeClubId: cup.fixtures[0]!.homeClubId } : item,
+      ),
+    };
+    expect(() => advanceDomesticCup(repeatedTeam, fixture.id, 1, 0, 0)).toThrow('对阵队伍重复');
   });
 });

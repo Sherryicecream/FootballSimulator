@@ -710,4 +710,43 @@ describe('职业赛季流程', () => {
     expect(review.seasons).toBeGreaterThan(0);
     expect(review.timeline.some(({ seasonId }) => seasonId === 'pro-2025')).toBe(true);
   });
+
+  it('keeps every same-week league and cup match in the monthly report', () => {
+    const started = startProfessionalSeason(signedProSave(), content.clubs);
+    const pro = started.proSeason!;
+    const leagueFixture = pro.fixtures.find(
+      ({ homeClubId, awayClubId }) => homeClubId === pro.clubId || awayClubId === pro.clubId,
+    )!;
+    const cupFixture = pro.domesticCup!.fixtures.find(
+      ({ homeClubId, awayClubId }) => homeClubId === pro.clubId || awayClubId === pro.clubId,
+    )!;
+    const save = {
+      ...started,
+      health: { ...started.health, activeInjury: null, fitness: 100, fatigue: 0 },
+      proSeason: {
+        ...pro,
+        currentDate: '2026-02-22',
+        currentMonth: '2026-02',
+        currentWeek: 26,
+        fixtures: pro.fixtures.map((fixture) =>
+          fixture.id === leagueFixture.id ? { ...fixture, weekKey: '2025-W27' } : fixture,
+        ),
+      },
+      monthlyAdvance: {
+        ...started.monthlyAdvance,
+        monthKey: '2026-02',
+        nextWeekIndex: 0,
+        status: 'idle' as const,
+        factIds: [],
+        matchIds: [],
+      },
+    };
+
+    const outcome = advanceProMonth(save, content.clubs, []);
+
+    expect(outcome.status).toBe('month-complete');
+    expect(outcome.report.matchIds).toEqual(
+      expect.arrayContaining([`pro-${leagueFixture.id}`, `pro-${cupFixture.id}`]),
+    );
+  });
 });

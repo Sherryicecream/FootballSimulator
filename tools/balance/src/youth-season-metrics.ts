@@ -39,6 +39,10 @@ export interface YouthSeasonMetrics {
   overseasSpent: boolean;
   hadCaps: boolean;
   capCount: number;
+  proCupAppearances: number;
+  proCupHonours: number;
+  proPromotions: number;
+  proRelegations: number;
 }
 
 export interface YouthBalanceReport {
@@ -81,6 +85,10 @@ export interface YouthBalanceReport {
     rejectRate: number;
     promiseShares: Record<string, number>;
     seasonsPlayedMedian: number;
+    proCupAppearanceRate: number;
+    proCupHonourRate: number;
+    proPromotionRate: number;
+    proRelegationRate: number;
   };
 }
 

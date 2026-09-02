@@ -26,14 +26,15 @@ export const createDomesticCup = (
     ({ id, tier, overseas }) =>
       id !== playerClubId && !overseas && Math.abs(tier - effectiveTier) <= 1,
   );
+  if (new Set(candidates.map(({ id }) => id)).size !== candidates.length) {
+    throw new Error('domestic cup candidate club IDs must be unique');
+  }
   if (candidates.length < 7) {
     throw new Error(`有效层级 ${effectiveTier} 附近国内俱乐部不足，无法组成国内杯`);
   }
 
   const rng = createSeededRandomSource(seed + Number(seasonYear) * 31 + 7400);
-  const entrants = rng
-    .shuffle([playerClubId, ...candidates.map(({ id }) => id)])
-    .slice(0, 8);
+  const entrants = rng.shuffle([playerClubId, ...candidates.map(({ id }) => id)]).slice(0, 8);
   const fixtures = [
     ...makeRoundFixtures('qf', QUARTERFINAL_WEEK, seasonYear, entrants),
     ...makeRoundFixtures('sf', SEMIFINAL_WEEK, seasonYear, [
@@ -89,6 +90,27 @@ export const advanceDomesticCup = (
   if (cup.entrants.length !== 8 || entrants.size !== 8) {
     throw new Error('杯赛参赛队名单非法');
   }
+  const currentRoundFixtures = cup.fixtures.filter(
+    (item) => roundForFixture(item) === fixtureRound,
+  );
+  const expectedFixtureCount =
+    fixtureRound === 'quarterfinal' ? 4 : fixtureRound === 'semifinal' ? 2 : 1;
+  if (currentRoundFixtures.length !== expectedFixtureCount) {
+    throw new Error(`杯赛 ${fixtureRound} 对阵数量非法`);
+  }
+  const currentRoundTeams = currentRoundFixtures.flatMap(({ homeClubId, awayClubId }) => [
+    homeClubId,
+    awayClubId,
+  ]);
+  if (
+    currentRoundTeams.some(isCupSlot) ||
+    new Set(currentRoundTeams).size !== currentRoundTeams.length
+  ) {
+    throw new Error('杯赛当前轮次对阵队伍重复或未确定');
+  }
+  if (currentRoundTeams.some((clubId) => !entrants.has(clubId))) {
+    throw new Error('杯赛当前轮次参赛队非法');
+  }
   if (
     fixture.homeClubId === fixture.awayClubId ||
     !entrants.has(fixture.homeClubId) ||
@@ -111,14 +133,16 @@ export const advanceDomesticCup = (
       : item,
   );
   const settled = { ...cup, fixtures: updatedFixtures };
-  const roundFixtures = updatedFixtures.filter((item) => roundForFixture(item) === fixtureRound);
-  if (roundFixtures.some(({ status }) => status !== 'played')) return settled;
+  const settledRoundFixtures = updatedFixtures.filter(
+    (item) => roundForFixture(item) === fixtureRound,
+  );
+  if (settledRoundFixtures.some(({ status }) => status !== 'played')) return settled;
 
   if (fixtureRound === 'quarterfinal') {
-    return populateNextRound(settled, 'semifinal', roundWinners(roundFixtures, entrants));
+    return populateNextRound(settled, 'semifinal', roundWinners(settledRoundFixtures, entrants));
   }
   if (fixtureRound === 'semifinal') {
-    return populateNextRound(settled, 'final', roundWinners(roundFixtures, entrants));
+    return populateNextRound(settled, 'final', roundWinners(settledRoundFixtures, entrants));
   }
 
   return {

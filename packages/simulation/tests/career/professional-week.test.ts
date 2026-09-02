@@ -267,8 +267,7 @@ describe('decideAppearance', () => {
       ];
       const cup = createDomesticCup(cupClubs, 'pro-club-1', 5, '2027', 7);
       const ownLeagueFixture = base.proSeason!.fixtures.find(
-        ({ homeClubId, awayClubId }) =>
-          homeClubId === 'pro-club-1' || awayClubId === 'pro-club-1',
+        ({ homeClubId, awayClubId }) => homeClubId === 'pro-club-1' || awayClubId === 'pro-club-1',
       )!;
       const fixtures = base.proSeason!.fixtures.map((fixture) =>
         fixture.id === ownLeagueFixture.id

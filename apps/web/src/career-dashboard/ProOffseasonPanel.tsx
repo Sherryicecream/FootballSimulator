@@ -9,6 +9,7 @@ import { SceneBanner } from '../design-system/SceneBanner';
 import type { FootballGlyphName } from '../design-system/FootballGlyph';
 import { FootballGlyph } from '../design-system/FootballGlyph';
 import { StatusBadge } from '../design-system/StatusBadge';
+import { professionalLeagueRank } from './pro-presentation';
 
 interface ProOffseasonPanelProps {
   save: CareerSaveV4Like;
@@ -46,20 +47,6 @@ const tierMovementLabel = (currentTier: number | undefined, nextTier: number | n
   return '层级保持';
 };
 
-const leagueRankFor = (save: CareerSaveV4Like): number | null => {
-  const pro = save.proSeason;
-  if (!pro) return null;
-  const sorted = [...pro.standings].sort(
-    (left, right) =>
-      right.points - left.points ||
-      right.goalsFor - right.goalsAgainst - (left.goalsFor - left.goalsAgainst) ||
-      right.goalsFor - left.goalsFor ||
-      left.clubId.localeCompare(right.clubId),
-  );
-  const index = sorted.findIndex(({ clubId }) => clubId === pro.clubId);
-  return index >= 0 ? index + 1 : null;
-};
-
 /** 职业休赛期：承诺对照报告 + 续约/下赛季选择。 */
 export function ProOffseasonPanel({
   save,
@@ -74,7 +61,9 @@ export function ProOffseasonPanel({
   const stats = save.proSeasonStats;
   const playedLeague =
     save.proSeason?.fixtures.filter(({ status }) => status === 'played').length ?? 0;
-  const leagueRank = leagueRankFor(save);
+  const leagueRank = save.proSeason
+    ? professionalLeagueRank(save.proSeason.standings, save.proSeason.clubId)
+    : null;
   const cup = save.proSeason?.domesticCup;
   const cupFixtures = cup?.fixtures ?? [];
   const playedCup = cupFixtures.filter(({ status }) => status === 'played').length;
