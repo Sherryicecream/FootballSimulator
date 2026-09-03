@@ -78,12 +78,14 @@ export {
 export { MAX_YOUTH_AGE, isFinalYouthSeason, canStartNextYouthSeason } from './career/youth-age';
 export { startNextSeason, createYouthFixtures } from './career/start-next-season';
 export { generateOffers } from './career/offer-generation';
+export type { GenerateOffersOptions, MarketPerformanceSnapshot } from './career/offer-generation';
 export { createLeagueFixtures } from './career/league-fixtures';
 export { createDomesticCup, advanceDomesticCup } from './career/domestic-cup';
 export { generateProSquad, buildDepthChart, depthRank } from './career/pro-squad';
 export { simulateProfessionalWeek, decideAppearance } from './career/professional-week';
 export { reviewPromise, evaluateProRole, buildRenewalOffer } from './career/promise-review';
 export { growthAgeFactor, applyAgeDecline } from './career/age-curve';
-export { generateTransferOffers } from './career/transfer-offers';
+export { generateProfessionalMarketOffers, generateTransferOffers } from './career/transfer-offers';
+export type { TransferMarketKind } from './career/transfer-offers';
 export { isEligibleForNationalTeam, accrueNationalTeam } from './career/national-team';
 export { buildCareerReview } from './career/career-review';

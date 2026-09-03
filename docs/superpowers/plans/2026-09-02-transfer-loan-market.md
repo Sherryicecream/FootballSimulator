@@ -120,7 +120,7 @@ git commit -m "feat: add loan state contracts"
 - 保留 generateTransferOffers(save, content, rng) 签名，内部固定生成永久报价。
 - GenerateOffersOptions 增加 offerKind、performance、excludeClubIds；allowFallback: false 时绝不生成伪造保底报价。
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 在测试文件顶部定义 seeded(seed)、saveWithContract、lowAdaptabilitySave，以及能力高低两个存档 fixture；fixture 从现有 simulation fixture 复制完整存档，只替换合同、适应力或属性。添加：
 
@@ -149,17 +149,17 @@ it('能力天花板保持单调，适应力不足时没有海外报价', () => {
 });
 ```
 
-- [ ] **Step 2: 运行失败测试**
+- [x] **Step 2: 运行失败测试**
 
 运行：pnpm vitest run packages/simulation/tests/career/transfer-offers.test.ts
 
 预期：FAIL，因为没有职业市场入口、报价没有 offerKind，且职业表现没有传入评分。
 
-- [ ] **Step 3: 写最小模拟实现**
+- [x] **Step 3: 写最小模拟实现**
 
 让 offer-generation.ts 从显式 performance 读取表现；职业市场传入 proSeasonStats，自由球员继续使用 seasonStats。构建报价时设置 offerKind，租借将 contractYears 固定为 1。候选池先排除当前合同俱乐部，海外候选仍须 adaptability >= 55，按兴趣和俱乐部 ID 稳定排序，最多返回 4 份。所有随机只消费调用方传入的派生 source，不推进 randomState.sequencePosition。
 
-- [ ] **Step 4: 运行通过测试并提交**
+- [x] **Step 4: 运行通过测试并提交**
 
 运行：pnpm vitest run packages/simulation/tests/career/transfer-offers.test.ts packages/simulation/tests/career/offer-generation.test.ts，预期 PASS。
 

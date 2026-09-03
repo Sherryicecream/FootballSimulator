@@ -12,11 +12,22 @@ import type { SeededRandomSource } from '../randomness';
  * 按 interest 排序取 2–4 份；不足 2 份时补充低层级保底要约。
  * 全部输入确定性可复现。
  */
+export interface MarketPerformanceSnapshot {
+  appearances: number;
+  goals: number;
+  assists: number;
+  ratingSum: number;
+  ratingCount: number;
+}
+
 export interface GenerateOffersOptions {
   /** 自由球员转会无保底要约 */
   allowFallback?: boolean;
   /** 市场降温：能力天花板调整（负值） */
   ceilingAdjustment?: number;
+  offerKind?: ContractOfferV3['offerKind'];
+  performance?: MarketPerformanceSnapshot;
+  excludeClubIds?: readonly string[];
 }
 
 export const generateOffers = (
@@ -29,13 +40,16 @@ export const generateOffers = (
   const position = save.player.identity.primaryPosition;
   const ability = weightedAbility(position, save.player.attributes);
   const potential = averagePotential(save);
-  const { ratingSum, ratingCount, appearances, goals, assists } = save.seasonStats;
+  const { ratingSum, ratingCount, appearances, goals, assists } =
+    options.performance ?? save.seasonStats;
   const avgRating = ratingCount > 0 ? ratingSum / ratingCount : null;
   const performance =
     avgRating != null ? clamp01((avgRating / 10) * 0.7 + Math.min(1, appearances / 20) * 0.3) : 0.4;
   const highlightBonus = goals + assists >= 8 ? 0.05 : 0;
 
-  const scored = clubs.map((club) => {
+  const excludedClubIds = new Set(options.excludeClubIds ?? []);
+  const availableClubs = clubs.filter((club) => !excludedClubIds.has(club.id));
+  const scored = availableClubs.map((club) => {
     const fit = fitScore(club, position);
     const ageScore = save.player.age <= 16 ? 0.6 : save.player.age <= 19 ? 0.7 : 0.5;
     const preference = tierPreference(club.tier, agentPreferences.leagueTierBias);
@@ -66,7 +80,7 @@ export const generateOffers = (
   let pool = ranked.slice(0, Math.min(targetCount, ranked.length));
   if (pool.length < 2 && options.allowFallback !== false) {
     // 保底要约优先取层级 ≤4 的俱乐部（低层级保底）；内容包没有低层级俱乐部时取层级最低者。
-    const remaining = [...clubs]
+    const remaining = [...availableClubs]
       .filter((club) => !pool.some(({ club: picked }) => picked.id === club.id))
       .sort((a, b) => a.tier - b.tier);
     const fallback = remaining.find((club) => club.tier <= 4) ?? remaining[0];
@@ -84,7 +98,15 @@ export const generateOffers = (
   }
 
   return pool.map(({ club, interest, ability: abilityValue }) =>
-    buildOffer(club, interest, abilityValue, save.player.age, agentPreferences, rng),
+    buildOffer(
+      club,
+      interest,
+      abilityValue,
+      save.player.age,
+      agentPreferences,
+      options.offerKind ?? 'permanent',
+      rng,
+    ),
   );
 };
 
@@ -94,9 +116,10 @@ const buildOffer = (
   ability: number,
   age: number,
   preferences: AgentPreferences,
+  offerKind: ContractOfferV3['offerKind'],
   rng: SeededRandomSource,
 ): ContractOfferV3 => {
-  const contractYears = interest >= 0.75 ? 3 : interest >= 0.6 ? 2 : 1;
+  const contractYears = offerKind === 'loan' ? 1 : interest >= 0.75 ? 3 : interest >= 0.6 ? 2 : 1;
   // 小幅表现浮动（±2%），不会翻转相邻层级之间的薪资单调性。
   const performanceCoefficient = 0.98 + rng.next() * 0.04;
   const overseasBoost = club.overseas ? 1.4 : 1;
@@ -113,7 +136,7 @@ const buildOffer = (
     salaryPerYear,
     contractYears,
     squadRole,
-    offerKind: 'permanent',
+    offerKind,
     overseas: club.overseas,
     promise,
     releaseClauseNote: club.tier >= 6 ? '附带降级解约条款：球队降级时可按约定条件解约' : '',
