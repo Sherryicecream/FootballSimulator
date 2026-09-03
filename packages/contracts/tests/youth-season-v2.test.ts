@@ -4,6 +4,9 @@ import {
   EventDefinitionSchema,
   InjuryStatusSchema,
   PlayerDevelopmentProfileSchema,
+  MonthlyReportSchema,
+  TrainingFeedbackSchema,
+  TrainingWeekContextSchema,
   YouthEventInstanceSchema,
   YouthSeasonStateSchema,
 } from '../src';
@@ -157,7 +160,87 @@ describe('youth season v2 contracts', () => {
 
     expect(parsed.success).toBe(false);
   });
+
+  it('validates structured training evidence and monthly feedback', () => {
+    const context = TrainingWeekContextSchema.parse({
+      focus: 'technical',
+      intensity: 'normal',
+      trainingLoad: 36,
+      totalLoad: 48.5,
+    });
+    const feedback = TrainingFeedbackSchema.parse({
+      plan: { focus: 'technical', intensity: 'normal', positionFocus: null },
+      trainingWeeks: 4,
+      totalTrainingLoad: 144,
+      averageTrainingLoad: 36,
+      totalLoad: 192,
+      fitness: { before: 78, after: 74, delta: -4 },
+      fatigue: { before: 12, after: 26, delta: 14 },
+      attributeChanges: [
+        { attribute: 'passing', oldValue: 62, newValue: 63 },
+      ],
+      health: {
+        status: 'none',
+        bodyArea: null,
+        expectedRecoveryWeeks: null,
+      },
+      matches: {
+        appearances: 2,
+        minutes: 138,
+        averageRating: 7.2,
+        status: 'positive',
+      },
+      conclusion: '技术训练转化为稳定的比赛表现。',
+      nextStep: '保持技术重点，并安排恢复。',
+    });
+    const report = MonthlyReportSchema.parse({
+      monthKey: '2024-09',
+      facts: [],
+      attributeChanges: feedback.attributeChanges,
+      stateSummary: { morale: 60, form: 55, confidence: 58, fitness: 74, fatigue: 26 },
+      matchIds: [],
+      trainingFeedback: feedback,
+    });
+
+    expect(context.totalLoad).toBe(48.5);
+    expect(report.trainingFeedback?.matches.averageRating).toBe(7.2);
+  });
+
+  it('rejects unknown training feedback fields while accepting legacy reports', () => {
+    const feedback = TrainingFeedbackSchema.safeParse({
+      plan: { focus: 'technical', intensity: 'normal', positionFocus: null },
+      trainingWeeks: 0,
+      totalTrainingLoad: 0,
+      averageTrainingLoad: 0,
+      totalLoad: 0,
+      fitness: { before: 70, after: 70, delta: 0 },
+      fatigue: { before: 5, after: 5, delta: 0 },
+      attributeChanges: [],
+      health: { status: 'none', bodyArea: null, expectedRecoveryWeeks: null },
+      matches: { appearances: 0, minutes: 0, averageRating: null, status: 'no-appearance' },
+      conclusion: '没有完整训练反馈。',
+      nextStep: '继续观察。',
+      unexpected: true,
+    });
+    const legacyReport = MonthlyReportSchema.parse({
+      monthKey: '2024-09',
+      facts: [],
+      attributeChanges: [],
+      stateSummary: { morale: 60, form: 50, confidence: 50, fitness: 70, fatigue: 5 },
+      matchIds: [],
+    });
+
+    expect(feedback.success).toBe(false);
+    expect(legacyReport.trainingFeedback).toBeUndefined();
+  });
+
+  it('defaults the save report field for an old v2 save', () => {
+    const parsed = CareerSaveV2Schema.parse(createV2Save());
+
+    expect(parsed.lastMonthlyReport).toBeNull();
+  });
 });
+
 
 const createV2Save = () => ({
   schemaVersion: 2,

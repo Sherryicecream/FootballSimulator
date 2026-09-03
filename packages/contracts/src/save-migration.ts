@@ -8,6 +8,7 @@ import { RelationshipGraphSchema } from './person';
 import {
   CareerLedgerEntryV2Schema,
   MonthlyAdvanceCursorSchema,
+  MonthlyReportSchema,
   PlayerCurrentStateSchema,
   TrainingPlanSchema,
   YouthClubContextSchema,
@@ -28,6 +29,7 @@ export const CareerSaveV2Schema = z.strictObject({
   relationships: RelationshipGraphSchema,
   story: YouthStoryStateSchema,
   monthlyAdvance: MonthlyAdvanceCursorSchema,
+  lastMonthlyReport: MonthlyReportSchema.nullable().default(null),
   ledger: z.array(CareerLedgerEntryV2Schema),
   randomState: RandomStateSchema,
 });

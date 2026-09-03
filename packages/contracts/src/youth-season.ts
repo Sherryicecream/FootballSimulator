@@ -7,17 +7,62 @@ import {
   EventInteractionSchema,
 } from './event';
 import { ClubProfileSchema, AgentArchetypeSchema } from './clubs';
+import { AttributeChangeSchema } from './career';
 
 const IdSchema = z.string().min(1).max(60);
 const ScoreSchema = z.number().int().min(0).max(100);
 const IsoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
+export const TrainingFocusSchema = z.enum(['technical', 'position', 'physical', 'tactical', 'recovery']);
+export type TrainingFocus = z.infer<typeof TrainingFocusSchema>;
+export const TrainingIntensitySchema = z.enum(['light', 'normal', 'intense']);
+export type TrainingIntensity = z.infer<typeof TrainingIntensitySchema>;
+
 export const TrainingPlanSchema = z.strictObject({
-  focus: z.enum(['technical', 'position', 'physical', 'tactical', 'recovery']),
-  intensity: z.enum(['light', 'normal', 'intense']),
+  focus: TrainingFocusSchema,
+  intensity: TrainingIntensitySchema,
   positionFocus: PositionSchema.nullable(),
 });
 export type TrainingPlan = z.infer<typeof TrainingPlanSchema>;
+
+export const TrainingWeekContextSchema = z.strictObject({
+  focus: TrainingFocusSchema,
+  intensity: TrainingIntensitySchema,
+  trainingLoad: z.number().min(0).max(100),
+  totalLoad: z.number().min(0).max(150),
+});
+export type TrainingWeekContext = z.infer<typeof TrainingWeekContextSchema>;
+
+const StateDeltaSchema = z.strictObject({
+  before: ScoreSchema,
+  after: ScoreSchema,
+  delta: z.number().int().min(-100).max(100),
+});
+
+export const TrainingFeedbackSchema = z.strictObject({
+  plan: TrainingPlanSchema,
+  trainingWeeks: z.number().int().min(0).max(5),
+  totalTrainingLoad: z.number().min(0).max(500),
+  averageTrainingLoad: z.number().min(0).max(100),
+  totalLoad: z.number().min(0).max(750),
+  fitness: StateDeltaSchema,
+  fatigue: StateDeltaSchema,
+  attributeChanges: z.array(AttributeChangeSchema).max(20),
+  health: z.strictObject({
+    status: z.enum(['none', 'active', 'recovered']),
+    bodyArea: z.string().min(1).max(60).nullable(),
+    expectedRecoveryWeeks: z.number().int().min(0).max(52).nullable(),
+  }),
+  matches: z.strictObject({
+    appearances: z.number().int().min(0).max(20),
+    minutes: z.number().int().min(0).max(1800),
+    averageRating: z.number().min(1).max(10).nullable(),
+    status: z.enum(['positive', 'steady', 'fatigue-limited', 'injury-limited', 'no-appearance']),
+  }),
+  conclusion: z.string().min(1).max(220),
+  nextStep: z.string().min(1).max(220),
+});
+export type TrainingFeedback = z.infer<typeof TrainingFeedbackSchema>;
 
 export const PlayerCurrentStateSchema = z.strictObject({
   morale: ScoreSchema,
@@ -246,6 +291,7 @@ export const CareerLedgerEntryV2Schema = z.strictObject({
   participantIds: z.array(IdSchema),
   outcome: ChoiceOutcomeSummarySchema.optional(),
   matchContext: MatchContextSchema.optional(),
+  trainingContext: TrainingWeekContextSchema.optional(),
 });
 export type CareerLedgerEntryV2 = z.infer<typeof CareerLedgerEntryV2Schema>;
 
@@ -335,18 +381,13 @@ export type StoryProgressSnapshot = z.infer<typeof StoryProgressSnapshotSchema>;
 export const MonthlyReportSchema = z.strictObject({
   monthKey: z.string().regex(/^\d{4}-\d{2}$/),
   facts: z.array(CareerLedgerEntryV2Schema),
-  attributeChanges: z.array(
-    z.strictObject({
-      attribute: z.string().min(1),
-      oldValue: ScoreSchema,
-      newValue: ScoreSchema,
-    }),
-  ),
+  attributeChanges: z.array(AttributeChangeSchema),
   stateSummary: PlayerCurrentStateSchema.extend({
     fitness: ScoreSchema,
     fatigue: ScoreSchema,
   }),
   matchIds: z.array(IdSchema),
+  trainingFeedback: TrainingFeedbackSchema.optional(),
   momentum: MonthlyMomentumSchema.optional(),
   storyProgress: StoryProgressSnapshotSchema.optional(),
   matchdayMoments: z.array(MatchdayMomentSchema).max(5).optional(),
