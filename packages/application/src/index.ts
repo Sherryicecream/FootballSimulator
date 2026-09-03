@@ -38,5 +38,12 @@ export {
   declineRenewal,
 } from './use-cases/pro-flow';
 export type { AdvanceProMonthOutcome } from './use-cases/pro-flow';
-export { generateFreeAgentOffers, signTransfer, retire } from './use-cases/transfer-flow';
+export {
+  generateFreeAgentOffers,
+  requestCareerMarket,
+  returnFromLoan,
+  signMarketOffer,
+  signTransfer,
+  retire,
+} from './use-cases/transfer-flow';
 export { buildCareerReview } from '@football/simulation';

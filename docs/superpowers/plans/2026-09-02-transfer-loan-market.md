@@ -186,7 +186,7 @@ git commit -m "feat: generate permanent and loan market offers"
 - generateFreeAgentOffers、signTransfer、retire 保持旧签名；signTransfer 复用内部永久签约函数。
 - 下一赛季 ID 使用 pro- 加上上个 proSeason 开赛年份加一。签租借时清空已完成的旧 proSeason，避免上一赛季状态和下一赛季租借冲突。
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 在测试文件中定义 proOffseasonSave()（由现有职业 fixture 完成一个赛季）、proSeasonSave()、parentClubId 和 loanOfferId。添加：
 
@@ -214,17 +214,17 @@ it('非法阶段和过期报价不改变存档', () => {
 });
 ```
 
-- [ ] **Step 2: 运行失败测试**
+- [x] **Step 2: 运行失败测试**
 
 运行：pnpm vitest run packages/application/tests/use-cases/transfer-market.test.ts packages/application/tests/use-cases/contract-flow.test.ts
 
 预期：FAIL，因为新的市场入口、账本事实和 activeLoan 建立逻辑不存在。
 
-- [ ] **Step 3: 写最小 application 实现**
+- [x] **Step 3: 写最小 application 实现**
 
 添加下一赛季日期、市场派生 seed 和账本 upsert helper。永久签约关闭旧的未结束 clubHistory，写入新合同、professional-contract、proSeason: null、清空报价和 transfer-signed 事实；海外状态按新合同更新。租借签约把当前合同复制为母队字段，把报价俱乐部写为目标队，保存开始/回归日期和目标队一年期信息，保留母队合同和母队未结束履历；重复请求同类市场不重复追加事实。
 
-- [ ] **Step 4: 运行通过测试并提交**
+- [x] **Step 4: 运行通过测试并提交**
 
 运行同一 Vitest 命令，预期市场、过期报价、重复请求、自由球员兼容测试 PASS。
 
