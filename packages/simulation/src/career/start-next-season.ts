@@ -92,11 +92,13 @@ export const startNextSeason = <S extends CareerSaveV3Like>(
       nextWeekIndex: 0,
       totalWeeks: 4,
       status: 'idle',
+      feedbackStartHealth: null,
       developmentAccrual: {},
       factIds: [],
       matchIds: [],
       interactiveEventCount: 0,
     },
+    lastMonthlyReport: null,
     seasonStats: {
       appearances: 0,
       goals: 0,

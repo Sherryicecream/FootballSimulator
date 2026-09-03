@@ -18,6 +18,7 @@ import {
   buildMonthlyMomentum,
   buildMatchdayMoments,
   buildStoryProgress,
+  buildTrainingFeedback,
   buildDepthChart,
   buildRenewalOffer,
   createLeagueFixtures,
@@ -149,6 +150,12 @@ export const startProfessionalSeason = <S extends CareerSaveV4Like>(
     participantIds: [],
   };
 
+  const startingHealth = {
+    ...save.health,
+    fitness: Math.max(70, save.health.fitness),
+    fatigue: Math.min(20, save.health.fatigue),
+    recentLoad: 0,
+  };
   return {
     ...save,
     contract: activeLoan ? contract : { ...contract, clubTier: effectiveTier },
@@ -193,14 +200,11 @@ export const startProfessionalSeason = <S extends CareerSaveV4Like>(
       factIds: [],
       matchIds: [],
       interactiveEventCount: 0,
+      feedbackStartHealth: startingHealth,
     },
     pendingOffers: [],
-    health: {
-      ...save.health,
-      fitness: Math.max(70, save.health.fitness),
-      fatigue: Math.min(20, save.health.fatigue),
-      recentLoad: 0,
-    },
+    lastMonthlyReport: null,
+    health: startingHealth,
     ledger: [...save.ledger, fact],
   };
 };
@@ -241,6 +245,9 @@ export const advanceProMonth = <S extends CareerSaveV4Like>(
   const resuming =
     initialSave.monthlyAdvance.monthKey === monthKey &&
     ['advancing', 'awaiting-decision'].includes(initialSave.monthlyAdvance.status);
+  const monthStartHealth = resuming
+    ? (initialSave.monthlyAdvance.feedbackStartHealth ?? initialSave.health)
+    : initialSave.health;
   let save: S = {
     ...initialSave,
     monthlyAdvance: {
@@ -251,6 +258,7 @@ export const advanceProMonth = <S extends CareerSaveV4Like>(
       factIds: resuming ? initialSave.monthlyAdvance.factIds : [],
       matchIds: resuming ? initialSave.monthlyAdvance.matchIds : [],
       interactiveEventCount: resuming ? initialSave.monthlyAdvance.interactiveEventCount : 0,
+      feedbackStartHealth: monthStartHealth,
     },
   };
 
@@ -332,11 +340,19 @@ export const advanceProMonth = <S extends CareerSaveV4Like>(
       factIds: [],
       matchIds: [],
       interactiveEventCount: 0,
+      feedbackStartHealth: null,
     },
     ledger: [...save.ledger, settlementFact],
   };
   const monthFactIds = [...initialSave.monthlyAdvance.factIds, ...factsDuringMonth];
   const reportFacts = save.ledger.filter(({ id }) => monthFactIds.includes(id));
+  const trainingFeedback = buildTrainingFeedback({
+    plan: save.trainingPlan,
+    facts: reportFacts,
+    startHealth: monthStartHealth,
+    endHealth: save.health,
+    attributeChanges,
+  });
   const report: MonthlyReport = {
     monthKey,
     facts: reportFacts,
@@ -347,10 +363,12 @@ export const advanceProMonth = <S extends CareerSaveV4Like>(
       fatigue: save.health.fatigue,
     },
     matchIds,
+    ...(trainingFeedback ? { trainingFeedback } : {}),
     momentum: buildMonthlyMomentum(reportFacts, attributeChanges),
     storyProgress: buildStoryProgress(save, events),
     matchdayMoments: buildMatchdayMoments(reportFacts),
   };
+  save = { ...save, lastMonthlyReport: report };
   void mergeDevelopmentAccrual;
   return {
     status: save.proSeason!.completed ? 'season-complete' : 'month-complete',

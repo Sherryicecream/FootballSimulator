@@ -41,6 +41,7 @@ describe('休赛期阶段机', () => {
     let save = finishSeason(createSave(42));
     const completed = completeYouthSeason(save);
     save = completed.save;
+    expect(save.lastMonthlyReport).not.toBeNull();
     expect(save.seasonHistory).toHaveLength(1);
     expect(save.seasonHistory[0]!.seasonId).toBe(save.season.id);
 
@@ -64,6 +65,7 @@ describe('休赛期阶段机', () => {
     expect(next.seasonHistory).toHaveLength(1);
     expect(next.ledger.some(({ summary }) => summary.includes('开启新赛季'))).toBe(true);
     expect(next.monthlyAdvance.status).toBe('idle');
+    expect(next.lastMonthlyReport).toBeNull();
   });
 
   it('休赛期结算与下赛季生成在同种子下完全一致', () => {

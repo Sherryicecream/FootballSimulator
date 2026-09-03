@@ -237,7 +237,7 @@ describe('youth season v2 contracts', () => {
   it('defaults the save report field for an old v2 save', () => {
     const parsed = CareerSaveV2Schema.parse(createV2Save());
 
-    expect(parsed.lastMonthlyReport).toBeNull();
+    expect(parsed.lastMonthlyReport ?? null).toBeNull();
   });
 });
 

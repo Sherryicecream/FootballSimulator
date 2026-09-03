@@ -434,6 +434,24 @@ describe('职业赛季流程', () => {
     ).toThrow(/阶段/);
   });
 
+  it('月报保存训练反馈并保留职业比赛联系', () => {
+    const initial = startProfessionalSeason(signedProSave(), content.clubs);
+    const outcome = advanceProMonth(initial, content.clubs, []);
+
+    expect(outcome.status).toBe('month-complete');
+    if (outcome.status !== 'month-complete') return;
+    const feedback = outcome.report.trainingFeedback;
+    expect(feedback).toEqual(
+      expect.objectContaining({
+        matches: expect.objectContaining({ appearances: expect.any(Number) }),
+      }),
+    );
+    expect(feedback?.trainingWeeks).toBeGreaterThanOrEqual(4);
+    expect(feedback?.trainingWeeks).toBeLessThanOrEqual(5);
+    expect(feedback?.totalTrainingLoad).toBe((feedback?.trainingWeeks ?? 0) * 36);
+    expect(outcome.save.lastMonthlyReport).toEqual(outcome.report);
+  });
+
   it('月度推进：青训赛季月份推进与赛季完成', () => {
     let save = startProfessionalSeason(signedProSave(), content.clubs);
     let guard = 0;

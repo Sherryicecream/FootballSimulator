@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CareerSaveV2, YouthAcademyProfile } from '@football/contracts';
 import type { EventDefinition } from '@football/contracts';
+import { simulateYouthWeek } from '@football/simulation';
 import { advanceCareerMonth } from '../../src/use-cases/advance-career-month';
 
 describe('advanceCareerMonth', () => {
@@ -33,6 +34,13 @@ describe('advanceCareerMonth', () => {
 
     expect(outcome.status).toBe('month-complete');
     if (outcome.status !== 'month-complete') return;
+    const feedback = outcome.report.trainingFeedback;
+    expect(feedback).toEqual(expect.objectContaining({ averageTrainingLoad: 36 }));
+    expect(feedback?.trainingWeeks).toBeGreaterThanOrEqual(4);
+    expect(feedback?.trainingWeeks).toBeLessThanOrEqual(5);
+    expect(feedback?.totalTrainingLoad).toBe((feedback?.trainingWeeks ?? 0) * 36);
+    expect(outcome.save.lastMonthlyReport).toEqual(outcome.report);
+    expect(outcome.save.monthlyAdvance.feedbackStartHealth).toBeNull();
     expect(outcome.save.season.currentMonth).toBe('2024-10');
     expect(outcome.save.season.fixtures[0]?.status).toBe('played');
     expect(outcome.report.matchIds).toEqual(['match-fixture-1', 'match-fixture-2']);
@@ -53,6 +61,34 @@ describe('advanceCareerMonth', () => {
     ).toBe(true);
     expect(outcome.save.health.fatigue).toBeGreaterThan(0);
     expect(outcome.save.monthlyAdvance.interactiveEventCount).toBe(0);
+  });
+
+  it('从月内中断恢复时沿用月初健康基线并与完整推进一致', () => {
+    const initial = createSave(73);
+    const firstWeek = simulateYouthWeek(initial, academies);
+    const paused = {
+      ...firstWeek.save,
+      monthlyAdvance: {
+        ...firstWeek.save.monthlyAdvance,
+        monthKey: initial.season.currentMonth,
+        nextWeekIndex: 1,
+        status: 'awaiting-decision' as const,
+        factIds: firstWeek.facts.map(({ id }) => id),
+        matchIds: firstWeek.matchResult ? [firstWeek.matchResult.id] : [],
+        feedbackStartHealth: initial.health,
+      },
+    };
+
+    const resumed = advanceCareerMonth(paused, academies);
+    const complete = advanceCareerMonth(initial, academies);
+
+    expect(resumed.status).toBe('month-complete');
+    expect(complete.status).toBe('month-complete');
+    if (resumed.status === 'awaiting-decision' || complete.status === 'awaiting-decision') return;
+    expect(resumed.report.trainingFeedback).toEqual(complete.report.trainingFeedback);
+    expect(resumed.report.attributeChanges).toEqual(complete.report.attributeChanges);
+    expect(resumed.save.health).toEqual(complete.save.health);
+    expect(resumed.save.player).toEqual(complete.save.player);
   });
 
   it('runs a complete no-decision season for 100 deterministic seeds without illegal state', () => {

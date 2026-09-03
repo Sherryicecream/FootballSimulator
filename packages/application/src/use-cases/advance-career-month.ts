@@ -13,6 +13,7 @@ import {
   buildMatchdayMoments,
   pickYouthEventForWeek,
   buildMonthlyMomentum,
+  buildTrainingFeedback,
   buildStoryProgress,
   settleMonthlyDevelopment,
   simulateYouthWeek,
@@ -52,6 +53,9 @@ export const advanceCareerMonth = <
   const resuming =
     initialSave.monthlyAdvance.monthKey === monthKey &&
     ['advancing', 'awaiting-decision'].includes(initialSave.monthlyAdvance.status);
+  const monthStartHealth = resuming
+    ? (initialSave.monthlyAdvance.feedbackStartHealth ?? initialSave.health)
+    : initialSave.health;
   let save: S = {
     ...initialSave,
     monthlyAdvance: {
@@ -62,6 +66,7 @@ export const advanceCareerMonth = <
       factIds: resuming ? initialSave.monthlyAdvance.factIds : [],
       matchIds: resuming ? initialSave.monthlyAdvance.matchIds : [],
       interactiveEventCount: resuming ? initialSave.monthlyAdvance.interactiveEventCount : 0,
+      feedbackStartHealth: monthStartHealth,
     },
   };
 
@@ -134,11 +139,19 @@ export const advanceCareerMonth = <
       factIds: [],
       matchIds: [],
       interactiveEventCount: 0,
+      feedbackStartHealth: null,
     },
     ledger: [...save.ledger, settlementFact, ...pathway.facts],
     randomState: { ...save.randomState, sequencePosition: pathwayRng.getPosition() },
   };
   const reportFacts = [...facts, settlementFact, ...pathway.facts];
+  const trainingFeedback = buildTrainingFeedback({
+    plan: save.trainingPlan,
+    facts: reportFacts,
+    startHealth: monthStartHealth,
+    endHealth: save.health,
+    attributeChanges: settlement.attributeChanges,
+  });
   const report: MonthlyReport = {
     monthKey,
     facts: reportFacts,
@@ -149,10 +162,12 @@ export const advanceCareerMonth = <
       fatigue: save.health.fatigue,
     },
     matchIds,
+    ...(trainingFeedback ? { trainingFeedback } : {}),
     momentum: buildMonthlyMomentum(reportFacts, settlement.attributeChanges),
     matchdayMoments: buildMatchdayMoments(reportFacts),
     storyProgress: buildStoryProgress(save, events),
   };
+  save = { ...save, lastMonthlyReport: report };
   return { status: save.season.completed ? 'season-complete' : 'month-complete', save, report };
 };
 

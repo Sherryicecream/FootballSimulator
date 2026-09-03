@@ -7,6 +7,7 @@ import {
   EventInteractionSchema,
 } from './event';
 import { ClubProfileSchema, AgentArchetypeSchema } from './clubs';
+import { HealthStateSchema } from './health';
 import { AttributeChangeSchema } from './career';
 
 const IdSchema = z.string().min(1).max(60);
@@ -170,6 +171,7 @@ export const MonthlyAdvanceCursorSchema = z.strictObject({
   factIds: z.array(IdSchema).default([]),
   matchIds: z.array(IdSchema).default([]),
   interactiveEventCount: z.number().int().min(0).max(2).default(0),
+  feedbackStartHealth: HealthStateSchema.nullable().optional(),
 });
 export type MonthlyAdvanceCursor = z.infer<typeof MonthlyAdvanceCursorSchema>;
 
