@@ -8,6 +8,7 @@ import { SceneBanner } from '../design-system/SceneBanner';
 import { CurrentStateBadges } from './CurrentStateBadges';
 import { StoryProgressPanel } from './StoryProgressPanel';
 import { MatchdayRhythmPanel } from './MatchdayRhythmPanel';
+import { TrainingFeedbackPanel } from './TrainingFeedbackPanel';
 import { FootballGlyph } from '../design-system/FootballGlyph';
 import type { ProCupState } from '@football/contracts';
 import {
@@ -320,6 +321,9 @@ export function ProDashboard({
                 </p>
               )}
             </section>
+            {report.trainingFeedback && (
+              <TrainingFeedbackPanel feedback={report.trainingFeedback} />
+            )}
             <MonthlyMomentumPanel monthKey={report.monthKey} momentum={report.momentum} />
             <MatchdayRhythmPanel moments={report.matchdayMoments ?? []} />
             <StoryProgressPanel progress={report.storyProgress} />

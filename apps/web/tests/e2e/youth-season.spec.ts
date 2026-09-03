@@ -8,6 +8,8 @@ test.describe('Youth season monthly flow', () => {
     await resolveUntilDashboard(page);
     await expect(page.getByLabel('月报')).toBeVisible();
     await expect(page.getByLabel('本月节奏')).toBeVisible();
+    await expect(page.getByRole('region', { name: '训练回执' })).toBeVisible();
+    await expect(page.getByText('训练负荷总计')).toBeVisible();
     await expect(page.getByTestId('scene-art')).toBeVisible();
     await expect(page.getByRole('status', { name: /体能/ })).toBeVisible();
     await expect(page.getByRole('status', { name: /教练评价/ })).toBeVisible();
@@ -58,6 +60,8 @@ test.describe('Youth season monthly flow', () => {
     await resolveUntilDashboard(page);
     await expect(page.getByLabel('月报')).toBeVisible();
     await expect(page.getByLabel('本月节奏')).toBeVisible();
+    await expect(page.getByRole('region', { name: '训练回执' })).toBeVisible();
+    await expect(page.getByText('训练负荷总计')).toBeVisible();
     await expect(page.getByTestId('scene-art')).toBeVisible();
     await expect(page.getByRole('status', { name: /士气/ })).toBeVisible();
     await expectNoHorizontalOverflow(page);

@@ -15,6 +15,7 @@ import { SceneBanner } from '../design-system/SceneBanner';
 import { CurrentStateBadges } from './CurrentStateBadges';
 import { StoryProgressPanel } from './StoryProgressPanel';
 import { MatchdayRhythmPanel } from './MatchdayRhythmPanel';
+import { TrainingFeedbackPanel } from './TrainingFeedbackPanel';
 
 interface CareerDashboardProps {
   save: CareerSaveV4Like;
@@ -129,6 +130,9 @@ export function CareerDashboard({
             </p>
           )}
         </section>
+      )}
+      {report?.trainingFeedback && !outcome && (
+        <TrainingFeedbackPanel feedback={report.trainingFeedback} />
       )}
       {report && !outcome && (
         <MonthlyMomentumPanel monthKey={report.monthKey} momentum={report.momentum} />

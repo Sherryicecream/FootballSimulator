@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { App } from '../../src/app/App';
 import { createCareerSave } from '@football/application';
 import { migrateCareerSaveV5 } from '@football/contracts';
-import type { CareerSave } from '@football/contracts';
+import type { CareerSave, MonthlyReport } from '@football/contracts';
 
 // Mock localStorage for persistence
 const localStorageMock = (() => {
@@ -95,6 +95,31 @@ describe('App', () => {
     expect(screen.queryByRole('button', { name: '返回仪表盘' })).toBeNull();
   });
 
+  it('restores the latest monthly report from a saved career', async () => {
+    const migrated = migrateCareerSaveV5(
+      createCareerSave({
+        playerName: '林河',
+        hometown: '上海',
+        primaryPosition: 'CENTER_BACK',
+        preferredFoot: 'RIGHT',
+        regionId: 'shanghai',
+        seed: 42,
+      }),
+    );
+    const lastMonthlyReport: MonthlyReport = {
+      monthKey: '2024-09',
+      facts: [],
+      attributeChanges: [],
+      stateSummary: { morale: 60, form: 55, confidence: 58, fitness: 72, fatigue: 14 },
+      matchIds: [],
+    };
+    storeSave({ ...migrated, lastMonthlyReport });
+
+    render(<App />);
+
+    expect(await screen.findByRole('region', { name: '月报' })).toBeDefined();
+    expect(screen.getByText('2024-09 月报')).toBeVisible();
+  });
   it('restores an unacknowledged event feedback before opening the dashboard', async () => {
     const migrated = migrateCareerSaveV5(
       createCareerSave({

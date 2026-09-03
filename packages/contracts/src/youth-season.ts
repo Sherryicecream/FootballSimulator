@@ -8,16 +8,20 @@ import {
 } from './event';
 import { ClubProfileSchema, AgentArchetypeSchema } from './clubs';
 import { HealthStateSchema } from './health';
-import { AttributeChangeSchema } from './career';
+import { AttributeChangeSchema, TrainingIntensitySchema } from './career';
 
 const IdSchema = z.string().min(1).max(60);
 const ScoreSchema = z.number().int().min(0).max(100);
 const IsoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
-export const TrainingFocusSchema = z.enum(['technical', 'position', 'physical', 'tactical', 'recovery']);
+export const TrainingFocusSchema = z.enum([
+  'technical',
+  'position',
+  'physical',
+  'tactical',
+  'recovery',
+]);
 export type TrainingFocus = z.infer<typeof TrainingFocusSchema>;
-export const TrainingIntensitySchema = z.enum(['light', 'normal', 'intense']);
-export type TrainingIntensity = z.infer<typeof TrainingIntensitySchema>;
 
 export const TrainingPlanSchema = z.strictObject({
   focus: TrainingFocusSchema,

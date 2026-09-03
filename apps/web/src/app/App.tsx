@@ -107,6 +107,7 @@ export function App() {
         const result = await savePort.load(slot);
         if (result.status === 'loaded') {
           const restored = loadCareer(result.save, youthContent);
+          setReport(restored.lastMonthlyReport ?? null);
           if (restored.story.pendingFeedback) {
             setSave(restored);
             setStep('event-feedback');

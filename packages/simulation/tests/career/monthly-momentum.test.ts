@@ -29,6 +29,21 @@ describe('monthly momentum', () => {
     expect(momentum.title).toContain('低谷期的谈话');
     expect(momentum.nextFocus).toContain('后续');
   });
+  it('keeps the persisted beat timeline within the monthly report contract', () => {
+    const facts: CareerLedgerEntryV2[] = Array.from({ length: 6 }, (_, index) =>
+      fact(
+        `training-2024-W0${index + 1}`,
+        `2024-W0${index + 1}`,
+        'training',
+        'technical/normal，周负荷 36',
+      ),
+    );
+
+    const momentum = buildMonthlyMomentum(facts, []);
+
+    expect(momentum.beats).toHaveLength(5);
+    expect(momentum.beats.at(-1)?.weekKey).toBe('2024-W06');
+  });
 });
 
 const fact = (

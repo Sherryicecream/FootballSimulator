@@ -32,6 +32,7 @@ export const buildMonthlyMomentum = (
   const beats = [...groupFactsByWeek(facts).entries()]
     .sort(([left], [right]) => compareWeekKeys(left, right))
     .map(([weekKey, weekFacts]) => buildBeat(weekKey, weekFacts));
+  const visibleBeats = beats.slice(-5);
   const highlight = beats.reduce<MonthlyBeat | null>(
     (best, beat) => (!best || KIND_PRIORITY[beat.kind] > KIND_PRIORITY[best.kind] ? beat : best),
     null,
@@ -51,7 +52,7 @@ export const buildMonthlyMomentum = (
     title: headlineFor(anchor),
     summary: summaryFor(anchor, beats.length, attributeChanges),
     nextFocus: nextFocusFor(anchor),
-    beats,
+    beats: visibleBeats,
   };
 };
 
