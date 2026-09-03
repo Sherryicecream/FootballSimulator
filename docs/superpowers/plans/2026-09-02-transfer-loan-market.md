@@ -407,23 +407,23 @@ git commit -m "test: cover loan career slice in browser"
 
 - 报告增加 permanentTransferRate、loanRate、loanReturnRate、loanSeasonAppearanceRate、overseasMoveRate。
 - loanReturnRate 分母为发生过租借的生涯；loanSeasonAppearanceRate 分母为完成租借赛季的生涯；前两类市场率分母分别是请求对应市场的生涯；overseasMoveRate 分母为所有转会签约。
-- 平衡策略固定为：有合同先请求租借，无报价再请求永久市场，收到报价选第一份，租借完成后继续回归母队，30 岁后按现有规则退役；策略只用于模拟，不写入 UI。
+- 平衡策略固定为：有合同时按种子在租借、永久转会和留队三条路径中选择；进入市场后收到报价选第一份，租借完成后继续回归母队，30 岁后按现有规则退役。策略只用于模拟，不写入 UI。
 
-- [ ] **Step 1: 写失败指标断言**
+- [x] **Step 1: 写失败指标断言**
 
 在现有 balance metrics 测试位置断言五个字段均为非负，并添加不变量：完成租借生涯至少有一条 loanHistory，回归后的 activeLoan === null，母队合同 ID 不改变。
 
-- [ ] **Step 2: 运行失败平衡检查**
+- [x] **Step 2: 运行失败平衡检查**
 
 运行：pnpm balance:youth -- --runs 20 --seed-start 1 --output artifacts/youth-balance-m10-transfer-loan-smoke.json
 
 预期：FAIL，报告没有新指标，生命周期没有使用新的职业市场路径。
 
-- [ ] **Step 3: 写最小平衡实现**
+- [x] **Step 3: 写最小平衡实现**
 
 在 LifecycleOutcome 保存市场请求、签约、租借完成、租借出场和海外流动计数；汇总时使用上述分母。职业模拟只通过 application 用例推进，逐月处理事件，并读取 loanHistory、proSeasonStats、clubHistory 与 contract 校验不变量。
 
-- [ ] **Step 4: 运行完整门禁**
+- [x] **Step 4: 运行完整门禁**
 
 按顺序运行：
 
@@ -439,7 +439,7 @@ pnpm balance:youth -- --runs 1000 --seed-start 1 --output artifacts/youth-balanc
 
 记录每条命令的实际结果；如果根 pnpm test 仍只因既有 balance Vitest 超时而未完成，同时保留直接 1,000 生涯命令的结果，并在 roadmap 区分断言通过与测试超时。
 
-- [ ] **Step 5: 更新进度并提交**
+- [x] **Step 5: 更新进度并提交**
 
 在 docs/ROADMAP.md 追加实际测试文件/用例数、类型/规范/构建、E2E、1,000 生涯完成率及五个新指标；未完成内容不得写成已完成。
 

@@ -22,7 +22,9 @@ import {
   completeProfessionalSeason,
   declineRenewal as declineRenewalUse,
   generateFreeAgentOffers,
+  requestCareerMarket,
   retire as retireUse,
+  signMarketOffer,
   signTransfer,
   startProfessionalSeason,
   submitNationalTeamDecision,
@@ -65,6 +67,16 @@ type LifecycleOutcome = {
   cupHonours: number;
   promotions: number;
   relegations: number;
+  permanentMarketRequests: number;
+  permanentMarketSignings: number;
+  loanMarketRequests: number;
+  loanSignings: number;
+  loanReturns: number;
+  loanSeasonAppearances: number;
+  loanHistoryCount: number;
+  activeLoanAtEnd: boolean;
+  loanContractStable: boolean;
+  overseasTransferCount: number;
 };
 
 export const runYouthSeasons = (runs: number, seedStart = 1): YouthBalanceReport => {
@@ -184,6 +196,16 @@ export const runYouthSeasons = (runs: number, seedStart = 1): YouthBalanceReport
       proCupHonours: lifecycle.cupHonours,
       proPromotions: lifecycle.promotions,
       proRelegations: lifecycle.relegations,
+      permanentMarketRequests: lifecycle.permanentMarketRequests,
+      permanentMarketSignings: lifecycle.permanentMarketSignings,
+      loanMarketRequests: lifecycle.loanMarketRequests,
+      loanSignings: lifecycle.loanSignings,
+      loanReturns: lifecycle.loanReturns,
+      loanSeasonAppearances: lifecycle.loanSeasonAppearances,
+      loanHistoryCount: lifecycle.loanHistoryCount,
+      activeLoanAtEnd: lifecycle.activeLoanAtEnd,
+      loanContractStable: lifecycle.loanContractStable,
+      overseasTransferCount: lifecycle.overseasTransferCount,
       weightedAbility: weightedAbility(
         final.save.player.identity.primaryPosition,
         final.save.player.attributes,
@@ -206,6 +228,33 @@ export const runYouthSeasons = (runs: number, seedStart = 1): YouthBalanceReport
       graduatedMetrics.filter(({ contractPromiseKind }) => contractPromiseKind === kind).length /
         Math.max(1, graduatedMetrics.length),
     ]),
+  );
+  const ratio = (numerator: number, denominator: number): number =>
+    numerator / Math.max(1, denominator);
+  const permanentMarketCareers = metrics.filter(
+    ({ permanentMarketRequests }) => permanentMarketRequests > 0,
+  ).length;
+  const permanentMarketTransfers = metrics.filter(
+    ({ permanentMarketSignings }) => permanentMarketSignings > 0,
+  ).length;
+  const loanMarketCareers = metrics.filter(
+    ({ loanMarketRequests }) => loanMarketRequests > 0,
+  ).length;
+  const loanSigningCareers = metrics.filter(({ loanSignings }) => loanSignings > 0).length;
+  const returnedLoanCareers = metrics.filter(
+    ({ loanSignings, loanReturns }) => loanSignings > 0 && loanReturns > 0,
+  ).length;
+  const completedLoanCareers = metrics.filter(
+    ({ loanHistoryCount }) => loanHistoryCount > 0,
+  ).length;
+  const loanAppearanceCareers = metrics.filter(
+    ({ loanHistoryCount, loanSeasonAppearances }) =>
+      loanHistoryCount > 0 && loanSeasonAppearances > 0,
+  ).length;
+  const transferSignings = metrics.reduce((sum, { transferCount }) => sum + transferCount, 0);
+  const overseasMoveSignings = metrics.reduce(
+    (sum, { overseasTransferCount }) => sum + overseasTransferCount,
+    0,
   );
   return {
     runs,
@@ -253,6 +302,11 @@ export const runYouthSeasons = (runs: number, seedStart = 1): YouthBalanceReport
       uniqueEventCombinations: new Set(
         metrics.map(({ decisionEventIds }) => [...new Set(decisionEventIds)].sort().join('|')),
       ).size,
+      permanentTransferRate: ratio(permanentMarketTransfers, permanentMarketCareers),
+      loanRate: ratio(loanSigningCareers, loanMarketCareers),
+      loanReturnRate: ratio(returnedLoanCareers, loanSigningCareers),
+      loanSeasonAppearanceRate: ratio(loanAppearanceCareers, completedLoanCareers),
+      overseasMoveRate: ratio(overseasMoveSignings, transferSignings),
       graduationRate: graduatedMetrics.length / runs,
       underageGraduationRate:
         graduatedMetrics.filter(({ graduationAge }) => graduationAge != null && graduationAge < 18)
@@ -375,6 +429,16 @@ const playLifecycle = (
     leagueAppearances: 0,
     severeInjuries: 0,
     freeAgent: false,
+    permanentMarketRequests: 0,
+    permanentMarketSignings: 0,
+    loanMarketRequests: 0,
+    loanSignings: 0,
+    loanReturns: 0,
+    loanSeasonAppearances: 0,
+    loanHistoryCount: 0,
+    activeLoanAtEnd: false,
+    loanContractStable: true,
+    overseasTransferCount: 0,
   };
   for (let season = 1; season <= 3; season += 1) {
     if (!save.season.completed) throw new Error('生命周期要求进入休赛期的存档已完成赛季');
@@ -456,6 +520,16 @@ const playLifecycle = (
           cupHonours: pro.cupHonours,
           promotions: pro.promotions,
           relegations: pro.relegations,
+          permanentMarketRequests: pro.permanentMarketRequests,
+          permanentMarketSignings: pro.permanentMarketSignings,
+          loanMarketRequests: pro.loanMarketRequests,
+          loanSignings: pro.loanSignings,
+          loanReturns: pro.loanReturns,
+          loanSeasonAppearances: pro.loanSeasonAppearances,
+          loanHistoryCount: pro.loanHistoryCount,
+          activeLoanAtEnd: pro.activeLoanAtEnd,
+          loanContractStable: pro.loanContractStable,
+          overseasTransferCount: pro.overseasTransferCount,
         };
       }
     }
@@ -551,6 +625,16 @@ const playProfessionalLife = (
   promotions: number;
   relegations: number;
   overseasSpent: boolean;
+  permanentMarketRequests: number;
+  permanentMarketSignings: number;
+  loanMarketRequests: number;
+  loanSignings: number;
+  loanReturns: number;
+  loanSeasonAppearances: number;
+  loanHistoryCount: number;
+  activeLoanAtEnd: boolean;
+  loanContractStable: boolean;
+  overseasTransferCount: number;
 } => {
   let save = signed;
   const professionalClubs = [...content.clubs, ...(content.overseasClubs ?? [])];
@@ -571,6 +655,14 @@ const playProfessionalLife = (
   let promotions = 0;
   let relegations = 0;
   let overseasSpent = signed.overseasSince !== null;
+  let permanentMarketRequests = 0;
+  let permanentMarketSignings = 0;
+  let loanMarketRequests = 0;
+  let loanSignings = 0;
+  let loanReturns = 0;
+  let loanSeasonAppearances = 0;
+  let loanContractStable = true;
+  let overseasTransferCount = 0;
   let freeAgentWindows = 0;
   const retirementAgeTarget = 29 + (signed.randomState.seed % 3);
 
@@ -594,6 +686,7 @@ const playProfessionalLife = (
             right.clubTier > left.clubTier ? right : left,
           );
         save = signTransfer(save, target.id);
+        if (target.overseas) overseasTransferCount += 1;
         overseasSpent = overseasSpent || save.overseasSince !== null;
         freeAgentWindows = 0;
         continue;
@@ -609,6 +702,50 @@ const playProfessionalLife = (
     if (phase !== 'professional-contract' && phase !== 'pro-offseason') {
       break;
     }
+    if (phase === 'pro-offseason') {
+      if (save.player.age >= 30 && save.player.age >= retirementAgeTarget) {
+        if (save.pendingOffers.length > 0) {
+          save = declineRenewalUse(save);
+        } else {
+          save = retireUse(save, save.proSeason?.endDate ?? '2040-06-30');
+        }
+        continue;
+      }
+      if (save.pendingOffers[0]?.id.startsWith('renewal-')) {
+        const contractEndYear = Number(save.proSeason?.endDate.slice(0, 4) ?? 0);
+        const shouldStay = (contractEndYear + save.player.age) % 3 !== 0;
+        if (!shouldStay) {
+          save = declineRenewalUse(save);
+          continue;
+        }
+        save = acceptRenewal(save);
+      }
+      const marketPath = (signed.randomState.seed + save.player.age) % 10;
+      const loanPathAvailable = marketPath <= 2;
+      if (loanPathAvailable) {
+        loanMarketRequests += 1;
+        const loanMarket = requestCareerMarket(save, content, 'loan');
+        if (loanMarket.pendingOffers.length > 0) {
+          loanSignings += 1;
+          save = signMarketOffer(loanMarket, loanMarket.pendingOffers[0]!.id);
+          continue;
+        }
+      }
+      if (marketPath === 3) {
+        permanentMarketRequests += 1;
+        const permanentMarket = requestCareerMarket(save, content, 'permanent');
+        if (permanentMarket.pendingOffers.length > 0) {
+          permanentMarketSignings += 1;
+          transferCount += 1;
+          if (permanentMarket.pendingOffers[0]!.overseas) overseasTransferCount += 1;
+          save = signMarketOffer(permanentMarket, permanentMarket.pendingOffers[0]!.id);
+          overseasSpent = overseasSpent || save.overseasSince !== null;
+          continue;
+        }
+        save = permanentMarket;
+      }
+    }
+    const loanForSeason = save.activeLoan;
     save = startProfessionalSeason(save, professionalClubs);
     overseasSpent = overseasSpent || save.overseasSince !== null;
     let guard = 0;
@@ -625,13 +762,27 @@ const playProfessionalLife = (
     if (!save.proSeason!.completed) throw new Error('职业赛季未在保护步数内完成');
     const settled = completeProfessionalSeason(save);
     save = settled.save;
+    if (loanForSeason) {
+      const loanEntry = save.loanHistory.at(-1);
+      if (!loanEntry || loanEntry.seasonId !== loanForSeason.seasonId) {
+        throw new Error('租借赛季 ' + loanForSeason.seasonId + ' 未写入租借履历');
+      }
+      loanReturns += 1;
+      loanSeasonAppearances += loanEntry.appearances;
+      loanContractStable =
+        loanContractStable && save.contract?.clubId === loanForSeason.parentClubId;
+    }
     cupAppearances += save.proSeasonStats.cupAppearances ?? 0;
     const honours = save.seasonHistory.at(-1)?.honours ?? [];
     cupHonours += honours.filter(({ kind }) => kind === 'cup-champion').length;
     promotions += honours.filter(({ kind }) => kind === 'promotion').length;
     relegations += honours.filter(({ kind }) => kind === 'relegation').length;
     if (save.story.pendingEvent?.storyId === 'national-team-debut') {
-      save = clearEventFeedback(submitNationalTeamDecision(save, 'accept-national-team'));
+      const choiceId =
+        (save.randomState.seed + save.player.age) % 2 === 0
+          ? 'accept-national-team'
+          : 'decline-national-team';
+      save = clearEventFeedback(submitNationalTeamDecision(save, choiceId));
     }
     seasonsPlayed += 1;
     totalMinutes += save.proSeasonStats.minutes;
@@ -705,6 +856,16 @@ const playProfessionalLife = (
     cupHonours,
     promotions,
     relegations,
+    permanentMarketRequests,
+    permanentMarketSignings,
+    loanMarketRequests,
+    loanSignings,
+    loanReturns,
+    loanSeasonAppearances,
+    loanHistoryCount: save.loanHistory.length,
+    activeLoanAtEnd: Boolean(save.activeLoan),
+    loanContractStable,
+    overseasTransferCount,
   };
 };
 

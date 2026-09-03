@@ -46,7 +46,8 @@ describe('youth balance runner', () => {
 
     // M6 职业期三连季校准范围（首轮工程校准）
     expect(report.summary.proPromiseKeptRate).toBeGreaterThanOrEqual(0.7);
-    expect(report.summary.proPromiseKeptRate).toBeLessThanOrEqual(0.95);
+    // M10 市场合同允许无出场承诺，兑现率上沿放宽但仍要求不超过 99%。
+    expect(report.summary.proPromiseKeptRate).toBeLessThanOrEqual(0.99);
     expect(report.summary.proStarterRate).toBeGreaterThanOrEqual(0.15);
     // 首发率按全部样本统计；年龄封顶后更多球员进入职业期，随毕业率上沿同步放宽。
     expect(report.summary.proStarterRate).toBeLessThanOrEqual(0.65);
@@ -75,5 +76,28 @@ describe('youth balance runner', () => {
     expect(report.metrics[0]).toEqual(
       expect.objectContaining({ proCupAppearances: expect.any(Number) }),
     );
+    const marketRates = [
+      report.summary.permanentTransferRate,
+      report.summary.loanRate,
+      report.summary.loanReturnRate,
+      report.summary.loanSeasonAppearanceRate,
+      report.summary.overseasMoveRate,
+    ];
+    for (const rate of marketRates) {
+      expect(rate).toBeGreaterThanOrEqual(0);
+    }
+    for (const metric of report.metrics) {
+      expect(metric.permanentMarketRequests).toBeGreaterThanOrEqual(0);
+      expect(metric.permanentMarketSignings).toBeGreaterThanOrEqual(0);
+      expect(metric.loanMarketRequests).toBeGreaterThanOrEqual(0);
+      expect(metric.loanSignings).toBeGreaterThanOrEqual(0);
+      expect(metric.loanReturns).toBeGreaterThanOrEqual(0);
+      expect(metric.loanSeasonAppearances).toBeGreaterThanOrEqual(0);
+      if (metric.loanSignings > 0) {
+        expect(metric.loanHistoryCount).toBeGreaterThan(0);
+        expect(metric.activeLoanAtEnd).toBe(false);
+        expect(metric.loanContractStable).toBe(true);
+      }
+    }
   }, 600_000);
 });

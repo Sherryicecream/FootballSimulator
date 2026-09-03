@@ -43,6 +43,16 @@ export interface YouthSeasonMetrics {
   proCupHonours: number;
   proPromotions: number;
   proRelegations: number;
+  permanentMarketRequests: number;
+  permanentMarketSignings: number;
+  loanMarketRequests: number;
+  loanSignings: number;
+  loanReturns: number;
+  loanSeasonAppearances: number;
+  loanHistoryCount: number;
+  activeLoanAtEnd: boolean;
+  loanContractStable: boolean;
+  overseasTransferCount: number;
 }
 
 export interface YouthBalanceReport {
@@ -66,6 +76,11 @@ export interface YouthBalanceReport {
     themeCoverageRate: number;
     uniqueEventCombinations: number;
     graduationRate: number;
+    permanentTransferRate: number;
+    loanRate: number;
+    loanReturnRate: number;
+    loanSeasonAppearanceRate: number;
+    overseasMoveRate: number;
     underageGraduationRate: number;
     proPromiseKeptRate: number;
     proClubCauseBrokenRate: number;
