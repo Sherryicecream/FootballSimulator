@@ -159,6 +159,29 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: '开始新生涯' }));
     expect(await screen.findByLabelText('球员姓名')).toBeDefined();
   });
+
+  it('restores a professional contract into the dashboard', async () => {
+    const migrated = migrateCareerSaveV5(
+      createCareerSave({
+        playerName: '林河',
+        hometown: '上海',
+        primaryPosition: 'CENTER_BACK',
+        preferredFoot: 'RIGHT',
+        regionId: 'shanghai',
+        seed: 42,
+      }),
+    );
+    const professionalContract = {
+      ...migrated,
+      careerPhase: 'professional-contract',
+      season: { ...migrated.season, completed: true },
+    } as const;
+    storeSave(professionalContract);
+
+    render(<App />);
+
+    expect(await screen.findByRole('button', { name: '开启职业赛季' })).toBeDefined();
+  });
 });
 
 const createSaveWithPendingEvent = (): CareerSave => {

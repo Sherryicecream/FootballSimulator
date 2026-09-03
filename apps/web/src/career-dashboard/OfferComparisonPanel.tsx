@@ -72,7 +72,11 @@ export function OfferComparisonPanel({
               {offer.releaseClauseNote && <li>{offer.releaseClauseNote}</li>}
             </ul>
             <button onClick={() => setSelectedId(offer.id)} disabled={selectedId === offer.id}>
-              {selectedId === offer.id ? '已选择' : '选择这份要约'}
+              {selectedId === offer.id
+                ? '已选择'
+                : (offer.offerKind ?? marketMode ?? 'permanent') === 'loan'
+                  ? '选择这份租借'
+                  : '选择这份要约'}
             </button>
           </article>
         ))}

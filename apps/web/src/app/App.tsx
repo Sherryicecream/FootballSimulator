@@ -119,6 +119,9 @@ export function App() {
           } else if (restored.careerPhase === 'pro-offseason') {
             setSave(restored);
             setStep('pro-offseason');
+          } else if (restored.careerPhase === 'professional-contract') {
+            setSave(restored);
+            setStep('dashboard');
           } else if (restored.careerPhase === 'free-agent') {
             setSave(restored);
             setStep('free-agent');

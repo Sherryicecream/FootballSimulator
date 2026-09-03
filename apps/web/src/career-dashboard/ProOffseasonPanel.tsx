@@ -84,6 +84,11 @@ export function ProOffseasonPanel({
   );
   const honours = save.seasonHistory.at(-1)?.honours ?? [];
   const marketMode = marketOffers[0]?.offerKind ?? 'permanent';
+  const returnedFromLoan = Boolean(
+    !activeLoan &&
+    save.proSeason?.completed &&
+    save.ledger.some(({ id }) => id === 'loan-return-' + save.proSeason?.id),
+  );
 
   return (
     <section className="offseason" aria-label="职业休赛期">
@@ -157,6 +162,11 @@ export function ProOffseasonPanel({
           <span>合同归属：{activeLoan.parentClubName}</span>
           <span>赛季末自动回归：{activeLoan.returnsOn}</span>
         </section>
+      )}
+      {returnedFromLoan && (
+        <div className="loan-return-note" role="status">
+          租借已结束，已回到母队
+        </div>
       )}
 
       <ul className="offseason-list">

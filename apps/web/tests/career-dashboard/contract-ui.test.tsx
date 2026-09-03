@@ -97,7 +97,7 @@ describe('ContractCard', () => {
     expect(screen.getByText('合同仍归母队')).toBeVisible();
     expect(screen.getByText('赛季末自动回归')).toBeVisible();
     expect(screen.getByText(/预计角色：轮换球员/)).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: '选择这份要约' }));
+    fireEvent.click(screen.getByRole('button', { name: '选择这份租借' }));
     expect(screen.getByRole('alertdialog')).toHaveTextContent('确认签署租借');
   });
 

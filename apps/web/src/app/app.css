@@ -2478,6 +2478,15 @@ fieldset {
 .loan-context strong {
   color: var(--color-ink);
 }
+.loan-return-note {
+  margin: 16px 0;
+  padding: 13px 16px;
+  border: 1px solid rgba(184, 240, 68, 0.42);
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, rgba(92, 125, 33, 0.28), rgba(13, 27, 17, 0.82));
+  color: var(--color-accent);
+  font-weight: 800;
+}
 
 .loan-context span,
 .loan-status-card p {

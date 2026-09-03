@@ -359,7 +359,7 @@ git commit -m "feat: present loan market and career honours"
 - E2E 用 application 用例构造合法租借存档；浏览器只验证页面渲染、点击和回归提示。
 - 流程固定为：休赛期 → 请求租借 → 选择报价 → 一次确认 → 开赛 → 月度推进至结算 → 自动回归母队。
 
-- [ ] **Step 1: 写失败 E2E**
+- [x] **Step 1: 写失败 E2E**
 
 在 E2E 文件中定义 buildLoanSaveThroughApplication() 和 advanceAllProfessionalMonths(page)；前者复用现有 buildProSave 并调用 request/sign market，后者复用现有事件处理 helper。添加断言：
 
@@ -374,17 +374,17 @@ await advanceAllProfessionalMonths(page);
 await expect(page.getByText('租借已结束，已回到母队')).toBeVisible();
 ```
 
-- [ ] **Step 2: 运行失败 E2E**
+- [x] **Step 2: 运行失败 E2E**
 
 运行：pnpm exec playwright test apps/web/tests/e2e/professional-season.spec.ts --project=chromium
 
 预期：FAIL，因为没有租借入口和自动回归的可见反馈。
 
-- [ ] **Step 3: 写最小 E2E 支持**
+- [x] **Step 3: 写最小 E2E 支持**
 
 使用 application 构造 fixture，不直接拼非法 activeLoan；推进期间遇到事件先完成反馈，再等待赛季总结。断言目标队、母队合同、租借数据、回归提示、场景 banner 和桌面/移动端无横向溢出。
 
-- [ ] **Step 4: 运行通过测试并提交**
+- [x] **Step 4: 运行通过测试并提交**
 
 运行：pnpm exec playwright test apps/web/tests/e2e/professional-season.spec.ts，预期原有职业流程和新增租借流程均 PASS。
 

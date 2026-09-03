@@ -120,16 +120,26 @@ function advanceProMonthHeadless(save: Parameters<typeof advanceProMonth>[0]) {
 
 const injectSave = async (page: Page, save: unknown) => {
   const payload = JSON.stringify({ version: 4, savedAt: new Date().toISOString(), data: save });
-  await page.addInitScript((value) => {
-    window.localStorage.clear();
-    window.localStorage.setItem('football-save-pro-e2e', value);
-  }, payload);
+  const storageKey = 'football-save-' + ((save as { careerId?: string }).careerId ?? 'pro-e2e');
+  await page.addInitScript(
+    ({ key, value }) => {
+      if (!window.localStorage.getItem(key)) window.localStorage.setItem(key, value);
+    },
+    { key: storageKey, value: payload },
+  );
 };
 
 test.describe('职业赛季流程', () => {
   // 处理推进过程中的事件直至回到职业仪表盘
   async function resolveUntilProDashboard(page: Page) {
     for (let guard = 0; guard < 20; guard += 1) {
+      if (
+        await page
+          .getByText('职业赛季总结')
+          .isVisible()
+          .catch(() => false)
+      )
+        return;
       const advance = page.getByRole('button', { name: '推进到下个月' });
       if (await advance.isVisible().catch(() => false)) return;
       const choice = page.locator('main button').first();
@@ -197,6 +207,52 @@ test.describe('职业赛季流程', () => {
       await expectNoHorizontalOverflow(page);
     }
   });
+
+  test('通过职业市场完成租借赛季并自动回到母队', async ({ page }) => {
+    const offseason = buildLoanOffseasonSave();
+    await injectSave(page, offseason);
+    await page.goto('/');
+
+    await expect(page.getByText('职业赛季总结')).toBeVisible();
+    await page.getByRole('button', { name: '寻找租借机会' }).click();
+    await expect(page.getByText('合同仍归母队').first()).toBeVisible();
+    await expect(page.getByText('赛季末自动回归').first()).toBeVisible();
+    await page
+      .getByRole('button', { name: /选择这份租借/ })
+      .first()
+      .click();
+    await page.getByRole('button', { name: '确认签署租借' }).click();
+
+    await expect(page.getByRole('button', { name: '开启职业赛季' })).toBeVisible();
+    await page.getByRole('button', { name: '开启职业赛季' }).click();
+    await expect(page.getByRole('region', { name: '职业仪表盘' })).toBeVisible();
+    await expect(page.getByText(/当前参赛队：/)).toBeVisible();
+
+    for (let guard = 0; guard < 14; guard += 1) {
+      if (
+        await page
+          .getByText('租借已结束，已回到母队')
+          .isVisible()
+          .catch(() => false)
+      )
+        break;
+      const advance = page.getByRole('button', { name: '推进到下个月' });
+      if (!(await advance.isVisible().catch(() => false))) {
+        await resolveUntilProDashboard(page);
+        continue;
+      }
+      await advance.click();
+      await resolveUntilProDashboard(page);
+    }
+
+    await expect(page.getByText('租借已结束，已回到母队')).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+    await page.reload();
+    await expect(page.getByText('租借已结束，已回到母队')).toBeVisible();
+  });
+  function buildLoanOffseasonSave() {
+    return completeProfessionalSeason(buildProSave({ completeSeason: true })).save;
+  }
 });
 
 async function expectNoHorizontalOverflow(page: Page) {
