@@ -451,6 +451,39 @@ describe('ProDashboard', () => {
     expect(screen.getByText('联赛出场')).toBeVisible();
     expect(screen.getByText('杯赛出场')).toBeVisible();
   });
+
+  it('租借时区分实际参赛队与合同母队', () => {
+    const loaned = {
+      ...save,
+      activeLoan: {
+        parentClubId: 'pro-club-1',
+        parentClubName: '东海职业',
+        parentClubTier: 5,
+        loanClubId: 'loan-club-1',
+        loanClubName: '山谷联',
+        loanClubTier: 6,
+        startedOn: '2027-08-01',
+        returnsOn: '2028-05-31',
+        seasonId: 'pro-2027',
+      },
+    };
+    render(
+      <ProDashboard
+        save={loaned}
+        report={null}
+        advancing={false}
+        onAdvance={() => {}}
+        onNewCareer={() => {}}
+      />,
+    );
+    expect(screen.getByRole('heading', { name: '山谷联' })).toBeVisible();
+    expect(screen.getByRole('region', { name: '租借状态' })).toHaveTextContent(
+      '合同归属：东海职业',
+    );
+    expect(screen.getByRole('region', { name: '租借状态' })).toHaveTextContent(
+      '赛季末自动回归：2028-05-31',
+    );
+  });
 });
 
 describe('ProOffseasonPanel', () => {
@@ -491,6 +524,42 @@ describe('ProOffseasonPanel', () => {
     expect(screen.getByText(/出场份额 42%（承诺 30%）/)).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: '开始下个职业赛季' }));
     expect(onStart).toHaveBeenCalledTimes(1);
+  });
+
+  it('展示永久转会与租借机会入口，并标明当前租借归属', () => {
+    const loanSave = {
+      ...settledSaveWithHonours,
+      activeLoan: {
+        parentClubId: settledSaveWithHonours.contract!.clubId,
+        parentClubName: settledSaveWithHonours.contract!.clubName,
+        parentClubTier: settledSaveWithHonours.contract!.clubTier,
+        loanClubId: 'loan-club-1',
+        loanClubName: '山谷联',
+        loanClubTier: 5,
+        startedOn: '2028-08-01',
+        returnsOn: '2029-05-31',
+        seasonId: settledSaveWithHonours.proSeason!.id,
+      },
+    };
+    const onRequestMarket = vi.fn();
+    const onSignMarketOffer = vi.fn();
+    render(
+      <ProOffseasonPanel
+        save={loanSave}
+        onStartNextSeason={() => {}}
+        onAcceptRenewal={() => {}}
+        onDeclineRenewal={() => {}}
+        onRetire={() => {}}
+        onRequestMarket={onRequestMarket}
+        onSignMarketOffer={onSignMarketOffer}
+      />,
+    );
+    expect(screen.getByRole('button', { name: '寻找永久转会' })).toBeVisible();
+    expect(screen.getByRole('button', { name: '寻找租借机会' })).toBeVisible();
+    expect(screen.getByText(/当前参赛队：山谷联/)).toBeVisible();
+    expect(screen.getByText(/合同归属：职业俱乐部1/)).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: '寻找租借机会' }));
+    expect(onRequestMarket).toHaveBeenCalledWith('loan');
   });
 
   it('合同到期展示续约确认，并可拒绝成为自由球员', () => {

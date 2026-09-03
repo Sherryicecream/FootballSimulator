@@ -5,6 +5,7 @@ import {
   type CareerSave,
   type CareerSaveV4Like,
   type CareerSaveV5,
+  type ContractOfferV3,
   type MonthlyReport,
   type TrainingPlan,
 } from '@football/contracts';
@@ -26,7 +27,9 @@ import {
   generateFreeAgentOffers,
   loadCareer,
   rejectOffers,
+  requestCareerMarket,
   retire,
+  signMarketOffer,
   signContract,
   signTransfer,
   startNextYouthSeason,
@@ -371,6 +374,26 @@ export function App() {
       setError(message(caught));
     }
   };
+  const handleRequestCareerMarket = (kind: ContractOfferV3['offerKind']) => {
+    if (!save) return;
+    setError(null);
+    try {
+      persist(requestCareerMarket(save, youthContent, kind));
+    } catch (caught) {
+      setError(message(caught));
+    }
+  };
+  const handleSignMarketOffer = (offerId: string) => {
+    if (!save) return;
+    setError(null);
+    try {
+      persist(signMarketOffer(save, offerId));
+      setReport(null);
+      setStep('dashboard');
+    } catch (caught) {
+      setError(message(caught));
+    }
+  };
   const handleWaitWindow = () => {
     if (!save) return;
     setError(null);
@@ -499,6 +522,8 @@ export function App() {
           onAcceptRenewal={handleAcceptRenewal}
           onDeclineRenewal={handleDeclineRenewal}
           onRetire={handleRetire}
+          onRequestMarket={handleRequestCareerMarket}
+          onSignMarketOffer={handleSignMarketOffer}
         />
       )}
       {step === 'free-agent' && save && (

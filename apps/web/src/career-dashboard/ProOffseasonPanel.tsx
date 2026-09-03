@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type {
   CareerSaveV4Like,
+  CareerSaveV5Like,
+  ContractOfferV3,
   PromiseReview,
   ProCupState,
   SeasonHonour,
@@ -10,6 +12,7 @@ import type { FootballGlyphName } from '../design-system/FootballGlyph';
 import { FootballGlyph } from '../design-system/FootballGlyph';
 import { StatusBadge } from '../design-system/StatusBadge';
 import { professionalLeagueRank } from './pro-presentation';
+import { OfferComparisonPanel } from './OfferComparisonPanel';
 
 interface ProOffseasonPanelProps {
   save: CareerSaveV4Like;
@@ -17,6 +20,8 @@ interface ProOffseasonPanelProps {
   onAcceptRenewal: () => void;
   onDeclineRenewal: () => void;
   onRetire: () => void;
+  onRequestMarket?: (kind: ContractOfferV3['offerKind']) => void;
+  onSignMarketOffer?: (offerId: string) => void;
 }
 
 const causeLabels: Record<PromiseReview['cause'], string> = {
@@ -54,10 +59,15 @@ export function ProOffseasonPanel({
   onAcceptRenewal,
   onDeclineRenewal,
   onRetire,
+  onRequestMarket,
+  onSignMarketOffer,
 }: ProOffseasonPanelProps) {
   const [retireConfirm, setRetireConfirm] = useState(false);
+  const v5Save = save as CareerSaveV5Like;
+  const activeLoan = v5Save.activeLoan;
   const lastReview = save.promiseReviews.at(-1);
-  const renewalOffer = save.pendingOffers[0] ?? null;
+  const marketOffers = save.pendingOffers.filter(({ id }) => id.startsWith('offer-'));
+  const renewalOffer = save.pendingOffers.find(({ id }) => id.startsWith('renewal-')) ?? null;
   const stats = save.proSeasonStats;
   const playedLeague =
     save.proSeason?.fixtures.filter(({ status }) => status === 'played').length ?? 0;
@@ -69,10 +79,11 @@ export function ProOffseasonPanel({
   const playedCup = cupFixtures.filter(({ status }) => status === 'played').length;
   const cupRound = cup ? CUP_ROUND_LABELS[cup.currentRound] : '暂无杯赛记录';
   const tierMovement = tierMovementLabel(
-    save.contract?.clubTier,
+    activeLoan?.loanClubTier ?? save.contract?.clubTier,
     save.proSeason?.nextClubTier ?? null,
   );
   const honours = save.seasonHistory.at(-1)?.honours ?? [];
+  const marketMode = marketOffers[0]?.offerKind ?? 'permanent';
 
   return (
     <section className="offseason" aria-label="职业休赛期">
@@ -139,6 +150,15 @@ export function ProOffseasonPanel({
           )}
         </section>
       </div>
+
+      {activeLoan && (
+        <section className="loan-context" aria-label="当前租借">
+          <strong>当前参赛队：{activeLoan.loanClubName}</strong>
+          <span>合同归属：{activeLoan.parentClubName}</span>
+          <span>赛季末自动回归：{activeLoan.returnsOn}</span>
+        </section>
+      )}
+
       <ul className="offseason-list">
         <li>
           联赛出场 {stats.leagueAppearances} 次，预备队出场 {stats.reserveAppearances} 次，联赛分钟{' '}
@@ -177,7 +197,29 @@ export function ProOffseasonPanel({
         </div>
       )}
 
-      {renewalOffer ? (
+      {onRequestMarket && (
+        <section className="career-market" aria-label="职业市场">
+          <div>
+            <span className="card-kicker">下一步选择</span>
+            <h3>打开职业市场</h3>
+            <p>永久转会会改变合同归属；租借可以先获得稳定出场，再在赛季末回到母队。</p>
+          </div>
+          <div className="career-market-actions">
+            <button onClick={() => onRequestMarket('permanent')}>寻找永久转会</button>
+            <button onClick={() => onRequestMarket('loan')}>寻找租借机会</button>
+          </div>
+        </section>
+      )}
+
+      {marketOffers.length > 0 ? (
+        <OfferComparisonPanel
+          offers={marketOffers}
+          marketMode={marketMode}
+          onSign={onSignMarketOffer ?? (() => undefined)}
+          onRejectAll={onStartNextSeason}
+          rejectLabel="暂不签约，开始下个职业赛季"
+        />
+      ) : renewalOffer ? (
         <div className="sign-confirm" role="alertdialog" aria-label="续约确认">
           <h3>合同到期</h3>
           <p>

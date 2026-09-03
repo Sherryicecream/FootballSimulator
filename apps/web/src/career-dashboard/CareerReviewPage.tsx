@@ -105,6 +105,56 @@ export function CareerReviewPage({
         </div>
       </dl>
 
+      <section className="review-honours" role="group" aria-label="生涯荣誉">
+        <div className="review-section-heading">
+          <span className="review-kicker">荣誉陈列室</span>
+          <h3>生涯荣誉</h3>
+          <p>每一项荣誉都对应一个已经完成的赛季目标。</p>
+        </div>
+        {review.honours.length > 0 ? (
+          <ul className="review-honours-list">
+            {review.honours.map((honour) => (
+              <li key={honour.id} className="review-honour-item">
+                <FootballGlyph name="form" size={18} />
+                <div>
+                  <strong>{honour.label}</strong>
+                  <span>{honour.seasonId}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="review-empty">还没有解锁生涯荣誉。</p>
+        )}
+      </section>
+
+      {save.loanHistory.length > 0 && (
+        <section className="review-loans" role="group" aria-label="租借经历">
+          <div className="review-section-heading">
+            <span className="review-kicker">流动的赛季</span>
+            <h3>租借经历</h3>
+            <p>租借不会抹去母队合同，但会留下独立的出场和成长记录。</p>
+          </div>
+          <div className="review-loan-list">
+            {save.loanHistory.map((loan) => (
+              <article className="review-loan-card" key={`${loan.seasonId}-${loan.loanClubId}`}>
+                <div className="review-loan-heading">
+                  <strong>{loan.loanClubName}</strong>
+                  <span>租借 · {loan.seasonId}</span>
+                </div>
+                <p>
+                  合同母队：{loan.parentClubName} · {loan.from} 至 {loan.to}
+                </p>
+                <p>
+                  出场 {loan.appearances} 次，进球 {loan.goals} 个，助攻 {loan.assists} 次，
+                  {loan.minutes} 分钟
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
       <div className="review-replay" role="group" aria-label="全生涯回放">
         <div className="review-section-heading">
           <span className="review-kicker">全生涯回放</span>

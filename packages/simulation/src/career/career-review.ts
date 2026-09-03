@@ -1,4 +1,4 @@
-import type { CareerLedgerEntryV2, CareerSaveV5Like } from '@football/contracts';
+import type { CareerLedgerEntryV2, CareerSaveV5Like, SeasonHonour } from '@football/contracts';
 
 export type CareerTier = 'legend' | 'world-class' | 'national' | 'solid' | 'ordinary';
 export type CareerReplayMomentKind =
@@ -36,6 +36,7 @@ export interface CareerReviewData {
   caps: number;
   nationalGoals: number;
   clubs: number;
+  honours: SeasonHonour[];
   overseasSpells: boolean;
   timeline: Array<{
     seasonId: string;
@@ -81,6 +82,11 @@ export const buildCareerReview = (save: CareerSaveV5Like): CareerReviewData => {
           : reputation >= 45
             ? 'solid'
             : 'ordinary';
+  const careerClubIds = new Set([
+    ...save.clubHistory.map(({ clubId }) => clubId),
+    ...save.loanHistory.map(({ loanClubId }) => loanClubId),
+  ]);
+  const honours = save.seasonHistory.flatMap(({ honours: seasonHonours }) => seasonHonours);
 
   return {
     tier,
@@ -92,10 +98,12 @@ export const buildCareerReview = (save: CareerSaveV5Like): CareerReviewData => {
     totals: save.totals,
     caps,
     nationalGoals: save.nationalTeam?.goals ?? 0,
-    clubs: save.clubHistory.length,
-    overseasSpells: save.clubHistory.some(
-      ({ clubId }) => save.overseasSince !== null || clubId.startsWith('ov-'),
-    ),
+    clubs: careerClubIds.size,
+    honours,
+    overseasSpells:
+      save.overseasSince !== null ||
+      save.clubHistory.some(({ clubId }) => clubId.startsWith('ov-')) ||
+      save.loanHistory.some(({ loanClubId }) => loanClubId.startsWith('ov-')),
     timeline: save.seasonHistory.map(({ seasonId, status, appearances, goals, avgRating }) => ({
       seasonId,
       status,

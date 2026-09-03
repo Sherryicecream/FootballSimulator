@@ -29,6 +29,14 @@ const offers: ContractOfferV3[] = [
     releaseClauseNote: '附带降级解约条款：球队降级时可按约定条件解约',
   },
 ];
+const loanOffer: ContractOfferV3 = {
+  ...offers[0]!,
+  id: 'loan-offer-a',
+  clubId: 'loan-club-a',
+  clubName: '镜湖潮汐',
+  offerKind: 'loan',
+  contractYears: 1,
+};
 
 describe('AgentPreferencesForm', () => {
   it('提交经纪人倾向', () => {
@@ -74,6 +82,25 @@ describe('OfferComparisonPanel', () => {
 });
 
 describe('ContractCard', () => {
+  it('展示租借类别、合同归属、回归时间和预计角色', () => {
+    const onSign = vi.fn();
+    render(
+      <OfferComparisonPanel
+        offers={[loanOffer]}
+        marketMode="loan"
+        onSign={onSign}
+        onRejectAll={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('租借')).toBeVisible();
+    expect(screen.getByText('合同仍归母队')).toBeVisible();
+    expect(screen.getByText('赛季末自动回归')).toBeVisible();
+    expect(screen.getByText(/预计角色：轮换球员/)).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: '选择这份要约' }));
+    expect(screen.getByRole('alertdialog')).toHaveTextContent('确认签署租借');
+  });
+
   it('展示合同关键信息', () => {
     render(
       <ContractCard

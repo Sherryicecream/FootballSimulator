@@ -322,23 +322,23 @@ git commit -m "feat: complete loan season and return to parent club"
 - CareerReviewData 增加 honours: SeasonHonour[]，clubs 和 overseasSpells 计入租借目标。
 - ProDashboard 当前俱乐部名称优先使用 activeLoan.loanClubName，否则使用合同俱乐部名称。
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 在 contract-ui.test.tsx 添加含两类报价的 fixture，断言“租借 · 合同仍归母队”“赛季末自动回归”和“预计角色”。在职业休赛期测试中断言“寻找永久转会”和“寻找租借机会”两个按钮；在回顾测试中断言租借俱乐部、租借标签、租借赛季数据和荣誉陈列。
 
-- [ ] **Step 2: 运行失败测试**
+- [x] **Step 2: 运行失败测试**
 
 运行：pnpm vitest run apps/web/tests/career-dashboard/contract-ui.test.tsx apps/web/tests/career-dashboard/pro-dashboard.test.tsx apps/web/tests/career-dashboard/CareerReviewPage.test.tsx
 
 预期：FAIL，因为现有报价卡没有市场类别，休赛期没有市场入口，回顾没有租借和荣誉区块。
 
-- [ ] **Step 3: 写最小 UI 实现**
+- [x] **Step 3: 写最小 UI 实现**
 
 App.tsx 只增加 request/sign 两个 application 回调；存档恢复仍只按 careerPhase 路由，web 不改写 activeLoan。休赛期显示母队合同卡、两个市场入口和当前市场报价；租借卡明确显示目标队、预计角色、薪资、合同仍归母队、代表目标队、自动回归日期。签约确认只出现一次。
 
 ProDashboard 分开显示实际参赛队与合同母队；生涯回顾增加荣誉陈列和租借标签。使用既有 FootballGlyph、SceneBanner 与语义状态色提升标题对比度和卡片层次，保持移动端单列且无横向滚动。
 
-- [ ] **Step 4: 运行通过测试并提交**
+- [x] **Step 4: 运行通过测试并提交**
 
 运行：pnpm vitest run apps/web/tests/career-dashboard/contract-ui.test.tsx apps/web/tests/career-dashboard/pro-dashboard.test.tsx apps/web/tests/career-dashboard/CareerReviewPage.test.tsx apps/web/tests/app/App.test.tsx，预期新旧职业市场 UI、实际参赛队和自由球员测试 PASS。
 

@@ -10,7 +10,12 @@ import { StoryProgressPanel } from './StoryProgressPanel';
 import { MatchdayRhythmPanel } from './MatchdayRhythmPanel';
 import { FootballGlyph } from '../design-system/FootballGlyph';
 import type { ProCupState } from '@football/contracts';
-import { professionalLeagueRank, sortProfessionalStandings } from './pro-presentation';
+import {
+  contractClubName,
+  professionalClubName,
+  professionalLeagueRank,
+  sortProfessionalStandings,
+} from './pro-presentation';
 
 interface ProDashboardProps {
   save: CareerSaveV5Like;
@@ -84,7 +89,12 @@ export function ProDashboard({
     (cup
       ? '最近杯赛：已完成 ' + cupPlayed + ' 场，当前轮次为' + cupRound
       : '最近杯赛：本赛季暂无杯赛记录');
-  const tierMovement = tierMovementLabel(save.contract?.clubTier, pro.nextClubTier);
+  const tierMovement = tierMovementLabel(
+    save.activeLoan?.loanClubTier ?? save.contract?.clubTier,
+    pro.nextClubTier,
+  );
+  const actualClubName = professionalClubName(save);
+  const parentClubName = contractClubName(save);
   const leadBeat = pickLeadBeat(report?.momentum?.beats ?? []);
   const sceneKind = leadBeat ? sceneKindForBeat(leadBeat.kind) : 'neutral';
   const sceneTitle = leadBeat?.title ?? report?.momentum?.title ?? '职业赛季进行中';
@@ -96,7 +106,7 @@ export function ProDashboard({
   return (
     <section className="pro-dashboard" aria-label="职业仪表盘">
       <header className="career-hero">
-        <h2>{pro.clubId && (save.contract?.clubName ?? '职业俱乐部')}</h2>
+        <h2>{actualClubName}</h2>
         <div className="career-meta">
           <span>{pro.currentDate}</span>
           <span>第 {pro.currentWeek} 周</span>
@@ -106,6 +116,18 @@ export function ProDashboard({
           </span>
         </div>
       </header>
+
+      {save.activeLoan && (
+        <section className="dashboard-card loan-status-card" aria-label="租借状态">
+          <div className="card-heading">
+            <span className="card-kicker">合同状态</span>
+            <h3>租借状态</h3>
+          </div>
+          <p>当前参赛队：{actualClubName}</p>
+          <p>合同归属：{parentClubName}</p>
+          <p>赛季末自动回归：{save.activeLoan.returnsOn}</p>
+        </section>
+      )}
 
       <SceneBanner
         kind={sceneKind}
@@ -325,7 +347,7 @@ const memberName = (pro: NonNullable<CareerSaveV5Like['proSeason']>, personId: s
   pro.squad.find(({ personId: id }) => id === personId)?.name ?? personId;
 
 const clubName = (save: CareerSaveV5Like, clubId: string): string => {
-  if (clubId === save.proSeason?.clubId) return save.contract?.clubName ?? clubId;
+  if (clubId === save.proSeason?.clubId) return professionalClubName(save);
   // 其他俱乐部名称从内容包渲染由调用方保证；此处退化为 ID
   return clubDisplayName(clubId);
 };

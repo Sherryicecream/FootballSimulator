@@ -7,6 +7,7 @@ interface OfferComparisonPanelProps {
   onSign: (offerId: string) => void;
   onRejectAll: () => void;
   rejectLabel?: string;
+  marketMode?: ContractOfferV3['offerKind'];
 }
 
 const roleLabels: Record<ContractOfferV3['squadRole'], string> = {
@@ -29,32 +30,45 @@ export function OfferComparisonPanel({
   onSign,
   onRejectAll,
   rejectLabel = '拒绝全部要约，留在青训',
+  marketMode,
 }: OfferComparisonPanelProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = offers.find(({ id }) => id === selectedId) ?? null;
+  const selectedKind = selected?.offerKind ?? marketMode ?? 'permanent';
 
   return (
     <section className="offer-panel" aria-label="合同要约">
       <SceneBanner
         kind="locker-room"
         eyebrow="职业市场 · 谈判桌"
-        title="经纪人的报价"
+        title={marketMode === 'loan' ? '租借机会' : '经纪人的报价'}
         detail="每一份合同都代表不同的出场路径、成长速度和风险承担。"
       />
       <div className="offer-list">
         {offers.map((offer) => (
           <article
             key={offer.id}
-            className={selectedId === offer.id ? 'offer-card selected' : 'offer-card'}
+            className={`offer-card ${offer.offerKind ?? marketMode ?? 'permanent'}${selectedId === offer.id ? ' selected' : ''}`}
           >
-            <h3>
-              {offer.clubName}（层级 {offer.clubTier}）
-            </h3>
+            <div className="offer-card-heading">
+              <h3>
+                {offer.clubName}（层级 {offer.clubTier}）
+              </h3>
+              <span className="market-kind">
+                {(offer.offerKind ?? marketMode ?? 'permanent') === 'loan' ? '租借' : '永久转会'}
+              </span>
+            </div>
             <ul>
               <li>年薪：{offer.salaryPerYear.toLocaleString('zh-CN')}</li>
               <li>期限：{offer.contractYears} 年</li>
-              <li>队内角色：{roleLabels[offer.squadRole]}</li>
+              <li>预计角色：{roleLabels[offer.squadRole]}</li>
               <li>{promiseLabel(offer)}</li>
+              {(offer.offerKind ?? marketMode ?? 'permanent') === 'loan' && (
+                <>
+                  <li>合同仍归母队</li>
+                  <li>赛季末自动回归</li>
+                </>
+              )}
               {offer.releaseClauseNote && <li>{offer.releaseClauseNote}</li>}
             </ul>
             <button onClick={() => setSelectedId(offer.id)} disabled={selectedId === offer.id}>
@@ -67,11 +81,12 @@ export function OfferComparisonPanel({
       {selected && (
         <div className="sign-confirm" role="alertdialog" aria-label="签署确认">
           <p>
-            确认与 {selected.clubName} 签署 {selected.contractYears}{' '}
-            年合同？签署是不可撤销的重大决定。
+            {selectedKind === 'loan'
+              ? `确认与 ${selected.clubName} 签署租借 ${selected.contractYears} 年合同？合同仍归母队，赛季末自动回归。`
+              : `确认与 ${selected.clubName} 签署 ${selected.contractYears} 年合同？签署是不可撤销的重大决定。`}
           </p>
           <button className="confirm" onClick={() => onSign(selected.id)}>
-            确认签署
+            {selectedKind === 'loan' ? '确认签署租借' : '确认签署'}
           </button>
           <button onClick={() => setSelectedId(null)}>再考虑一下</button>
         </div>
