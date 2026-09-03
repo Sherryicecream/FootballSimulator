@@ -38,6 +38,8 @@ export { simulateInjuryRisk } from './health/injury-model';
 export { simulateScheduledYouthMatch } from './match/scheduled-youth-match';
 export { deriveAge, simulateYouthWeek } from './career/simulate-youth-week';
 export type { YouthWeekTransition } from './career/simulate-youth-week';
+export { buildTrainingFeedback } from './career/training-feedback';
+export type { TrainingFeedbackInput } from './career/training-feedback';
 export { deriveDevelopmentSignals } from './career/development-signals';
 export type { DevelopmentSignal } from './career/development-signals';
 export { advanceFirstTeamPathway } from './first-team/pathway';
