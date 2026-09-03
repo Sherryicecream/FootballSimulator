@@ -249,7 +249,7 @@ git commit -m "feat: add professional transfer market flow"
 - completeProfessionalSeason 先读取目标队统计和成绩；租借不更新母队 clubHistory，创建 LoanHistoryEntry 后调用 returnFromLoan，清空租借状态；永久路径保留既有合同和 nextClubTier 继承。
 - 租借回归后 proSeason.nextClubTier 为 null，下一赛季以母队合同层级为基础；续约报价显式使用 offerKind: 'permanent'。
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 在 pro-flow.test.ts 顶部定义本地 finishProfessionalSeason(save)：反复调用 advanceProMonth 并处理 pending event；定义 completeLoanWithTargetRelegation() 覆盖最终积分榜；定义 completedLoanSave() 返回已完成且有 activeLoan 的存档。添加：
 
@@ -280,17 +280,17 @@ it('租借回归幂等', () => {
 
 finishProfessionalSeason 必须通过月度推进完成赛季，不得直接改写统计。
 
-- [ ] **Step 2: 运行失败测试**
+- [x] **Step 2: 运行失败测试**
 
 运行：pnpm vitest run packages/application/tests/use-cases/pro-flow.test.ts
 
 预期：FAIL，当前开赛读取母队合同，结算会把目标队统计写入母队履历，且没有租借回归记录。
 
-- [ ] **Step 3: 写最小 application 实现**
+- [x] **Step 3: 写最小 application 实现**
 
 让开赛的当前俱乐部、海外标记、层级和赛程来源统一使用 activeLoan 优先，并校验绑定赛季。结算分出永久和租借路径：租借数据进入 loanHistory，目标队荣誉进入赛季历史，目标队层级不写入合同；永久路径保持原有 clubHistory、合同年限和层级逻辑。所有事实继续来自现有月度/比赛账本。
 
-- [ ] **Step 4: 运行通过测试并提交**
+- [x] **Step 4: 运行通过测试并提交**
 
 运行 pnpm vitest run packages/application/tests/use-cases/pro-flow.test.ts packages/application/tests/use-cases/transfer-market.test.ts，预期租借目标队、合同归属、荣誉隔离、幂等回归及原有职业杯赛/升降级测试 PASS。
 

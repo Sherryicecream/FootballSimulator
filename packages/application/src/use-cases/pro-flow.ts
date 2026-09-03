@@ -3,6 +3,7 @@ import type {
   MonthlyReport,
   CareerSaveV4Like,
   CareerSaveV5Like,
+  LoanHistoryEntry,
   ClubProfile,
   EventDefinition,
   LeagueStanding,
@@ -10,7 +11,7 @@ import type {
   SeasonHonour,
   SeasonHistorySummary,
 } from '@football/contracts';
-import { retire as retireCareer } from './transfer-flow';
+import { retire as retireCareer, returnFromLoan } from './transfer-flow';
 import {
   applyAgeDecline,
   accrueNationalTeam,
@@ -49,19 +50,32 @@ export const startProfessionalSeason = <S extends CareerSaveV4Like>(
     throw new Error(`非法阶段转移：当前阶段 ${save.careerPhase} 不能开启职业赛季`);
   }
   const contract = ensureContract(save);
-  const club = clubs.find(({ id }) => id === contract.clubId);
-  if (!club) throw new Error(`签约俱乐部 ${contract.clubId} 不在内容包中`);
+  const activeLoan = (save as Partial<CareerSaveV5Like>).activeLoan ?? null;
+  if (activeLoan && activeLoan.parentClubId !== contract.clubId) {
+    throw new Error('租借母队与当前合同不一致');
+  }
+  const clubId = activeLoan?.loanClubId ?? contract.clubId;
+  const club = clubs.find(({ id }) => id === clubId);
+  if (!club) throw new Error(`参赛俱乐部 ${clubId} 不在内容包中`);
+  if (activeLoan && club.tier !== activeLoan.loanClubTier) {
+    throw new Error(`租借目标队层级 ${club.tier} 与存档 ${activeLoan.loanClubTier} 不一致`);
+  }
 
   // 首个职业赛季从签署年份开始；续赛季从上个职业赛季年份 +1（8 月开赛）
-  const year =
-    save.careerPhase === 'professional-contract'
+  const year = activeLoan
+    ? Number(activeLoan.seasonId.slice(4))
+    : save.careerPhase === 'professional-contract'
       ? Number(contract.signedOn.slice(0, 4))
       : save.proSeason
         ? Number(save.proSeason.startDate.slice(0, 4)) + 1
         : 0;
   if (!Number.isFinite(year) || year <= 0) throw new Error('无法确定职业赛季年份');
+  if (activeLoan && activeLoan.seasonId !== `pro-${year}`) {
+    throw new Error(`租借绑定赛季 ${activeLoan.seasonId} 与开赛年份不一致`);
+  }
   const startDate = `${year}-08-01`;
-  const effectiveTier = save.proSeason?.nextClubTier ?? contract.clubTier;
+  const effectiveTier =
+    activeLoan?.loanClubTier ?? save.proSeason?.nextClubTier ?? contract.clubTier;
   const competitionId = `${club.overseas ? 'pro-overseas-tier' : 'pro-tier'}-${effectiveTier}`;
   const eligibleClubs = clubs.filter(
     ({ overseas }) => Boolean(overseas) === Boolean(club.overseas),
@@ -137,7 +151,7 @@ export const startProfessionalSeason = <S extends CareerSaveV4Like>(
 
   return {
     ...save,
-    contract: { ...contract, clubTier: effectiveTier },
+    contract: activeLoan ? contract : { ...contract, clubTier: effectiveTier },
     careerPhase: 'pro-season',
     proPhase: 'preseason',
     proSeason: {
@@ -373,7 +387,7 @@ const buildSeasonOutcome = (
   const playerRank = sorted.findIndex(({ clubId }) => clubId === pro.clubId) + 1;
   if (playerRank === 0) throw new Error('赛季积分榜缺少球员所在俱乐部');
 
-  const currentTier = pro.nextClubTier ?? contract.clubTier;
+  const currentTier = save.activeLoan?.loanClubTier ?? pro.nextClubTier ?? contract.clubTier;
   const isPromoted = playerRank <= 2 && currentTier < 8;
   const isRelegated =
     playerRank >= Math.max(1, sorted.length - 1) && currentTier > 3 && !isPromoted;
@@ -461,6 +475,7 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
   const outcome = reviewPromise(save);
 
   const contract = save.contract!;
+  const activeLoan = save.activeLoan;
   const expired = contract.seasonsCompleted + 1 >= contract.contractYears;
   const contractAfter = { ...contract, seasonsCompleted: contract.seasonsCompleted + 1 };
   if (outcome) {
@@ -512,9 +527,9 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
       : 0;
   const visibilityReputationDelta =
     Math.min(3, Math.floor(seasonApps / 5)) + (averageRating >= 7 ? 1 : 0);
-  const existingClubIndex = save.clubHistory.findIndex(
-    ({ clubId, to }) => clubId === contract.clubId && to === null,
-  );
+  const existingClubIndex = activeLoan
+    ? -1
+    : save.clubHistory.findIndex(({ clubId, to }) => clubId === contract.clubId && to === null);
   const clubHistory = [...save.clubHistory];
   if (existingClubIndex >= 0) {
     const entry = clubHistory[existingClubIndex]!;
@@ -524,7 +539,7 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
       appearances: entry.appearances + seasonAppearances,
       goals: entry.goals + seasonGoals,
     };
-  } else {
+  } else if (!activeLoan) {
     clubHistory.push({
       clubId: contract.clubId,
       clubName: contract.clubName,
@@ -535,6 +550,23 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
       goals: seasonGoals,
     });
   }
+  const loanHistoryEntry: LoanHistoryEntry | null = activeLoan
+    ? {
+        seasonId: activeLoan.seasonId,
+        parentClubId: activeLoan.parentClubId,
+        parentClubName: activeLoan.parentClubName,
+        loanClubId: activeLoan.loanClubId,
+        loanClubName: activeLoan.loanClubName,
+        from: activeLoan.startedOn,
+        to: activeLoan.returnsOn,
+        appearances: seasonAppearances,
+        goals: seasonGoals,
+        assists: seasonAssists,
+        minutes: seasonMinutes,
+        competitionTier: activeLoan.loanClubTier,
+        outcomeEvidenceId: seasonOutcome.evidenceId,
+      }
+    : null;
   let next: S = {
     ...save,
     careerPhase: 'pro-offseason',
@@ -593,6 +625,9 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
     },
     ledger: [...save.ledger, ...facts],
   };
+  if (activeLoan && loanHistoryEntry) {
+    next = returnFromLoan(next, loanHistoryEntry) as S;
+  }
   if (next.player.age >= 38) {
     const forced = retireCareer(next, next.proSeason!.endDate) as S;
     return { save: forced, review: outcome };
@@ -691,6 +726,7 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
           salaryPerYear: offer.salaryPerYear,
           contractYears: offer.contractYears,
           squadRole: offer.squadRole,
+          offerKind: 'permanent',
           promise: offer.promise,
           releaseClauseNote: '',
         },

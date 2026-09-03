@@ -9,7 +9,13 @@ import {
   startProfessionalSeason,
   submitNationalTeamDecision,
 } from '../../src/use-cases/pro-flow';
-import { generateFreeAgentOffers, retire, signTransfer } from '../../src/use-cases/transfer-flow';
+import {
+  generateFreeAgentOffers,
+  requestCareerMarket,
+  retire,
+  signMarketOffer,
+  signTransfer,
+} from '../../src/use-cases/transfer-flow';
 import {
   submitAgentPreferences,
   generateContractOffers,
@@ -67,6 +73,29 @@ function signedProSave(overrides: Partial<CareerSaveV4> = {}): CareerSaveV4 {
     },
   });
   return { ...v4, ...overrides };
+}
+function finishProfessionalSeason<S extends CareerSaveV4>(save: S): S {
+  let current = save;
+  let guard = 0;
+  while (!current.proSeason?.completed && guard < 20) {
+    const outcome = advanceProMonth(current, content.clubs, []);
+    if (outcome.status === 'awaiting-decision') throw new Error('测试赛季出现未处理事件');
+    current = outcome.save;
+    guard += 1;
+  }
+  if (!current.proSeason?.completed) throw new Error('测试赛季未在月度推进中完成');
+  return current;
+}
+
+function loanedOffseasonSave() {
+  let save = migrateCareerSaveV5(signedProSave());
+  const started = startProfessionalSeason(save, content.clubs);
+  const finished = finishProfessionalSeason(started);
+  const settled = completeProfessionalSeason(finished).save;
+  const market = requestCareerMarket(settled, content, 'loan');
+  const offer = market.pendingOffers[0];
+  if (!offer) throw new Error('测试市场没有租借报价');
+  return { save: signMarketOffer(market, offer.id), offer };
 }
 
 function standingsWithPlayerRank(
@@ -261,6 +290,60 @@ describe('职业赛季流程', () => {
     expect(next.proSeason!.domesticCup?.entrants).toContain(next.proSeason!.clubId);
   });
 
+  it('租借赛季使用目标队数据，结算后回到母队', () => {
+    const { save: signed } = loanedOffseasonSave();
+    const started = startProfessionalSeason(signed, content.clubs);
+    const targetClubId = signed.activeLoan!.loanClubId;
+    expect(started.proSeason?.clubId).toBe(targetClubId);
+
+    const finished = finishProfessionalSeason(started);
+    const completed = {
+      ...finished,
+      proSeason: {
+        ...finished.proSeason!,
+        standings: standingsWithPlayerRank(finished.proSeason!.standings, targetClubId, 1),
+      },
+    };
+    const settled = completeProfessionalSeason(completed).save;
+
+    expect(settled.activeLoan).toBeNull();
+    expect(settled.contract?.clubId).toBe(signed.contract?.clubId);
+    expect(settled.loanHistory.at(-1)?.loanClubId).toBe(targetClubId);
+    expect(settled.seasonHistory.at(-1)?.honours).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: 'league-champion', clubId: targetClubId }),
+      ]),
+    );
+  });
+
+  it('目标队降级只记录在目标队赛季，不污染母队合同层级', () => {
+    const { save: signed } = loanedOffseasonSave();
+    const started = startProfessionalSeason(signed, content.clubs);
+    const targetClubId = signed.activeLoan!.loanClubId;
+    const completed = {
+      ...started,
+      proSeason: {
+        ...started.proSeason!,
+        clubId: targetClubId,
+        currentDate: started.proSeason!.endDate,
+        currentMonth: started.proSeason!.endDate.slice(0, 7),
+        currentWeek: 52,
+        standings: standingsWithPlayerRank(started.proSeason!.standings, targetClubId, 99),
+        completed: true,
+      },
+    };
+
+    const settled = completeProfessionalSeason(completed).save;
+
+    expect(settled.contract?.clubId).toBe(signed.contract?.clubId);
+    expect(settled.contract?.clubTier).toBe(signed.contract?.clubTier);
+    expect(settled.proSeason?.nextClubTier).toBeNull();
+    expect(settled.seasonHistory.at(-1)?.honours).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: 'relegation', clubId: targetClubId }),
+      ]),
+    );
+  });
   it('settles cup and league honours and promotion into season history and ledger', () => {
     const completed = saveWithCompletedLeagueAndCup({ playerRank: 2, cupChampion: true });
     const settled = completeProfessionalSeason(completed).save;
