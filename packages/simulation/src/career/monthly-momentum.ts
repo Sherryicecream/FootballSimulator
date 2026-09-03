@@ -32,7 +32,6 @@ export const buildMonthlyMomentum = (
   const beats = [...groupFactsByWeek(facts).entries()]
     .sort(([left], [right]) => compareWeekKeys(left, right))
     .map(([weekKey, weekFacts]) => buildBeat(weekKey, weekFacts));
-  const visibleBeats = beats.slice(-5);
   const highlight = beats.reduce<MonthlyBeat | null>(
     (best, beat) => (!best || KIND_PRIORITY[beat.kind] > KIND_PRIORITY[best.kind] ? beat : best),
     null,
@@ -47,6 +46,7 @@ export const buildMonthlyMomentum = (
       intensity: 'routine',
     } satisfies MonthlyBeat);
 
+  const visibleBeats = selectVisibleBeats(beats, anchor);
   return {
     tone: toneFor(anchor.kind, attributeChanges),
     title: headlineFor(anchor),
@@ -54,6 +54,15 @@ export const buildMonthlyMomentum = (
     nextFocus: nextFocusFor(anchor),
     beats: visibleBeats,
   };
+};
+
+const selectVisibleBeats = (beats: readonly MonthlyBeat[], anchor: MonthlyBeat): MonthlyBeat[] => {
+  if (beats.length <= 5) return [...beats];
+  const anchorIndex = beats.indexOf(anchor);
+  if (anchorIndex >= 0 && anchorIndex < beats.length - 4) {
+    return [anchor, ...beats.slice(-4)];
+  }
+  return beats.slice(-5);
 };
 
 const groupFactsByWeek = (facts: readonly CareerLedgerEntryV2[]) => {

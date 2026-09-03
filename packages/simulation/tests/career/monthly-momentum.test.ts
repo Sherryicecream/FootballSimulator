@@ -42,6 +42,7 @@ describe('monthly momentum', () => {
     const momentum = buildMonthlyMomentum(facts, []);
 
     expect(momentum.beats).toHaveLength(5);
+    expect(momentum.beats[0]?.weekKey).toBe('2024-W01');
     expect(momentum.beats.at(-1)?.weekKey).toBe('2024-W06');
   });
 });
