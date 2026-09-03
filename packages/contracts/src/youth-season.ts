@@ -240,6 +240,7 @@ export const CareerLedgerEntryV2Schema = z.strictObject({
     'transfer-signed',
     'national-debut',
     'retirement',
+    'market-window',
   ]),
   summary: z.string().min(1).max(500),
   participantIds: z.array(IdSchema),

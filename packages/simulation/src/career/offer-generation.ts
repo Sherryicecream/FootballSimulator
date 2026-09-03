@@ -113,6 +113,7 @@ const buildOffer = (
     salaryPerYear,
     contractYears,
     squadRole,
+    offerKind: 'permanent',
     overseas: club.overseas,
     promise,
     releaseClauseNote: club.tier >= 6 ? '附带降级解约条款：球队降级时可按约定条件解约' : '',

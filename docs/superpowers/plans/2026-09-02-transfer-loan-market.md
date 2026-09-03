@@ -59,7 +59,7 @@
 - 导出 validateCareerSaveV5LoanState(save: CareerSaveV5): CareerSaveV5。有进行中 proSeason 时，activeLoan.seasonId 必须等于 proSeason.id；尚未开赛时 proSeason === null 可以通过。
 - CareerLedgerEntryV2Schema.type 增加 market-window。
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 在测试文件中从现有 v5 fixture 构造 legacyV5Fixture、无 offerKind 的 legacyOffer，并定义 validV5WithLoan(overrides) 为 CareerSaveV5Schema.parse({ ...fixture, ...overrides })。添加：
 
@@ -83,17 +83,17 @@ it('进行中的租借必须绑定当前职业赛季', () => {
 });
 ```
 
-- [ ] **Step 2: 运行失败测试**
+- [x] **Step 2: 运行失败测试**
 
 运行：pnpm vitest run packages/contracts/tests/transfer-loan.test.ts packages/contracts/tests/career-v5.test.ts
 
 预期：FAIL，原因是新字段、账本类型和跨字段校验尚未定义。
 
-- [ ] **Step 3: 写最小契约实现**
+- [x] **Step 3: 写最小契约实现**
 
 先扩展报价 schema，再添加两个 strict schema 和 v5 默认字段；迁移成功后调用 validateCareerSaveV5LoanState。为现有续约报价对象补 offerKind: 'permanent'，保证严格对象仍能解析。
 
-- [ ] **Step 4: 运行通过测试并提交**
+- [x] **Step 4: 运行通过测试并提交**
 
 运行同一 Vitest 命令，预期新增迁移测试与旧 v4/v5 测试全部 PASS。
 

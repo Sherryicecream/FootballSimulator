@@ -43,6 +43,7 @@ export const ContractOfferV3Schema = z.strictObject({
   salaryPerYear: z.number().int().min(0),
   contractYears: z.number().int().min(1).max(3),
   squadRole: z.enum(['youth-team', 'rotation', 'first-team-rotation', 'highlighted-prospect']),
+  offerKind: z.enum(['permanent', 'loan']).default('permanent'),
   overseas: z.boolean().default(false),
   promise: ContractPromiseSchema,
   releaseClauseNote: z.string().max(200),
