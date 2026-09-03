@@ -97,8 +97,9 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
     ({ homeClubId, awayClubId }) => homeClubId === pro.clubId || awayClubId === pro.clubId,
   );
 
+  const trainingContribution = trainingLoad(save.trainingPlan.intensity);
   const load =
-    (trainingLoad(save.trainingPlan.intensity) + 8) * 1.15 +
+    (trainingContribution + 8) * 1.15 +
     ownFixtures.length * 12 * (save.trainingPlan.intensity === 'light' ? 0.5 : 1);
   const recoveredInjury = advanceInjury(save.health.activeInjury);
   let health = {
@@ -236,7 +237,15 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
     );
   }
   const matchResult = playerMatches.at(-1)?.match ?? null;
-  const facts = createProFacts(save, weekKey, load, playerMatches, selection, injury);
+  const facts = createProFacts(
+    save,
+    weekKey,
+    trainingContribution,
+    load,
+    playerMatches,
+    selection,
+    injury,
+  );
   const nextDate = addDays(pro.currentDate, 7);
   const playedIds = new Set(leagueFixtures.map(({ id }) => id));
   const fixtures = pro.fixtures.map((fixture) =>
@@ -471,6 +480,7 @@ const confidenceDelta = (match: YouthMatchResultV2 | null) =>
 const createProFacts = (
   save: CareerSaveV4Like,
   weekKey: string,
+  trainingContribution: number,
   load: number,
   playerMatches: readonly PlayerProfessionalMatch[],
   selection: ProAppearanceDecision,
@@ -483,6 +493,12 @@ const createProFacts = (
       type: 'training',
       summary: `${save.trainingPlan.focus}/${save.trainingPlan.intensity}，周负荷 ${Math.round(load)}`,
       participantIds: [],
+      trainingContext: {
+        focus: save.trainingPlan.focus,
+        intensity: save.trainingPlan.intensity,
+        trainingLoad: trainingContribution,
+        totalLoad: load,
+      },
     },
   ];
   for (const { match, competitionId, opponentStrength, teamImpact } of playerMatches) {

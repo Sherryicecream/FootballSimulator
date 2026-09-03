@@ -7,6 +7,14 @@ describe('simulateYouthWeek', () => {
     const save = createYouthSave();
     const first = simulateYouthWeek(save, academies);
     const second = simulateYouthWeek(save, academies);
+    const training = first.facts.find(({ type }) => type === 'training');
+
+    expect(training?.trainingContext).toEqual({
+      focus: 'technical',
+      intensity: 'normal',
+      trainingLoad: 36,
+      totalLoad: 36 + (first.matchResult?.minutesPlayed ?? 0) * 0.42,
+    });
 
     expect(first).toEqual(second);
     expect(first.facts.find(({ type }) => type === 'match')?.matchContext).toEqual(

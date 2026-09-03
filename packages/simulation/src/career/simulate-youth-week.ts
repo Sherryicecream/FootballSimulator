@@ -40,7 +40,8 @@ export const simulateYouthWeek = <S extends YouthWeekInputShape>(
     (candidate) => candidate.weekKey === weekKey && candidate.status === 'scheduled',
   );
   const matchResult = fixture ? simulateScheduledYouthMatch(save, fixture, academies, rng) : null;
-  const load = trainingLoad(save.trainingPlan.intensity) + (matchResult?.minutesPlayed ?? 0) * 0.42;
+  const trainingContribution = trainingLoad(save.trainingPlan.intensity);
+  const load = trainingContribution + (matchResult?.minutesPlayed ?? 0) * 0.42;
   const recoveredInjury = advanceInjury(save.health.activeInjury);
   let health = {
     ...save.health,
@@ -69,6 +70,7 @@ export const simulateYouthWeek = <S extends YouthWeekInputShape>(
   const facts = createFacts(
     save,
     weekKey,
+    trainingContribution,
     load,
     matchResult,
     injury,
@@ -143,6 +145,7 @@ const advanceInjury = (injury: CareerSaveV2['health']['activeInjury']) => {
 const createFacts = (
   save: CareerSaveV2Like,
   weekKey: string,
+  trainingContribution: number,
   load: number,
   match: YouthMatchResultV2 | null,
   injury: CareerSaveV2['health']['activeInjury'],
@@ -156,6 +159,12 @@ const createFacts = (
       type: 'training',
       summary: `${save.trainingPlan.focus}/${save.trainingPlan.intensity}，周负荷 ${Math.round(load)}`,
       participantIds: [],
+      trainingContext: {
+        focus: save.trainingPlan.focus,
+        intensity: save.trainingPlan.intensity,
+        trainingLoad: trainingContribution,
+        totalLoad: load,
+      },
     },
   ];
   if (match)

@@ -85,6 +85,18 @@ describe('simulateProfessionalWeek', () => {
     const save = createProSave();
     // 第 2 周起有赛程
     const { save: next, matchResult } = simulateProfessionalWeek(save, proClubs);
+    const training = next.ledger.find(({ type }) => type === 'training');
+    const ownFixtures = save.proSeason!.fixtures.filter(
+      ({ weekKey, homeClubId, awayClubId }) =>
+        weekKey === '2027-W02' && (homeClubId === 'pro-club-1' || awayClubId === 'pro-club-1'),
+    );
+
+    expect(training?.trainingContext).toEqual({
+      focus: 'technical',
+      intensity: 'normal',
+      trainingLoad: 36,
+      totalLoad: (36 + 8) * 1.15 + ownFixtures.length * 12,
+    });
     expect(next.proSeason!.currentWeek).toBe(2);
     expect(next.proSeason!.fixtures.every(({ status }) => status === 'played')).toBe(false);
     const weekFixtures = save.proSeason!.fixtures.filter(({ weekKey }) => weekKey === '2027-W02');
