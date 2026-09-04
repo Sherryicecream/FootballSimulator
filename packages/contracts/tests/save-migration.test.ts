@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CareerSaveSchema, CareerSaveV2Schema, migrateCareerSave } from '../src';
+import { buildYouthSaveV2Fixture } from './fixtures/youth-save-v2';
 
 describe('migrateCareerSave', () => {
   it('deterministically preserves v1 identity, academy, random state and ledger', () => {
@@ -20,6 +21,32 @@ describe('migrateCareerSave', () => {
 
   it('rejects data that is neither a v1 nor v2 save', () => {
     expect(() => migrateCareerSave({ schemaVersion: 99 })).toThrow('无法迁移存档');
+  });
+
+  it('preserves a legacy pending feedback without inventing authored result fields', () => {
+    const base = buildYouthSaveV2Fixture();
+    const migrated = migrateCareerSave({
+      ...base,
+      story: {
+        ...base.story,
+        pendingFeedback: {
+          eventId: 'misunderstanding-clarification',
+          title: '训练场上的误会',
+          choiceId: 'clarify',
+          choiceText: '当面澄清误会',
+          response: '旧版本的通用结果',
+          participantResponses: [],
+          stateChanges: [],
+          relationshipChanges: [],
+          followUp: '旧版本的通用后续',
+        },
+      },
+    });
+
+    expect(migrated.story.pendingFeedback?.response).toBe('旧版本的通用结果');
+    expect(migrated.story.pendingFeedback?.resultTitle).toBeUndefined();
+    expect(migrated.story.pendingFeedback?.resultTone).toBeUndefined();
+    expect(migrated.story.pendingFeedback?.outcome).toBeUndefined();
   });
 });
 

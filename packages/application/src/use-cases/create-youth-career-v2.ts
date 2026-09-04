@@ -93,6 +93,7 @@ const hydratePendingEvent = (
       return {
         ...choice,
         ...(authored.response !== undefined ? { response: authored.response } : {}),
+        ...(authored.resultTitle !== undefined ? { resultTitle: authored.resultTitle } : {}),
         ...(authored.responses !== undefined ? { responses: authored.responses } : {}),
         ...(authored.followUp !== undefined ? { followUp: authored.followUp } : {}),
         ...(authored.narrativeVariants !== undefined

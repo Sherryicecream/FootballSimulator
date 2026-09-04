@@ -40,6 +40,8 @@ describe('resolveCareerEvent with authored outcomes', () => {
       expect.objectContaining({ outcome: 'success', label: '沟通奏效' }),
     );
     expect(result.story.pendingFeedback?.response).toContain('成熟');
+    expect(result.story.pendingFeedback?.resultTitle).toBe('沟通奏效');
+    expect(result.story.pendingFeedback?.resultTone).toBe('success');
     expect(result.currentState.confidence).toBeGreaterThan(save.currentState.confidence);
     expect(result.ledger.at(-1)?.summary).toContain('沟通奏效');
     expect(result.ledger.at(-1)?.outcome).toEqual(

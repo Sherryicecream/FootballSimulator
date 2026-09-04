@@ -72,6 +72,7 @@ describe('headless youth career flow', () => {
         {
           ...event.choices[0]!,
           response: '你把训练中的误会解释清楚，教练也看到了你的处理方式。',
+          resultTitle: '沟通留下结果',
           responses: [
             {
               speakerRole: 'youth-coach',
@@ -124,6 +125,7 @@ describe('headless youth career flow', () => {
     const choice = restored.story.pendingEvent?.choices[0];
 
     expect(choice?.response).toBe(authoredEvent.choices[0]!.response);
+    expect(choice?.resultTitle).toBe(authoredEvent.choices[0]!.resultTitle);
     expect(choice?.responses).toEqual(authoredEvent.choices[0]!.responses);
     expect(choice?.followUp).toBe(authoredEvent.choices[0]!.followUp);
     expect(restored.story.pendingEvent?.storyId).toBe(authoredEvent.storyId);
@@ -159,6 +161,9 @@ describe('headless youth career flow', () => {
       authoredEvent.choices[0]!.followUp,
     );
     expect(restoredFeedback.story.pendingFeedback?.nextEventIds).toEqual(authoredEvent.nextEvents);
+    expect(restoredFeedback.story.pendingFeedback?.resultTitle).toBeUndefined();
+    expect(restoredFeedback.story.pendingFeedback?.resultTone).toBeUndefined();
+    expect(restoredFeedback.story.pendingFeedback?.outcome).toBeUndefined();
   });
 });
 
