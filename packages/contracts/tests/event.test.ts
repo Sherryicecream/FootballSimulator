@@ -9,9 +9,11 @@ describe('EventChoice', () => {
       riskLabel: '中等',
       effects: { reputation: 5, determination: 2 },
       delayEffects: { stamina: -3 },
+      resultTitle: '训练计划已记录',
     });
     expect(valid.id).toBe('accept_challenge');
     expect(valid.riskLabel).toBe('中等');
+    expect(valid.resultTitle).toBe('训练计划已记录');
     expect(valid.nextEventIds).toBeUndefined();
   });
 });

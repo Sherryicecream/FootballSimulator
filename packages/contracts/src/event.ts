@@ -24,6 +24,9 @@ export const EventSpeakerRoleSchema = z.enum([
 ]);
 export type EventSpeakerRole = z.infer<typeof EventSpeakerRoleSchema>;
 
+export const EventFeedbackResultToneSchema = z.enum(['success', 'partial', 'failure', 'neutral']);
+export type EventFeedbackResultTone = z.infer<typeof EventFeedbackResultToneSchema>;
+
 export const EventChoiceResponseSchema = z.strictObject({
   speakerRole: EventSpeakerRoleSchema,
   text: z.string().min(1).max(500),
@@ -34,6 +37,7 @@ export const EventChoiceNarrativeVariantSchema = z.strictObject({
   response: z.string().min(1).max(500),
   responses: z.array(EventChoiceResponseSchema).max(6).optional(),
   followUp: z.string().min(1).max(300),
+  resultTitle: z.string().min(1).max(100).optional(),
 });
 export type EventChoiceNarrativeVariant = z.infer<typeof EventChoiceNarrativeVariantSchema>;
 
@@ -133,6 +137,7 @@ export const EventChoiceSchema = z.object({
   delayEffects: z.record(z.string(), z.number().int()).optional(),
   memoryKey: z.string().optional(),
   response: z.string().min(1).max(500).optional(),
+  resultTitle: z.string().min(1).max(100).optional(),
   responses: z.array(EventChoiceResponseSchema).max(6).optional(),
   followUp: z.string().min(1).max(300).optional(),
   nextEventIds: z.array(z.string().min(1).max(60)).max(8).optional(),

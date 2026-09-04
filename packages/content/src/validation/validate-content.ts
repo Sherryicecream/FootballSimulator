@@ -80,13 +80,41 @@ export const validateYouthContent = (raw: YouthContentBundle): YouthContentBundl
     assertNoReplacementChar(event.description);
     for (const choice of event.choices) {
       assertNoReplacementChar(choice.text);
-      for (const variant of choice.narrativeVariants ?? []) {
+      for (const text of [choice.response, choice.resultTitle, choice.followUp]) {
+        if (text) {
+          assertNoReplacementChar(text);
+        }
+      }
+      for (const response of choice.responses ?? []) {
+        assertNoReplacementChar(response.text);
+      }
+      for (const outcome of Object.values(choice.resolution?.outcomes ?? {})) {
+        assertNoReplacementChar(outcome.label);
+        for (const text of [outcome.response, outcome.followUp]) {
+          if (text) {
+            assertNoReplacementChar(text);
+          }
+        }
+        for (const response of outcome.responses ?? []) {
+          assertNoReplacementChar(response.text);
+        }
+      }
+      for (const variant of [
+        ...(choice.narrativeVariants ?? []),
+        ...Object.values(choice.resolution?.outcomes ?? {}).flatMap(
+          (outcome) => outcome.narrativeVariants ?? [],
+        ),
+      ]) {
         assertNoReplacementChar(variant.response);
         assertNoReplacementChar(variant.followUp);
+        if (variant.resultTitle) {
+          assertNoReplacementChar(variant.resultTitle);
+        }
         for (const response of variant.responses ?? []) {
           assertNoReplacementChar(response.text);
         }
       }
+      assertDeclaredResponseRoles(event, choice);
     }
   }
 
@@ -201,6 +229,29 @@ const validateEvents = (events: EventDefinition[]): void => {
       }
     }
     assertNoRealClubBrand(`${event.title} ${event.description}`);
+  }
+};
+
+const assertDeclaredResponseRoles = (
+  event: EventDefinition,
+  choice: EventDefinition['choices'][number],
+): void => {
+  const declaredRoles = new Set(event.participantRoles ?? []);
+  const responses = [
+    ...(choice.responses ?? []),
+    ...(choice.narrativeVariants ?? []).flatMap((variant) => variant.responses ?? []),
+    ...Object.values(choice.resolution?.outcomes ?? {}).flatMap((outcome) => [
+      ...(outcome.responses ?? []),
+      ...(outcome.narrativeVariants ?? []).flatMap((variant) => variant.responses ?? []),
+    ]),
+  ];
+
+  for (const response of responses) {
+    if (!declaredRoles.has(response.speakerRole)) {
+      throw new Error(
+        '事件参与角色未声明：' + event.id + '.' + choice.id + '.' + response.speakerRole,
+      );
+    }
   }
 };
 

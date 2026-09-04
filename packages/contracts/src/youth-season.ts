@@ -3,6 +3,7 @@ import { PositionSchema } from './primitives';
 import {
   ChoiceOutcomeSummarySchema,
   EventChoiceSchema,
+  EventFeedbackResultToneSchema,
   EventDefinitionSchema,
   EventInteractionSchema,
 } from './event';
@@ -232,6 +233,8 @@ export type EventFeedbackRelationshipChange = z.infer<typeof EventFeedbackRelati
 export const EventFeedbackSchema = z.strictObject({
   eventId: IdSchema,
   title: z.string().min(1).max(100),
+  resultTitle: z.string().min(1).max(100).optional(),
+  resultTone: EventFeedbackResultToneSchema.optional(),
   choiceId: IdSchema,
   choiceText: z.string().min(1).max(200),
   response: z.string().min(1).max(500),

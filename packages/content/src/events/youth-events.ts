@@ -637,6 +637,7 @@ const legacyYouthEvents: EventDefinition[] = [
     description:
       '最近几场训练中你频频出现失误，队友开始有些不耐烦了。你开始怀疑自己是否真的适合踢球，晚上躺在床上辗转难眠。',
     condition: {},
+    participantRoles: ['youth-coach'],
     choices: [
       {
         id: 'cc-push-through',

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CareerSaveV2Schema,
+  EventFeedbackSchema,
   EventDefinitionSchema,
   InjuryStatusSchema,
   PlayerDevelopmentProfileSchema,
@@ -230,6 +231,38 @@ describe('youth season v2 contracts', () => {
 
     expect(feedback.success).toBe(false);
     expect(legacyReport.trainingFeedback).toBeUndefined();
+  });
+
+  it('accepts structured result presentation fields and keeps legacy feedback valid', () => {
+    const feedback = EventFeedbackSchema.parse({
+      eventId: 'misunderstanding-clarification',
+      title: '误会澄清',
+      resultTitle: '误会已澄清',
+      resultTone: 'success',
+      choiceId: 'clarify',
+      choiceText: '当面澄清误会',
+      response: '你把事实和感受分开说明，训练组重新恢复了秩序。',
+      participantResponses: [],
+      stateChanges: [],
+      relationshipChanges: [],
+      followUp: '教练会在下一次训练继续观察。',
+    });
+    const legacyFeedback = EventFeedbackSchema.parse({
+      eventId: 'legacy-event',
+      title: '旧事件',
+      choiceId: 'continue',
+      choiceText: '继续',
+      response: '事件暂告一段落。',
+      participantResponses: [],
+      stateChanges: [],
+      relationshipChanges: [],
+      followUp: '后续影响仍在观察中。',
+    });
+
+    expect(feedback.resultTitle).toBe('误会已澄清');
+    expect(feedback.resultTone).toBe('success');
+    expect(legacyFeedback.resultTitle).toBeUndefined();
+    expect(legacyFeedback.resultTone).toBeUndefined();
   });
 
   it('defaults the save report field for an old v2 save', () => {

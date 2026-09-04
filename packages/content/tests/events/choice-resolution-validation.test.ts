@@ -13,4 +13,17 @@ describe('choice resolution content validation', () => {
 
     expect(() => validateYouthContent(invalid)).toThrow('未知事件效果');
   });
+
+  it('rejects response roles that are not declared by the event', () => {
+    const invalid = structuredClone(getYouthContent()) as YouthContentBundle;
+    const event = invalid.events.find(({ id }) => id === 'misunderstanding-clarification')!;
+    const choice = event.choices.find(({ id }) => id === 'clarify')!;
+    choice.responses = [{ speakerRole: 'rival', text: '这条回应不属于当前事件的人物。' }];
+
+    expect(() => validateYouthContent(invalid)).toThrow('参与角色');
+  });
+
+  it('accepts response roles declared by the event', () => {
+    expect(() => validateYouthContent(getYouthContent())).not.toThrow();
+  });
 });
