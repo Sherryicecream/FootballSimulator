@@ -89,8 +89,16 @@ describe('selectEventNarrativeVariant', () => {
             label: '沟通判定成功',
             effects: {},
             narrativeVariants: [
-              { response: '你把事实说清楚。', followUp: '教练认可了这次沟通。', resultTitle: '沟通奏效' },
-              { response: '你用训练录像还原了误会。', followUp: '下一次训练会检验默契。', resultTitle: '误会已拆解' },
+              {
+                response: '你把事实说清楚。',
+                followUp: '教练认可了这次沟通。',
+                resultTitle: '沟通奏效',
+              },
+              {
+                response: '你用训练录像还原了误会。',
+                followUp: '下一次训练会检验默契。',
+                resultTitle: '误会已拆解',
+              },
             ],
           },
           partial: {
