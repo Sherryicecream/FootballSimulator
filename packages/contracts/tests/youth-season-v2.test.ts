@@ -176,9 +176,7 @@ describe('youth season v2 contracts', () => {
       totalLoad: 192,
       fitness: { before: 78, after: 74, delta: -4 },
       fatigue: { before: 12, after: 26, delta: 14 },
-      attributeChanges: [
-        { attribute: 'passing', oldValue: 62, newValue: 63 },
-      ],
+      attributeChanges: [{ attribute: 'passing', oldValue: 62, newValue: 63 }],
       health: {
         status: 'none',
         bodyArea: null,
@@ -240,7 +238,6 @@ describe('youth season v2 contracts', () => {
     expect(parsed.lastMonthlyReport ?? null).toBeNull();
   });
 });
-
 
 const createV2Save = () => ({
   schemaVersion: 2,

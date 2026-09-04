@@ -154,7 +154,7 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
     standings = updateStandings(standings, fixture, result.homeScore, result.awayScore);
     if (isOwn && selection.appearance !== 'unavailable') {
       const match: YouthMatchResultV2 = {
-        id: `pro-${fixture.id}`,
+        id: `pro-${pro.startDate.slice(0, 4)}-${fixture.id}`,
         fixtureId: fixture.id,
         opponentId: isHome ? fixture.awayClubId : fixture.homeClubId,
         opponentName: isHome ? away.name : home.name,
@@ -205,7 +205,7 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
     );
     if (isOwn && selection.appearance !== 'unavailable') {
       const match: YouthMatchResultV2 = {
-        id: `pro-${fixture.id}`,
+        id: `pro-${pro.startDate.slice(0, 4)}-${fixture.id}`,
         fixtureId: fixture.id,
         opponentId: isHome ? fixture.awayClubId : fixture.homeClubId,
         opponentName: isHome ? away.name : home.name,
@@ -253,7 +253,7 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
       ? {
           ...fixture,
           status: 'played' as const,
-          resultId: `pro-${fixture.id}`,
+          resultId: `pro-${pro.startDate.slice(0, 4)}-${fixture.id}`,
         }
       : fixture,
   );

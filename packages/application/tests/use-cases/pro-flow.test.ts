@@ -847,7 +847,10 @@ describe('职业赛季流程', () => {
 
     expect(outcome.status).toBe('month-complete');
     expect(outcome.report.matchIds).toEqual(
-      expect.arrayContaining([`pro-${leagueFixture.id}`, `pro-${cupFixture.id}`]),
+      expect.arrayContaining([
+        `pro-${pro.startDate.slice(0, 4)}-${leagueFixture.id}`,
+        `pro-${pro.startDate.slice(0, 4)}-${cupFixture.id}`,
+      ]),
     );
   });
 });

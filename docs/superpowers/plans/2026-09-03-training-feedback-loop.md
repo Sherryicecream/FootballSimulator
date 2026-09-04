@@ -33,27 +33,27 @@
 - Produces `TrainingFocusSchema`, `TrainingIntensitySchema`, `TrainingWeekContextSchema`, `TrainingFeedbackSchema`, and `MonthlyReportSchema.trainingFeedback`.
 - Produces a nullable `lastMonthlyReport` field on the shared career save schema so v3/v4/v5 saves inherit the same compatible field.
 
-- [ ] **Step 1: Write failing schema tests**
+- [x] **Step 1: Write failing schema tests**
 
 Add tests that assert a valid training week context and feedback parse, reject unknown keys, and allow an old monthly report/save without the new optional fields. Assert a migrated historical save receives `lastMonthlyReport: null`.
 
-- [ ] **Step 2: Run the focused contract tests**
+- [x] **Step 2: Run the focused contract tests**
 
 Run: `pnpm test:unit -- packages/contracts/tests/youth-season-v2.test.ts packages/contracts/tests/save-migration.test.ts`
 
 Expected: FAIL because the new schemas and save field do not exist.
 
-- [ ] **Step 3: Implement the minimum contracts**
+- [x] **Step 3: Implement the minimum contracts**
 
 Extract reusable focus/intensity enums from `TrainingPlanSchema`. Add strict `TrainingWeekContextSchema` with `focus`, `intensity`, `trainingLoad` (`0..100`) and `totalLoad` (`0..150`). Add strict `TrainingFeedbackSchema` containing the plan, completed weeks, training/total load aggregates, fitness/fatigue before-after-delta objects, attribute changes, health status/details, match appearance/minute/rating summary, a bounded semantic match status, conclusion, and next-step text. Make `MonthlyReportSchema.trainingFeedback` optional and add `lastMonthlyReport: MonthlyReportSchema.nullable().default(null)` to the shared v2 save schema. Keep old reports and saves valid.
 
-- [ ] **Step 4: Run the focused contract tests again**
+- [x] **Step 4: Run the focused contract tests again**
 
 Run: `pnpm test:unit -- packages/contracts/tests/youth-season-v2.test.ts packages/contracts/tests/save-migration.test.ts`
 
 Expected: PASS, including strict-object rejection and old-save migration cases.
 
-- [ ] **Step 5: Commit the contract checkpoint**
+- [x] **Step 5: Commit the contract checkpoint**
 
 Run: `git add packages/contracts/src/youth-season.ts packages/contracts/src/save-migration.ts packages/contracts/tests/youth-season-v2.test.ts packages/contracts/tests/save-migration.test.ts && git commit -m "feat: add training feedback contracts"`
 
@@ -69,27 +69,27 @@ Run: `git add packages/contracts/src/youth-season.ts packages/contracts/src/save
 - Consumes the new `TrainingWeekContext` contract.
 - Produces `trainingContext` on every new `training` ledger fact. `trainingLoad` is the training contribution; `totalLoad` is the existing health-settlement load for that week.
 
-- [ ] **Step 1: Write failing simulation/application assertions**
+- [x] **Step 1: Write failing simulation/application assertions**
 
 Extend the existing youth-week test to assert the training fact includes the current plan, the calculated training contribution, and the exact total load used by health. Extend an existing professional-week/pro-flow case to assert the same shape for a league/cup week without changing match facts.
 
-- [ ] **Step 2: Run the focused tests**
+- [x] **Step 2: Run the focused tests**
 
 Run: `pnpm test:unit -- packages/simulation/tests/career/simulate-youth-week.test.ts packages/application/tests/use-cases/pro-flow.test.ts`
 
 Expected: FAIL because training facts currently only contain summary text.
 
-- [ ] **Step 3: Add structured context without changing formulas**
+- [x] **Step 3: Add structured context without changing formulas**
 
 Keep the existing `load` calculations byte-for-byte in behavior. Pass the base training contribution and computed total load into the fact factory, then add `trainingContext` while retaining the existing human-readable summary for legacy presentation.
 
-- [ ] **Step 4: Run the focused tests again**
+- [x] **Step 4: Run the focused tests again**
 
 Run: `pnpm test:unit -- packages/simulation/tests/career/simulate-youth-week.test.ts packages/application/tests/use-cases/pro-flow.test.ts`
 
 Expected: PASS and deterministic repeated transitions remain equal.
 
-- [ ] **Step 5: Commit the evidence checkpoint**
+- [x] **Step 5: Commit the evidence checkpoint**
 
 Run: `git add packages/simulation/src/career/simulate-youth-week.ts packages/simulation/src/career/professional-week.ts packages/simulation/tests/career/simulate-youth-week.test.ts packages/application/tests/use-cases/pro-flow.test.ts && git commit -m "feat: record structured weekly training evidence"`
 
@@ -104,27 +104,27 @@ Run: `git add packages/simulation/src/career/simulate-youth-week.ts packages/sim
 - Produces `buildTrainingFeedback(input): TrainingFeedback | null`.
 - `input` contains `plan`, month `facts`, `startHealth`, `endHealth`, and settled `attributeChanges`.
 
-- [ ] **Step 1: Write failing pure-function tests**
+- [x] **Step 1: Write failing pure-function tests**
 
 Cover: a month with four structured training facts and positive matches; a fatigue-limited month; an active/recovered injury month; no appearances; and a legacy fact list with no `trainingContext`. Assert exact load aggregates, state deltas, match aggregates, semantic status, and that identical input returns deep-equal output.
 
-- [ ] **Step 2: Run the focused simulation test**
+- [x] **Step 2: Run the focused simulation test**
 
 Run: `pnpm test:unit -- packages/simulation/tests/career/training-feedback.test.ts`
 
 Expected: FAIL because `buildTrainingFeedback` is not exported.
 
-- [ ] **Step 3: Implement the pure feedback builder**
+- [x] **Step 3: Implement the pure feedback builder**
 
 Filter `training`/`pro-match` facts by their structured contexts. Sum `trainingLoad` and `totalLoad`, calculate average training load, derive before/after health deltas from the supplied states, and aggregate only match contexts actually present. Mark legacy/no-context input as `null`. Determine semantic status using saved facts and thresholds only: no appearance, injury-limited, fatigue-limited, positive when average rating is at least `7`, otherwise steady. Generate bounded Chinese conclusion/next-step strings from these semantic facts; do not call randomness or inspect hidden player fields.
 
-- [ ] **Step 4: Run the focused simulation test again**
+- [x] **Step 4: Run the focused simulation test again**
 
 Run: `pnpm test:unit -- packages/simulation/tests/career/training-feedback.test.ts`
 
 Expected: PASS, including deterministic output and no mutation of input arrays.
 
-- [ ] **Step 5: Commit the feedback builder checkpoint**
+- [x] **Step 5: Commit the feedback builder checkpoint**
 
 Run: `git add packages/simulation/src/career/training-feedback.ts packages/simulation/src/index.ts packages/simulation/tests/career/training-feedback.test.ts && git commit -m "feat: build deterministic training feedback"`
 
@@ -144,27 +144,27 @@ Run: `git add packages/simulation/src/career/training-feedback.ts packages/simul
 - Consumes `buildTrainingFeedback`, current month facts, the pre-month health snapshot, and settled attribute changes.
 - Produces `report.trainingFeedback` and `save.lastMonthlyReport` for both youth and professional monthly completion paths.
 
-- [ ] **Step 1: Write failing monthly-flow tests**
+- [x] **Step 1: Write failing monthly-flow tests**
 
 Assert youth and professional month outcomes contain training feedback with the expected actual loads and match totals. Assert interrupted month resume does not duplicate training facts or feedback. Assert `lastMonthlyReport` equals the returned report and starting a new season resets it to `null`.
 
-- [ ] **Step 2: Run the focused application tests**
+- [x] **Step 2: Run the focused application tests**
 
 Run: `pnpm test:unit -- packages/application/tests/use-cases/advance-career-month-v2.test.ts packages/application/tests/use-cases/pro-flow.test.ts packages/application/tests/use-cases/youth-offseason.test.ts`
 
 Expected: FAIL because month reports and saves do not carry training feedback.
 
-- [ ] **Step 3: Assemble reports at the application boundary**
+- [x] **Step 3: Assemble reports at the application boundary**
 
 Capture the pre-month health before the weekly loop. After settlement, call the pure builder with report facts and final health. Set `lastMonthlyReport` in the returned save at the same moment the report becomes ready. Preserve it through event pauses, season completion and professional offseason; clear it only when a new season starts. Do not recalculate any simulation rule in the use case.
 
-- [ ] **Step 4: Run focused application tests again**
+- [x] **Step 4: Run focused application tests again**
 
 Run: `pnpm test:unit -- packages/application/tests/use-cases/advance-career-month-v2.test.ts packages/application/tests/use-cases/pro-flow.test.ts packages/application/tests/use-cases/youth-offseason.test.ts`
 
 Expected: PASS with no duplicate ledger IDs and unchanged existing match/health assertions.
 
-- [ ] **Step 5: Commit the application checkpoint**
+- [x] **Step 5: Commit the application checkpoint**
 
 Run: `git add packages/application/src packages/application/tests/use-cases/advance-career-month-v2.test.ts packages/application/tests/use-cases/pro-flow.test.ts packages/application/tests/use-cases/youth-offseason.test.ts && git commit -m "feat: persist monthly training feedback"`
 
@@ -184,31 +184,31 @@ Run: `git add packages/application/src packages/application/tests/use-cases/adva
 - Consumes `MonthlyReport.trainingFeedback` and `save.lastMonthlyReport` only.
 - Produces a single training-plan control in `CareerDashboard` and a presentation-only `TrainingFeedbackPanel` with accessible semantic icons and text/value labels.
 
-- [ ] **Step 1: Write failing component tests**
+- [x] **Step 1: Write failing component tests**
 
 Add a fixture with training feedback and assert the panel renders plan, load, attribute changes, fitness/fatigue deltas, health status, and match connection. Assert a missing feedback field keeps the old monthly report visible without an empty or crashing panel. Assert the dashboard exposes only one interactive training focus/intensity control pair.
 
-- [ ] **Step 2: Run the focused web tests**
+- [x] **Step 2: Run the focused web tests**
 
 Run: `pnpm test:unit -- apps/web/tests/career-dashboard/CareerDashboard.test.tsx apps/web/tests/career-dashboard/CareerDashboardVisuals.test.tsx apps/web/tests/career-dashboard/TrainingFeedbackPanel.test.tsx`
 
 Expected: FAIL because the panel and restore wiring do not exist.
 
-- [ ] **Step 3: Implement presentation-only feedback UI**
+- [x] **Step 3: Implement presentation-only feedback UI**
 
 Create a focused panel that maps semantic enums to Chinese labels and uses existing CSS variables/classes. Render numeric values alongside every load bar and state delta; use color plus text/icon semantics; do not calculate totals, thresholds, or causal claims in React. Keep the existing monthly momentum, story, and matchday panels below/alongside it. Remove the unused duplicate `TrainingSettings` component only if the reference audit remains empty.
 
-- [ ] **Step 4: Restore the latest report on load**
+- [x] **Step 4: Restore the latest report on load**
 
 When `loadCareer` returns a valid save, initialize the page report from `restored.lastMonthlyReport` while preserving existing phase routing. When a new season starts, accept the application-cleared value and clear the in-memory report as today. Keep current report state synchronized with the saved report after monthly completion.
 
-- [ ] **Step 5: Run focused web tests again**
+- [x] **Step 5: Run focused web tests again**
 
 Run: `pnpm test:unit -- apps/web/tests/career-dashboard/CareerDashboard.test.tsx apps/web/tests/career-dashboard/CareerDashboardVisuals.test.tsx apps/web/tests/career-dashboard/TrainingFeedbackPanel.test.tsx`
 
 Expected: PASS on desktop/mobile render assertions, legacy report fallback, and single-control checks.
 
-- [ ] **Step 6: Commit the web checkpoint**
+- [x] **Step 6: Commit the web checkpoint**
 
 Run: `git add apps/web/src apps/web/tests/career-dashboard && git commit -m "feat: show training feedback in monthly dashboard"`
 
@@ -223,36 +223,36 @@ Run: `git add apps/web/src apps/web/tests/career-dashboard && git commit -m "fea
 - Consumes the saved report contract and current monthly browser flow.
 - Produces a checked-in balance artifact and a roadmap entry documenting the completed module and unchanged simulation baseline.
 
-- [ ] **Step 1: Write the failing E2E assertions**
+- [x] **Step 1: Write the failing E2E assertions**
 
 Extend the existing monthly youth flow to reach a report, verify “训练回顾” plus load/state/match values, reload the page, and verify the same month report remains visible. Change the plan, advance another month, and verify the displayed focus/intensity reflects the new month’s actual structured facts.
 
-- [ ] **Step 2: Run the focused E2E test**
+- [x] **Step 2: Run the focused E2E test**
 
 Run: `pnpm test:e2e -- apps/web/tests/e2e/youth-season.spec.ts`
 
 Expected: FAIL until persistence and the panel are wired.
 
-- [ ] **Step 3: Fix only integration defects found by E2E**
+- [x] **Step 3: Fix only integration defects found by E2E**
 
 Keep the browser on monthly actions; do not add weekly selectors or fast-forward controls. Ensure the local save slot is written before reload assertions.
 
-- [ ] **Step 4: Run the focused E2E test again**
+- [x] **Step 4: Run the focused E2E test again**
 
 Run: `pnpm test:e2e -- apps/web/tests/e2e/youth-season.spec.ts`
 
 Expected: PASS on the existing desktop and mobile projects.
 
-- [ ] **Step 5: Run the complete required gates**
+- [x] **Step 5: Run the complete required gates**
 
 Run in order: `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm build`, `pnpm test:e2e`, then `pnpm balance:youth -- --runs 1000 --seed-start 1 --output artifacts/youth-balance-m10-training-feedback.json`.
 
-Expected: all commands pass; balance completion remains `100%`, and match/decision/injury/graduation/contract metrics stay within an explainable range of `artifacts/youth-balance-m10-transfer-loan.json`.
+Actual: all required gates passed. The root `pnpm test` covered 110 test files and 518 tests plus architecture 10/10; `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm build`, `pnpm test:e2e` (18/18) and the direct 1,000-season balance command also passed. The balance report is `artifacts/youth-balance-m10-training-feedback.json`.
 
-- [ ] **Step 6: Update the roadmap after evidence exists**
+- [x] **Step 6: Update the roadmap after evidence exists**
 
 Append the module completion, exact gate counts, balance artifact path, and an explicit note that simulation outcomes/random sequence were unchanged. Do not edit `spec.md` for a presentation/report-only extension unless an actual long-term product rule changed.
 
-- [ ] **Step 7: Commit the verified module checkpoint**
+- [x] **Step 7: Commit the verified module checkpoint**
 
 Run: `git add apps/web/tests/e2e/youth-season.spec.ts docs/ROADMAP.md artifacts/youth-balance-m10-training-feedback.json && git commit -m "feat: complete training feedback loop"`

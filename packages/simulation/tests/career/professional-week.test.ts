@@ -81,6 +81,40 @@ describe('simulateProfessionalWeek', () => {
     expect(a).toEqual(b);
   });
 
+  it('uses unique match fact IDs across professional seasons', () => {
+    const first = simulateProfessionalWeek(createProSave(), proClubs);
+    const secondBase = createProSave();
+    const second = simulateProfessionalWeek(
+      {
+        ...secondBase,
+        proSeason: {
+          ...secondBase.proSeason!,
+          id: 'pro-2028',
+          startDate: '2028-08-01',
+          endDate: '2029-05-31',
+          currentDate: '2028-08-01',
+          currentMonth: '2028-08',
+          fixtures: createLeagueFixtures(
+            proClubs.map(({ id }) => id),
+            'pro-league',
+            7,
+            '2028',
+          ),
+        },
+      },
+      proClubs,
+    );
+    const firstMatchIds = first.save.ledger
+      .filter(({ type }) => type === 'pro-match')
+      .map(({ id }) => id);
+    const secondMatchIds = second.save.ledger
+      .filter(({ type }) => type === 'pro-match')
+      .map(({ id }) => id);
+
+    expect(firstMatchIds.length).toBeGreaterThan(0);
+    expect(secondMatchIds.length).toBeGreaterThan(0);
+    expect(firstMatchIds.some((id) => secondMatchIds.includes(id))).toBe(false);
+  });
   it('推进日期、更新赛程与积分榜，比赛场次一一对应', () => {
     const save = createProSave();
     // 第 2 周起有赛程
@@ -252,7 +286,7 @@ describe('decideAppearance', () => {
         ({ weekKey, homeClubId, awayClubId }) =>
           weekKey.endsWith('W27') && (homeClubId === 'pro-club-1' || awayClubId === 'pro-club-1'),
       )!;
-      const fact = next.ledger.find(({ id }) => id === `pro-${ownCupFixture.id}`);
+      const fact = next.ledger.find(({ id }) => id === `pro-2027-${ownCupFixture.id}`);
 
       expect(next.proSeason!.standings).toEqual(save.proSeason!.standings);
       expect(

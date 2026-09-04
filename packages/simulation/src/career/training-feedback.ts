@@ -36,9 +36,7 @@ export const buildTrainingFeedback = ({
     contexts.reduce((sum, { trainingLoad }) => sum + trainingLoad, 0),
   );
   const averageTrainingLoad = roundOneDecimal(totalTrainingLoad / contexts.length);
-  const totalLoad = roundOneDecimal(
-    contexts.reduce((sum, { totalLoad: load }) => sum + load, 0),
-  );
+  const totalLoad = roundOneDecimal(contexts.reduce((sum, { totalLoad: load }) => sum + load, 0));
   const matchContexts = facts
     .filter(({ type }) => type === 'match' || type === 'pro-match')
     .map(({ matchContext }) => matchContext)
@@ -131,7 +129,8 @@ const conclusionFor = (
   if (matchStatus === 'fatigue-limited') return `本月${focus}训练负荷较高，疲劳已经影响比赛表现。`;
   if (matchStatus === 'positive') return `本月${focus}训练按计划执行，比赛表现出现积极信号。`;
   if (matchStatus === 'no-appearance') return `本月${focus}训练完成，但暂时没有足够的出场样本。`;
-  if (healthStatus === 'recovered') return `本月${focus}训练伴随伤病恢复，成长结算包含 ${attributeChangeCount} 项变化。`;
+  if (healthStatus === 'recovered')
+    return `本月${focus}训练伴随伤病恢复，成长结算包含 ${attributeChangeCount} 项变化。`;
   return `本月${focus}训练按计划完成，比赛与成长结果保持稳定。`;
 };
 
@@ -140,9 +139,11 @@ const nextStepFor = (
   matchStatus: TrainingFeedback['matches']['status'],
   healthStatus: 'none' | 'active' | 'recovered',
 ): string => {
-  if (healthStatus === 'active' || matchStatus === 'injury-limited') return '优先完成恢复，再逐步恢复训练和比赛负荷。';
+  if (healthStatus === 'active' || matchStatus === 'injury-limited')
+    return '优先完成恢复，再逐步恢复训练和比赛负荷。';
   if (matchStatus === 'fatigue-limited') return '下月先降低负荷，等疲劳回落后再追求更高训练量。';
-  if (matchStatus === 'no-appearance') return `保持${focusLabel(plan.focus)}重点，等待更多比赛样本验证效果。`;
+  if (matchStatus === 'no-appearance')
+    return `保持${focusLabel(plan.focus)}重点，等待更多比赛样本验证效果。`;
   if (matchStatus === 'positive') return `继续${focusLabel(plan.focus)}重点，同时安排常规恢复。`;
   return `继续${focusLabel(plan.focus)}重点，关注下一月的身体状态与出场机会。`;
 };

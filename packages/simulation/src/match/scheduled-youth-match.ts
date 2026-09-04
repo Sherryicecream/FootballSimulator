@@ -69,7 +69,7 @@ export const simulateScheduledYouthMatch = (
     : null;
 
   return {
-    id: `match-${fixture.id}`,
+    id: `match-${save.season.startDate.slice(0, 4)}-${fixture.id}`,
     fixtureId: fixture.id,
     opponentId,
     opponentName: opponent.name,
