@@ -1,4 +1,5 @@
 import type { EventDefinition } from '@football/contracts';
+import { createAuthoredResolution } from './authored-outcomes';
 
 export const balancedOneOffEvents: EventDefinition[] = [
   {
@@ -93,6 +94,47 @@ export const balancedOneOffEvents: EventDefinition[] = [
         text: '冷静复盘全部失球录像',
         riskLabel: 'low',
         effects: { confidence: 2, coachTrust: 3 },
+        resolution: createAuthoredResolution('composure', 52, {
+          success: {
+            label: '复盘找到改口',
+            effects: { confidence: 3, coachTrust: 3 },
+            response:
+              '你把失球录像按站位、回追和最后一脚传球拆开，终于找到一个能在下次提前修正的瞬间。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“问题被拆成动作，才有机会在比赛里真正改掉。”',
+              },
+            ],
+            followUp: '下一场训练会安排同一侧的防守回合，检验你的第一步选择。',
+          },
+          partial: {
+            label: '复盘形成方向',
+            effects: { confidence: 2, coachTrust: 3 },
+            response:
+              '你完整看完了录像，也记下了主要失误；不过真正进入高速对抗时，修正还需要继续练。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“知道问题在哪里了，接下来要让身体记住新的选择。”',
+              },
+            ],
+            followUp: '下一场比赛前会再回看一次关键回合，确认修正没有停在纸面上。',
+          },
+          failure: {
+            label: '失误仍未拆开',
+            effects: { confidence: -2, coachTrust: -2 },
+            response:
+              '你看完了录像，却始终把失球归结为运气和队友位置，第二天训练时仍重复了同一个回追错误。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“复盘不是找借口，下一次我要看到你指出自己的责任。”',
+              },
+            ],
+            followUp: '接下来的训练会从最基础的站位开始，重新建立可靠的防守判断。',
+          },
+        }),
         response:
           '你没有跳过那几个最刺眼的回合，而是把每一次站位和回追路线都倒回去看了一遍。复盘结束时，失误不再只是一个模糊的懊悔。',
         responses: [
@@ -109,6 +151,47 @@ export const balancedOneOffEvents: EventDefinition[] = [
         text: '放下失误，专注下一场比赛',
         riskLabel: 'medium',
         effects: { morale: 2, confidence: -1 },
+        resolution: createAuthoredResolution('determination', 55, {
+          success: {
+            label: '向前看但记住细节',
+            effects: { morale: 3, confidence: 1 },
+            response:
+              '你关掉录像让自己休息，却在第二天主动记下那脚传球的触发条件；情绪放下了，教训没有丢。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“能继续向前，也能记住细节，这才是成熟的复盘。”',
+              },
+            ],
+            followUp: '下一场比赛会给你一次重新处理相似局面的机会。',
+          },
+          partial: {
+            label: '失误暂时放下',
+            effects: { morale: 2, confidence: -1 },
+            response:
+              '你没有让失误继续占据整晚，第二天精神状态好了一些，但还没有把问题转成明确的训练目标。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“恢复状态是第一步，别让下一次机会又变成同一个画面。”',
+              },
+            ],
+            followUp: '教练会在下一次训练提醒你回到录像里的关键区域。',
+          },
+          failure: {
+            label: '失误被带进下一场',
+            effects: { morale: -2, confidence: -3, coachTrust: -1 },
+            response:
+              '你急着翻篇，却在训练中回避同一侧的处理球；没有复盘的轻松很快变成了新的犹豫。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“向前看不等于假装没发生，先把该看的回合看完。”',
+              },
+            ],
+            followUp: '下一场比赛前你需要完成一次针对性复盘，否则上场机会会受到影响。',
+          },
+        }),
         response:
           '你关掉了录像，没有让这次失误继续占据整晚。第二天训练时你看起来轻松了些，但那脚传球的画面仍在关键时刻提醒着你。',
         responses: [
@@ -189,6 +272,47 @@ export const balancedOneOffEvents: EventDefinition[] = [
         text: '和教练调整训练的重点',
         riskLabel: 'low',
         effects: { confidence: 2, coachTrust: 2 },
+        resolution: createAuthoredResolution('decision', 52, {
+          success: {
+            label: '训练重点重新对焦',
+            effects: { confidence: 3, coachTrust: 3 },
+            response:
+              '你和教练把瓶颈拆成第一脚处理、抬头观察和最后选择三个小任务，训练终于有了可见的进度条。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“换的不是花样，是让每一次练习都能回答一个问题。”',
+              },
+            ],
+            followUp: '接下来两周会记录这三个细节，短期数据不漂亮也不会被忽略。',
+          },
+          partial: {
+            label: '瓶颈出现突破口',
+            effects: { confidence: 2, coachTrust: 2 },
+            response:
+              '新的训练重点让你找到了方向，动作仍不够稳定，但每组练习都有了可以检查的目标。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“方向已经清楚，下一步是把它重复到比赛速度。”',
+              },
+            ],
+            followUp: '下一次有对抗训练会检验你能否保持新的处理顺序。',
+          },
+          failure: {
+            label: '调整没有落地',
+            effects: { confidence: -1, coachTrust: -1, fatigue: 2 },
+            response:
+              '你同意调整计划，却没有真正改变动作习惯；训练内容变了，关键回合里的选择仍旧原地打转。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“写下新计划不等于执行，先把一个细节做对。”',
+              },
+            ],
+            followUp: '教练会缩小任务范围，直到你能在疲劳下完成最基本的修正。',
+          },
+        }),
         response:
           '你承认原来的练习没有带来突破，并和教练把动作拆成了几个更小的环节。训练计划没有变得更热闹，却终于有了可以检查的进度。',
         responses: [
@@ -205,6 +329,45 @@ export const balancedOneOffEvents: EventDefinition[] = [
         text: '坚持重复直到动作稳定',
         riskLabel: 'medium',
         effects: { confidence: 1, fatigue: 4 },
+        resolution: createAuthoredResolution('determination', 58, {
+          success: {
+            label: '重复转成稳定',
+            effects: { confidence: 2, fatigue: 2 },
+            response:
+              '你在最后几组仍保持动作质量，并主动修正每次触球的角度；枯燥的重复开始变成可复用的稳定。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“重复不是目的，能在疲劳里保持质量才是进步。”',
+              },
+            ],
+            followUp: '下一次对抗训练会把这项稳定带进更快的节奏。',
+          },
+          partial: {
+            label: '动作略有稳定',
+            effects: { confidence: 1, fatigue: 4 },
+            response: '你把同一组动作坚持到底，失误确实少了一点，但疲劳让动作质量还没有完全固定。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“基础已经有了，下一次要学会在累的时候保持它。”',
+              },
+            ],
+            followUp: '接下来会继续观察重复训练是否真的转化为比赛处理球。',
+          },
+          failure: {
+            label: '重复加重疲劳',
+            effects: { confidence: -1, fatigue: 6 },
+            response: '你把训练量一再推高，却没有修正动作，最后几组的失误和疲劳一起累积。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“加量不能替代修正，先把动作做对再谈坚持。”',
+              },
+            ],
+            followUp: '下一次训练会降低总量，并检查疲劳是否已经影响你的基本技术。',
+          },
+        }),
         response:
           '你没有更换训练内容，只是把同一组动作又做了一遍。枯燥让时间变慢，但最后几次触球的失误确实少了一点。',
         responses: [
@@ -236,6 +399,46 @@ export const balancedOneOffEvents: EventDefinition[] = [
         text: '配合理疗完成低强度恢复',
         riskLabel: 'low',
         effects: { fatigue: -6, fitness: 2 },
+        resolution: createAuthoredResolution('stamina', 65, {
+          success: {
+            label: '恢复计划执行顺利',
+            effects: { fatigue: -8, fitness: 3 },
+            response:
+              '你按理疗师安排完成低强度恢复，疲劳明显下降，身体对下一次训练的反馈也更稳定。',
+            responses: [
+              {
+                speakerRole: 'assistant-coach',
+                text: '{personName}：“恢复不是偷懒，是让下一次训练有质量地开始。”',
+              },
+            ],
+            followUp: '助教会根据明天的疲劳反应决定是否逐步加回跑动量。',
+          },
+          partial: {
+            label: '恢复达到预期',
+            effects: { fatigue: -6, fitness: 2 },
+            response: '你完成了恢复课程，疲劳得到缓解，但身体还没有准备好立刻回到完整对抗。',
+            responses: [
+              {
+                speakerRole: 'assistant-coach',
+                text: '{personName}：“今天的目标完成了，明天仍要先听身体的反馈。”',
+              },
+            ],
+            followUp: '下一次训练会继续控制强度，避免恢复日变成新的负荷。',
+          },
+          failure: {
+            label: '恢复效果有限',
+            effects: { fatigue: -1, fitness: -1 },
+            response:
+              '你虽然完成了课程，却没有按要求补水和降下节奏，疲劳只小幅回落，身体仍显得沉重。',
+            responses: [
+              {
+                speakerRole: 'assistant-coach',
+                text: '{personName}：“恢复计划需要完整执行，不能只完成场上的一半。”',
+              },
+            ],
+            followUp: '教练组会延长低强度阶段，并观察是否出现新的不适信号。',
+          },
+        }),
       },
     ],
   },
@@ -476,6 +679,45 @@ export const balancedOneOffEvents: EventDefinition[] = [
         text: '按计划逐步恢复训练量',
         riskLabel: 'low',
         effects: { fitness: 3, fatigue: -2, confidence: 2 },
+        resolution: createAuthoredResolution('stamina', 58, {
+          success: {
+            label: '回归节奏稳步建立',
+            effects: { fitness: 4, fatigue: -3, confidence: 2 },
+            response: '你按计划完成恢复训练，在没有逞强的情况下把跑动和对抗一点点加回来。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“回来不是越快越好，是要能一直回来。”',
+              },
+            ],
+            followUp: '接下来两周会按反应逐步增加强度，恢复质量决定你何时回到名单。',
+          },
+          partial: {
+            label: '回归按计划推进',
+            effects: { fitness: 3, fatigue: -2, confidence: 2 },
+            response: '你完成了医疗组规定的训练量，身体反应基本稳定，但还需要更多对抗来确认恢复。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“今天通过了，下一步仍然要给身体时间。”',
+              },
+            ],
+            followUp: '教练会在下一次合练后复查反应，暂不提前承诺比赛时间。',
+          },
+          failure: {
+            label: '回归需要放慢',
+            effects: { fitness: -1, fatigue: 3, confidence: -2 },
+            response:
+              '你在恢复训练中提前加速，伤处的紧绷感重新出现，训练组只好把负荷降回基础阶段。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“急着证明自己只会让回归再次延后。”',
+              },
+            ],
+            followUp: '下一次训练会重新评估负荷，出现疼痛或异常反应时必须及时报告。',
+          },
+        }),
         response:
           '你按医疗组划出的强度完成了恢复训练，没有因为一次顺利的变向就急着加码。离开场地时，你感觉自己终于在重新掌控身体。',
         responses: [
@@ -491,6 +733,47 @@ export const balancedOneOffEvents: EventDefinition[] = [
         text: '尽快参加合练找状态',
         riskLabel: 'medium',
         effects: { fitness: 2, fatigue: 5, confidence: 3 },
+        resolution: createAuthoredResolution('stamina', 62, {
+          success: {
+            label: '合练顺利找回节奏',
+            effects: { fitness: 3, fatigue: 2, confidence: 3 },
+            response:
+              '你参加合练后逐渐找回比赛感觉，训练结束时伤处没有异常，身体允许下一步继续加量。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“状态回来了，但每次加量都要先看恢复反应。”',
+              },
+            ],
+            followUp: '教练会考虑让你进入下一场名单，同时安排额外的恢复观察。',
+          },
+          partial: {
+            label: '合练找到一半状态',
+            effects: { fitness: 2, fatigue: 5, confidence: 3 },
+            response:
+              '你完成了合练，触球感觉回来了，但疲劳和紧绷感提醒你还不能立刻恢复全部比赛节奏。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“感觉会回来，名单要等身体给出答案。”',
+              },
+            ],
+            followUp: '下一次合练仍会限制时间，避免一次状态回升换来新的停训。',
+          },
+          failure: {
+            label: '过快合练反应不佳',
+            effects: { fitness: -2, fatigue: 8, confidence: -2 },
+            response:
+              '你急着参加完整合练，冲刺后的不适让动作开始变形，医疗组要求你重新回到恢复阶段。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“回归不是和伤处赌一把，今天的反应已经说明问题。”',
+              },
+            ],
+            followUp: '下一次训练会降低负荷并复查恢复进度，比赛安排暂时顺延。',
+          },
+        }),
         response:
           '你主动加入合练，第一次冲刺时仍有些迟疑，但连续几次触球让你重新找回了比赛的感觉。训练结束后，伤处的紧绷也比预想中更明显。',
         responses: [

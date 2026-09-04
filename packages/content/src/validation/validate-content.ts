@@ -45,6 +45,19 @@ const realClubBrands = [
   'manchester united',
 ];
 
+const dynamicResultEventIds = new Set([
+  'misunderstanding-clarification',
+  'misunderstanding-repair',
+  'costly-match-mistake',
+  'technical-plateau',
+  'recovery-session-warning',
+  'return-to-full-training',
+  'position-race-opening',
+  'position-race-review',
+  'coach-trust-opening',
+  'coach-trust-test',
+]);
+
 export const validateYouthContent = (raw: YouthContentBundle): YouthContentBundle => {
   const content = YouthContentBundleSchema.parse(raw);
   assertUniqueIds(
@@ -203,6 +216,9 @@ const validateEvents = (events: EventDefinition[]): void => {
       throw new Error(`重大事件必须有条件：${event.id}`);
     }
     for (const choice of event.choices) {
+      if (dynamicResultEventIds.has(event.id)) {
+        assertCompleteResultBranches(event, choice);
+      }
       for (const effectKey of [
         ...Object.keys(choice.effects),
         ...Object.keys(choice.delayEffects ?? {}),
@@ -229,6 +245,25 @@ const validateEvents = (events: EventDefinition[]): void => {
       }
     }
     assertNoRealClubBrand(`${event.title} ${event.description}`);
+  }
+};
+
+const assertCompleteResultBranches = (
+  event: EventDefinition,
+  choice: EventDefinition['choices'][number],
+): void => {
+  const outcomes = choice.resolution?.outcomes;
+  if (!outcomes) {
+    throw new Error(`结果分支不完整：${event.id}.${choice.id} 缺少 resolution.outcomes`);
+  }
+  const branches = [outcomes.success, outcomes.partial, outcomes.failure];
+  if (new Set(branches.map(({ label }) => label)).size !== 3) {
+    throw new Error(`结果分支标题重复：${event.id}.${choice.id}`);
+  }
+  for (const branch of branches) {
+    if (!branch.response?.trim() || !branch.followUp?.trim()) {
+      throw new Error(`结果分支文案不完整：${event.id}.${choice.id}`);
+    }
   }
 };
 

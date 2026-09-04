@@ -1,4 +1,5 @@
 import type { EventDefinition } from '@football/contracts';
+import { createAuthoredResolution } from './authored-outcomes';
 import { balancedOneOffEvents } from './one-off-events';
 import { shortStoryEvents } from './story-events';
 import { trajectoryEvents } from './trajectory-events';
@@ -45,18 +46,48 @@ const legacyYouthEvents: EventDefinition[] = [
               effects: { respect: 4, trust: 3, confidence: 3, coachTrust: 2 },
               response:
                 '你把事实、感受和下一次配合分开说清楚，教练没有再追问，队友也主动把误会放下。',
+              responses: [
+                {
+                  speakerRole: 'youth-coach',
+                  text: '{personName}：“愿意把问题说开，才有机会把注意力带回训练。”',
+                },
+                {
+                  speakerRole: 'teammate',
+                  text: '{personName}：“我刚才确实听反了，下一次我会提前喊你。”',
+                },
+              ],
               followUp: '教练会把这次沟通记在心里；下一场比赛，你们的默契会成为新的观察点。',
             },
             partial: {
               label: '误会缓和',
               effects: { respect: 2, trust: 1, confidence: 1 },
               response: '你的解释让气氛缓和下来，但队友仍需要几次训练确认你们能否真正配合。',
+              responses: [
+                {
+                  speakerRole: 'youth-coach',
+                  text: '{personName}：“方向是对的，先让下一次配合证明它。”',
+                },
+                {
+                  speakerRole: 'teammate',
+                  text: '{personName}：“我愿意再试一次，但我们要把信号说清楚。”',
+                },
+              ],
               followUp: '下一场比赛的第一次沟通将决定这次澄清能否留下来。',
             },
             failure: {
               label: '解释被误解',
               effects: { respect: -1, trust: -2, confidence: -2, coachTrust: -2 },
               response: '你试图把话说清楚，却被听成了推责；教练让你们先回到训练，不再继续争辩。',
+              responses: [
+                {
+                  speakerRole: 'youth-coach',
+                  text: '{personName}：“先停下争论，下一次训练用行动承担责任。”',
+                },
+                {
+                  speakerRole: 'teammate',
+                  text: '{personName}：“我现在还没听懂你的意思，先别把问题扩大。”',
+                },
+              ],
               followUp: '下一次训练你需要用行动证明自己愿意承担沟通责任。',
             },
           },
@@ -109,6 +140,46 @@ const legacyYouthEvents: EventDefinition[] = [
         text: '先保持沉默，用接下来的训练表现证明自己',
         riskLabel: 'low',
         effects: { confidence: 1, morale: -1 },
+        resolution: createAuthoredResolution('composure', 52, {
+          success: {
+            label: '沉默换来稳定',
+            effects: { confidence: 2 },
+            response:
+              '你没有争辩，却在训练中连续做对了几个关键选择，队友的戒心先被稳定表现压了下去。',
+            responses: [
+              {
+                speakerRole: 'teammate',
+                text: '{personName}：“我看见你在认真补救，下一次我会先给你信号。”',
+              },
+            ],
+            followUp: '教练会继续观察你能否把沉默转成稳定沟通，而不是再次回避问题。',
+          },
+          partial: {
+            label: '问题暂时搁置',
+            effects: { confidence: 1, morale: -1 },
+            response: '你没有把争执继续扩大，但误会也没有真正消失。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“沉默可以让训练继续，但问题还在这里。”',
+              },
+            ],
+            followUp: '下一次配合前，教练会留意你是否愿意主动说出跑位意图。',
+          },
+          failure: {
+            label: '误会继续发酵',
+            effects: { confidence: -2, morale: -2, trust: -1 },
+            response:
+              '你把话留到场下，却没能阻止情绪带进下一次对抗；一次迟到的传球让旧问题重新浮出水面。',
+            responses: [
+              {
+                speakerRole: 'teammate',
+                text: '{personName}：“你一直不说，我只能按最坏的方式猜。”',
+              },
+            ],
+            followUp: '下一次训练需要先修复沟通，再谈用表现证明自己。',
+          },
+        }),
         response: '你没有把争执继续扩大，但误会也没有真正消失。',
         responses: [
           {
@@ -149,6 +220,42 @@ const legacyYouthEvents: EventDefinition[] = [
         text: '提前沟通跑位，把话说在前面',
         riskLabel: 'low',
         effects: { trust: 2, respect: 2 },
+        resolution: createAuthoredResolution('decision', 54, {
+          success: {
+            label: '默契重新接上',
+            effects: { trust: 3, respect: 3 },
+            response: '你在跑位前把意图说清楚，队友及时把球送进空当，第一次配合不漂亮却足够可靠。',
+            responses: [
+              { speakerRole: 'teammate', text: '{personName}：“提前说一声，很多失误就不会发生。”' },
+            ],
+            followUp: '教练会在下一场比赛继续观察你们能否把主动沟通保持住。',
+          },
+          partial: {
+            label: '配合暂时修复',
+            effects: { trust: 2, respect: 2 },
+            response: '你提前喊出了跑位，队友也做出回应；配合完成了，但节奏仍有半拍迟疑。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“方向是对的，下一步是让沟通赶在动作之前。”',
+              },
+            ],
+            followUp: '接下来几次训练会继续检验这份默契能否经受更快的比赛节奏。',
+          },
+          failure: {
+            label: '沟通再次错位',
+            effects: { trust: -1, respect: -1, confidence: -1 },
+            response:
+              '你试着提前沟通，却在关键一刻说得含糊，队友按另一种理解启动，机会从两人的犹豫间溜走。',
+            responses: [
+              {
+                speakerRole: 'teammate',
+                text: '{personName}：“我听见了，但还是不知道你到底要往哪里跑。”',
+              },
+            ],
+            followUp: '下一场训练会先安排简单配合，重新建立可执行的信号。',
+          },
+        }),
         response:
           '你在跑位前先喊出了自己的意图，队友也用手势回应。那次配合并不华丽，却让你们第一次不用猜测彼此的下一步。',
         responses: [
@@ -169,6 +276,43 @@ const legacyYouthEvents: EventDefinition[] = [
         text: '不再解释，直接用跑位回应',
         riskLabel: 'medium',
         effects: { respect: 1 },
+        resolution: createAuthoredResolution('offTheBall', 56, {
+          success: {
+            label: '跑位回应奏效',
+            effects: { respect: 2, confidence: 2 },
+            response:
+              '你连续两次提前启动，第二次终于在队友抬头前进入了空当；这次冒险让默契有了实际落点。',
+            responses: [
+              {
+                speakerRole: 'teammate',
+                text: '{personName}：“这次我看懂了，你的启动比以前更早。”',
+              },
+            ],
+            followUp: '教练会在下一场比赛安排相似回合，检验你能否稳定读懂空间。',
+          },
+          partial: {
+            label: '表现暂时回应',
+            effects: { respect: 1 },
+            response: '你用跑位回应了质疑，队友完成了传球，但你们仍需要更多提示才能在压力下同步。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“表现能说明一部分问题，别让队友永远靠猜。”',
+              },
+            ],
+            followUp: '下一次高压训练会继续观察你是否保留主动沟通。',
+          },
+          failure: {
+            label: '跑位没有被读懂',
+            effects: { respect: -1, confidence: -2 },
+            response:
+              '你连续启动却没有给出足够信号，队友错过了传球窗口，原本想用表现证明自己的计划反而制造了新的误解。',
+            responses: [
+              { speakerRole: 'teammate', text: '{personName}：“我没收到你的信号，只能把球回传。”' },
+            ],
+            followUp: '下一次合练会从明确喊话开始，先恢复基本配合再追求冒险。',
+          },
+        }),
         response:
           '你没有再停下来解释，而是提前启动、连续跑了两次空当。第二次队友终于把球送了过来，迟到的默契在一次冒险里重新接上。',
         responses: [

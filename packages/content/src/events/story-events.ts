@@ -1,4 +1,5 @@
 import type { EventDefinition } from '@football/contracts';
+import { createAuthoredResolution } from './authored-outcomes';
 
 export const shortStoryEvents: EventDefinition[] = [
   {
@@ -22,6 +23,45 @@ export const shortStoryEvents: EventDefinition[] = [
         text: '正面竞争同一位置',
         riskLabel: 'medium',
         effects: { confidence: 3, fatigue: 4, respect: 2 },
+        resolution: createAuthoredResolution('determination', 58, {
+          success: {
+            label: '竞争中建立优势',
+            effects: { confidence: 4, fatigue: 4, respect: 3 },
+            response:
+              '你把竞争者的挑战接下，在高强度对抗里连续完成关键回合，优势第一次变得可量化。',
+            responses: [
+              {
+                speakerRole: 'rival',
+                text: '{personName}：“这次你赢了几个回合，但我会继续追上来。”',
+              },
+            ],
+            followUp: '教练会根据连续训练和比赛表现重新评估轮换顺序。',
+          },
+          partial: {
+            label: '竞争保持开放',
+            effects: { confidence: 3, fatigue: 4, respect: 2 },
+            response: '你敢于正面竞争，表现有亮点也有波动，暂时还不足以改变轮换顺序。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“竞争不是一天定胜负，先把稳定性保持住。”',
+              },
+            ],
+            followUp: '接下来几周会继续记录你们在压力回合里的选择。',
+          },
+          failure: {
+            label: '竞争暂时失势',
+            effects: { confidence: -2, fatigue: 8, respect: -1 },
+            response: '你把强度推得很高，却在关键对抗里连续失位，竞争者抓住机会领先了一步。',
+            responses: [
+              {
+                speakerRole: 'rival',
+                text: '{personName}：“我会把今天的空当记住，下一次你得更快。”',
+              },
+            ],
+            followUp: '教练会让你回到基础站位训练，再决定下一次竞争机会。',
+          },
+        }),
         responses: [
           {
             speakerRole: 'rival',
@@ -42,6 +82,45 @@ export const shortStoryEvents: EventDefinition[] = [
         text: '先观察他的优点和要领',
         riskLabel: 'low',
         effects: { confidence: 1, coachTrust: 2 },
+        resolution: createAuthoredResolution('vision', 55, {
+          success: {
+            label: '观察转成能力',
+            effects: { confidence: 2, coachTrust: 3 },
+            response: '你把竞争者的无球观察带进分组对抗，提前抬头的一次选择让自己赢得了新的空间。',
+            responses: [
+              {
+                speakerRole: 'rival',
+                text: '{personName}：“你看得很快，这个优点我不能再给你第二次机会。”',
+              },
+            ],
+            followUp: '教练会在下一场比赛观察你是否能主动发现空间，而不是只复制对手。',
+          },
+          partial: {
+            label: '观察得到验证',
+            effects: { confidence: 1, coachTrust: 2 },
+            response:
+              '你记录下竞争者的优点，也尝试在训练里使用；转化还不稳定，但比较开始变成资料。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“看懂只是起点，下一次要把它变成自己的动作。”',
+              },
+            ],
+            followUp: '接下来训练会给你更多相似回合，检验观察能否转成选择。',
+          },
+          failure: {
+            label: '只观察没有转化',
+            effects: { confidence: -1, coachTrust: -1 },
+            response: '你记住了竞争者的跑位，却在真正对抗时仍按旧习惯行动，分析没有进入脚下。',
+            responses: [
+              {
+                speakerRole: 'rival',
+                text: '{personName}：“看得懂不代表做得到，下一次我会继续把节奏提快。”',
+              },
+            ],
+            followUp: '教练会缩小任务到一个可执行细节，先让观察变成动作。',
+          },
+        }),
         responses: [
           {
             speakerRole: 'rival',
@@ -84,6 +163,42 @@ export const shortStoryEvents: EventDefinition[] = [
         text: '认真听取点评并改进细节',
         riskLabel: 'low',
         effects: { coachTrust: 3, respect: 2 },
+        resolution: createAuthoredResolution('decision', 58, {
+          success: {
+            label: '细节改变评价',
+            effects: { coachTrust: 4, respect: 3 },
+            response:
+              '你把教练指出的接球前观察带进剩余对抗，连续几次提前处理让竞争者也开始参考你的站位。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“细节被保持住，才会真正改变你们的差距。”',
+              },
+            ],
+            followUp: '后续比赛会继续检验你的无球选择，竞争者也会同步进步。',
+          },
+          partial: {
+            label: '点评转成训练目标',
+            effects: { coachTrust: 3, respect: 2 },
+            response: '你认真听完点评，并在当天训练里完成了几次修正；稳定性仍需要比赛来证明。',
+            responses: [
+              { speakerRole: 'rival', text: '{personName}：“你愿意调整，这比一句不服气更有用。”' },
+            ],
+            followUp: '下一次高压比赛会检验这个细节是否已经成为习惯。',
+          },
+          failure: {
+            label: '点评没有被执行',
+            effects: { coachTrust: -2, respect: -1, confidence: -1 },
+            response: '你听懂了教练的建议，却在对抗里急着证明自己，关键回合再次少看了一眼。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“听懂和做到之间还有距离，先把第一个观察动作固定下来。”',
+              },
+            ],
+            followUp: '教练会暂时减少复杂任务，观察你能否恢复可靠的基本选择。',
+          },
+        }),
         responses: [
           {
             speakerRole: 'rival',
@@ -104,6 +219,45 @@ export const shortStoryEvents: EventDefinition[] = [
         text: '用加倍的训练强度去回应',
         riskLabel: 'medium',
         effects: { confidence: 3, fatigue: 5 },
+        resolution: createAuthoredResolution('determination', 60, {
+          success: {
+            label: '强度回应被看见',
+            effects: { confidence: 4, fatigue: 5 },
+            response:
+              '你提高训练强度后仍能控制动作质量，最后一组对抗赢下关键回合，积极性终于没有以失误为代价。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“强度让你被看见，控制强度才让你留在名单里。”',
+              },
+            ],
+            followUp: '下一场比赛名单会同时参考你的积极性和恢复情况。',
+          },
+          partial: {
+            label: '强度带来亮点',
+            effects: { confidence: 3, fatigue: 5 },
+            response: '你用更高强度的跑动回应比较，几次抢回球权，但疲劳也让最后几次动作变慢。',
+            responses: [
+              {
+                speakerRole: 'rival',
+                text: '{personName}：“你追得很凶，但比赛不会只给你最后一组机会。”',
+              },
+            ],
+            followUp: '教练会观察你能否把强度分配到完整训练和比赛。',
+          },
+          failure: {
+            label: '过度消耗反噬',
+            effects: { confidence: -2, fatigue: 8, coachTrust: -1 },
+            response: '你把训练强度推过了当前承受范围，后半段失误增多，竞争者反而在稳定性上领先。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“想赢下位置可以，但不能把自己先练到失去选择。”',
+              },
+            ],
+            followUp: '下一次训练会降低负荷，先恢复动作质量再谈继续加码。',
+          },
+        }),
         responses: [
           {
             speakerRole: 'rival',
@@ -217,6 +371,47 @@ export const shortStoryEvents: EventDefinition[] = [
         text: '接受更多的指导',
         riskLabel: 'low',
         effects: { coachTrust: 3, fatigue: 2, confidence: 2 },
+        resolution: createAuthoredResolution('decision', 52, {
+          success: {
+            label: '指导转成清晰目标',
+            effects: { coachTrust: 4, fatigue: 2, confidence: 3 },
+            response:
+              '你接受额外指导并把每个要求拆成当天能完成的任务，训练结束时已经能解释自己为什么这样处理。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“要求变具体了，执行结果也要同样具体。”',
+              },
+            ],
+            followUp: '下一次训练会按这份目标逐项检查，不再只看泛泛的态度。',
+          },
+          partial: {
+            label: '获得阶段性指导',
+            effects: { coachTrust: 3, fatigue: 2, confidence: 2 },
+            response:
+              '你完成了额外复盘，开始理解教练反复强调的细节，但还没有在高速对抗里完全执行。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“方向清楚了，下一次把它带到真正的对抗里。”',
+              },
+            ],
+            followUp: '教练会继续给你小任务，完成情况将影响后续信任。',
+          },
+          failure: {
+            label: '指导压力超过准备',
+            effects: { coachTrust: -2, fatigue: 5, confidence: -1 },
+            response:
+              '你接受了更多任务，却没有安排恢复，额外训练让动作质量下降，指导反而变成了新的压力。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“主动性值得肯定，但承担责任也包括知道自己的上限。”',
+              },
+            ],
+            followUp: '下一阶段会缩短额外任务，先确认你能在正常负荷下稳定执行。',
+          },
+        }),
         responses: [
           {
             speakerRole: 'youth-coach',
@@ -233,6 +428,45 @@ export const shortStoryEvents: EventDefinition[] = [
         text: '询问专项训练的具体要求',
         riskLabel: 'low',
         effects: { coachTrust: 2, confidence: 1 },
+        resolution: createAuthoredResolution('decision', 50, {
+          success: {
+            label: '目标明确带来进步',
+            effects: { coachTrust: 3, confidence: 2 },
+            response:
+              '你追问训练标准，拿到一个每天可对照的第一脚处理目标，并在当天完成了清晰的复盘记录。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“问题问得具体，训练才有可能回答得具体。”',
+              },
+            ],
+            followUp: '教练会按这个目标安排阶段任务，进步和不足都会被记录。',
+          },
+          partial: {
+            label: '专项目标初步建立',
+            effects: { coachTrust: 2, confidence: 1 },
+            response: '你弄清了训练重点，也开始对照目标练习，但动作质量还会随疲劳波动。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“目标已经清楚，接下来要让它经得住疲劳。”',
+              },
+            ],
+            followUp: '下一次训练会在压力下复查第一脚处理质量。',
+          },
+          failure: {
+            label: '要求仍然模糊',
+            effects: { coachTrust: -1, confidence: -1 },
+            response: '你得到了一份目标，却没有继续确认执行标准，训练中仍回到宽泛的“再努力一点”。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“不明白就继续问，模糊的目标不会自己变成能力。”',
+              },
+            ],
+            followUp: '教练会先给你一个最小任务，确认你能按标准完成后再增加复杂度。',
+          },
+        }),
         responses: [
           {
             speakerRole: 'youth-coach',
@@ -271,6 +505,46 @@ export const shortStoryEvents: EventDefinition[] = [
         text: '按要求完成任务',
         riskLabel: 'low',
         effects: { coachTrust: 3, confidence: 2, fatigue: 3 },
+        resolution: createAuthoredResolution('discipline', 55, {
+          success: {
+            label: '稳定完成信任考核',
+            effects: { coachTrust: 4, confidence: 3, fatigue: 3 },
+            response:
+              '你按要求完成任务，没有急着炫技，几次疲劳下的基础处理仍然稳定，教练在记录旁边留下了肯定。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“稳定不是保守，是你在压力下仍能完成要求。”',
+              },
+            ],
+            followUp: '下一阶段会把更复杂的训练责任交给你。',
+          },
+          partial: {
+            label: '信任继续观察',
+            effects: { coachTrust: 3, confidence: 2, fatigue: 3 },
+            response: '你完成了大部分任务，基础要求没有失守，但几次节奏变化仍让动作质量出现波动。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“任务完成了，下一步是让变化也不影响基本质量。”',
+              },
+            ],
+            followUp: '教练会继续观察你在比赛速度下能否保持可靠。',
+          },
+          failure: {
+            label: '信任考核失分',
+            effects: { coachTrust: -2, confidence: -2, fatigue: 5 },
+            response:
+              '你急着完成额外要求，忽略了基础动作，训练节奏被几次失误打断，教练暂时收回了更大的自由度。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“主动性不能替代执行，先把要求本身做好。”',
+              },
+            ],
+            followUp: '下一次训练会回到基础任务，重新确认你能否稳定完成。',
+          },
+        }),
         responses: [
           {
             speakerRole: 'youth-coach',
@@ -286,6 +560,46 @@ export const shortStoryEvents: EventDefinition[] = [
         text: '自行加大任务的难度',
         riskLabel: 'high',
         effects: { coachTrust: 1, confidence: 4, fatigue: 6 },
+        resolution: createAuthoredResolution('decision', 65, {
+          success: {
+            label: '创造性得到边界',
+            effects: { coachTrust: 2, confidence: 5, fatigue: 6 },
+            response:
+              '你完成基础任务后只在可控回合里加大难度，几次变化制造了亮点，却没有打乱训练节奏。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“创造性有价值，但你已经学会给它加上边界。”',
+              },
+            ],
+            followUp: '教练会逐步开放更复杂的任务，前提是基础失误继续下降。',
+          },
+          partial: {
+            label: '冒险留下亮点',
+            effects: { coachTrust: 1, confidence: 4, fatigue: 6 },
+            response: '你主动加大难度，几次处理很有想法，也有几次让训练被迫停下，结果仍在观察中。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“敢尝试是优点，接下来要让失误率跟着降下来。”',
+              },
+            ],
+            followUp: '下一次会保留你的自由度，但先限制高风险动作的频率。',
+          },
+          failure: {
+            label: '自由度暂时收回',
+            effects: { coachTrust: -2, confidence: -1, fatigue: 8 },
+            response:
+              '你把尚未练稳的变化连续带进正式任务，训练节奏被打断，教练要求你回到基础执行。',
+            responses: [
+              {
+                speakerRole: 'youth-coach',
+                text: '{personName}：“想承担更多责任，先证明基础动作值得别人跟随。”',
+              },
+            ],
+            followUp: '后续训练会降低难度，等稳定性恢复后再重新开放尝试。',
+          },
+        }),
         responses: [
           {
             speakerRole: 'youth-coach',
