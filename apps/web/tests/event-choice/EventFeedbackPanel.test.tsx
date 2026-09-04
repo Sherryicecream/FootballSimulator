@@ -9,6 +9,8 @@ const feedback: EventFeedback = {
   title: '训练场上的误会',
   choiceId: 'clarify',
   choiceText: '当面澄清误会，把训练中的情况说清楚',
+  resultTitle: '沟通留下结果',
+  resultTone: 'success',
   response: '你把事情说清楚了，训练场的空气终于松动下来。',
   participantResponses: [
     {
@@ -43,6 +45,8 @@ describe('EventFeedbackPanel', () => {
     const { container } = render(<EventFeedbackPanel feedback={feedback} onContinue={() => {}} />);
 
     expect(screen.getByRole('heading', { name: '训练场上的误会' })).toBeDefined();
+    expect(screen.getByText('沟通留下结果')).toBeVisible();
+    expect(screen.getByText('成功')).toBeVisible();
     expect(screen.getByText(feedback.response)).toBeDefined();
     expect(screen.getByText(feedback.participantResponses[0]!.text)).toBeDefined();
     expect(screen.getByText(feedback.participantResponses[1]!.text)).toBeDefined();
@@ -55,9 +59,14 @@ describe('EventFeedbackPanel', () => {
   });
 
   it('shows the shared football scene when the event theme is known', () => {
-    render(
+    const { container } = render(
       <EventFeedbackPanel
-        feedback={{ ...feedback, nextEventIds: ['position-race-review'] }}
+        feedback={{
+          ...feedback,
+          resultTitle: undefined,
+          resultTone: undefined,
+          nextEventIds: ['position-race-review'],
+        }}
         nextEvents={[{ id: 'position-race-review', title: '位置竞争的进展' }]}
         sceneKind="locker-room"
         onContinue={() => {}}
@@ -65,7 +74,9 @@ describe('EventFeedbackPanel', () => {
     );
 
     expect(screen.getByRole('region', { name: '足球场景：训练场上的误会' })).toBeVisible();
-    expect(screen.getByText('现场结果')).toBeVisible();
+    expect(screen.getByText('事件暂告一段落')).toBeVisible();
+    expect(screen.getByText('中性记录')).toBeVisible();
+    expect(container.querySelector('.event-feedback-result--neutral')).not.toBeNull();
     expect(screen.getByText('人物回应')).toBeVisible();
     expect(screen.getByText('变化记录')).toBeVisible();
     expect(screen.getByText('后续影响')).toBeVisible();

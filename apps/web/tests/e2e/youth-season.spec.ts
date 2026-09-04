@@ -116,7 +116,10 @@ async function resolveUntilDashboard(page: Page, allowSeasonEnd = false): Promis
     const feedback = page.getByRole('button', { name: '继续推进' });
     if (await feedback.isVisible().catch(() => false)) {
       await expect(page.getByTestId('scene-art')).toBeVisible();
-      await expect(page.getByText('现场结果')).toBeVisible();
+      await expect(page.getByRole('article', { name: /事件结果：/ })).toBeVisible();
+      await expect(page.getByTestId('event-feedback-result-type')).toHaveText(
+        /成功|部分达成|受挫|中性记录/,
+      );
       await expect(page.getByText('人物回应')).toBeVisible();
       await expect(page.getByText('变化记录')).toBeVisible();
       await expect(page.getByText('后续影响')).toBeVisible();

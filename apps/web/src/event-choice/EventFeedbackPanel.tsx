@@ -58,12 +58,23 @@ const ATTRIBUTE_LABELS: Record<string, string> = {
   discipline: '纪律',
 };
 
+type ResultTone = NonNullable<EventFeedback['resultTone']>;
+const RESULT_TONE_LABELS: Record<ResultTone, string> = {
+  success: '成功',
+  partial: '部分达成',
+  failure: '受挫',
+  neutral: '中性记录',
+};
+
 export function EventFeedbackPanel({
   feedback,
   nextEvents = [],
   sceneKind = 'neutral',
   onContinue,
 }: EventFeedbackPanelProps) {
+  const resultTone: ResultTone = feedback.resultTone ?? feedback.outcome?.outcome ?? 'neutral';
+  const resultToneLabel = RESULT_TONE_LABELS[resultTone];
+  const resultTitle = feedback.resultTitle ?? feedback.outcome?.label ?? '事件暂告一段落';
   return (
     <section className="event-feedback-panel" aria-label="事件反馈">
       <SceneBanner
@@ -109,8 +120,17 @@ export function EventFeedbackPanel({
         </section>
       )}
 
-      <article className="event-feedback-result">
-        <span className="event-feedback-kicker">现场结果</span>
+      <article
+        className={'event-feedback-result event-feedback-result--' + resultTone}
+        aria-label={'事件结果：' + resultToneLabel}
+      >
+        <div className="event-feedback-result-meta">
+          <span className="event-feedback-kicker">结果类型</span>
+          <strong className="event-feedback-result-type" data-testid="event-feedback-result-type">
+            {resultToneLabel}
+          </strong>
+        </div>
+        <h2 className="event-feedback-result-title">{resultTitle}</h2>
         <p>{feedback.response}</p>
       </article>
 
