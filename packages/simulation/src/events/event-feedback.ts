@@ -21,18 +21,33 @@ export const buildEventFeedback = (
     .map((personId) => before.relationships.persons.find((person) => person.id === personId))
     .filter((person): person is NonNullable<typeof person> => Boolean(person));
   const variables = buildTemplateVariables(before, event, participants);
-  const selectedNarrative = choice.narrativeVariants
-    ? selectEventNarrativeVariant(choice.narrativeVariants, {
+  const authoredOutcome = outcome?.outcome === 'legacy' ? undefined : outcome;
+
+  const narrativeVariants = authoredOutcome?.narrativeVariants ?? choice.narrativeVariants;
+  const selectedNarrative = narrativeVariants
+    ? selectEventNarrativeVariant(narrativeVariants, {
         seed: before.randomState.seed,
         eventId: event.eventId,
         choiceId: choice.id,
       })
     : undefined;
 
-  const authoredOutcome = outcome?.outcome === 'legacy' ? undefined : outcome;
+  const resultTitle =
+    selectedNarrative?.variant.resultTitle ??
+    authoredOutcome?.summary?.label ??
+    choice.resultTitle ??
+    '事件暂告一段落';
+  const resultTone =
+    authoredOutcome?.outcome === 'success' ||
+    authoredOutcome?.outcome === 'partial' ||
+    authoredOutcome?.outcome === 'failure'
+      ? authoredOutcome.outcome
+      : 'neutral';
   return {
     eventId: event.eventId,
     title: event.title,
+    resultTitle,
+    resultTone,
     choiceId: choice.id,
     choiceText: renderTemplate(choice.text, variables),
     response: renderTemplate(
