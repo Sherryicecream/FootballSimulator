@@ -54,8 +54,16 @@ import { OfferComparisonPanel } from '../career-dashboard/OfferComparisonPanel';
 import { sceneKindForTheme } from '../career-dashboard/career-presentation';
 import { SceneBanner } from '../design-system/SceneBanner';
 import { createBootstrapContent } from './bootstrap-dependencies';
+import {
+  createLocalNarrativeClientFromEnv,
+  type LocalNarrativeClient,
+} from '../narration/local-ai-client';
 import { createLocalStorageCareerV4Port } from '../persistence/local-storage-save';
 import './app.css';
+
+const localNarrativeClient: LocalNarrativeClient | null = createLocalNarrativeClientFromEnv({
+  VITE_LOCAL_AI_ENDPOINT: import.meta.env.VITE_LOCAL_AI_ENDPOINT,
+});
 
 type Step =
   | 'creation'
@@ -601,6 +609,8 @@ export function App() {
           nextEvents={pendingFeedbackNextEvents}
           sceneKind={eventSceneKind}
           onContinue={continueAfterEventFeedback}
+          narrativeClient={localNarrativeClient ?? undefined}
+          playerName={save.player.identity.name}
         />
       )}
     </main>

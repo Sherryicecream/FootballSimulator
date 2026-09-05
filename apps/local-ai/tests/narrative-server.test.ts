@@ -129,7 +129,10 @@ describe('narrative server', () => {
     const wrongMethod = await fetch(`${url}/v1/narrative-polish`);
     expect(wrongMethod.status).toBe(405);
 
-    const oversized = await post(url, JSON.stringify({ ...request, context: { ...request.context, playerName: '名'.repeat(80) } }));
+    const oversized = await post(
+      url,
+      JSON.stringify({ ...request, context: { ...request.context, playerName: '名'.repeat(80) } }),
+    );
     expect([200, 400]).toContain(oversized.status);
     const healthAfter = await fetch(`${url}/health`);
     expect(healthAfter.status).toBe(200);

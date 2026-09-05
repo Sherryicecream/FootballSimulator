@@ -1,9 +1,6 @@
 import { createServer, type Server } from 'node:http';
 import { afterEach, describe, expect, it } from 'vitest';
-import {
-  buildNarrativePolishRequest,
-  createSafeNarrativeAdapter,
-} from '../src';
+import { buildNarrativePolishRequest, createSafeNarrativeAdapter } from '../src';
 import {
   createOpenAiCompatibleProvider,
   openAiCompatibleConfigFromEnv,
@@ -96,7 +93,9 @@ describe('openai-compatible provider', () => {
 
   it('accepts fenced json output from local models', async () => {
     const { url } = await startUpstream((_req, res) => {
-      res.end(JSON.stringify(completionBody('```json\n' + JSON.stringify(polishedContent) + '\n```')));
+      res.end(
+        JSON.stringify(completionBody('```json\n' + JSON.stringify(polishedContent) + '\n```')),
+      );
     });
     const result = await createSafeNarrativeAdapter(
       createOpenAiCompatibleProvider({ endpoint: url, model: 'test-model' }),
@@ -141,8 +140,16 @@ describe('openai-compatible provider', () => {
 
   it('reads configuration from environment variables and reports absence', () => {
     expect(
-      openAiCompatibleConfigFromEnv({ FOOTBALL_AI_ENDPOINT: 'http://127.0.0.1:11434/v1', FOOTBALL_AI_MODEL: 'qwen' }),
-    ).toEqual({ endpoint: 'http://127.0.0.1:11434/v1', model: 'qwen', apiKey: undefined, timeoutMs: undefined });
+      openAiCompatibleConfigFromEnv({
+        FOOTBALL_AI_ENDPOINT: 'http://127.0.0.1:11434/v1',
+        FOOTBALL_AI_MODEL: 'qwen',
+      }),
+    ).toEqual({
+      endpoint: 'http://127.0.0.1:11434/v1',
+      model: 'qwen',
+      apiKey: undefined,
+      timeoutMs: undefined,
+    });
     expect(openAiCompatibleConfigFromEnv({ FOOTBALL_AI_MODEL: 'qwen' })).toBeNull();
     expect(openAiCompatibleConfigFromEnv({})).toBeNull();
   });

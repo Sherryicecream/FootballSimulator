@@ -15,7 +15,9 @@ const SYSTEM_PROMPT = [
   '只输出一个 JSON 对象，字段为：{"response": string, "participantResponses": [{"personId": string, "text": string}], "followUp": string}，不要输出任何其他文字。',
 ].join('\n');
 
-export const createOpenAiCompatibleProvider = (config: OpenAiCompatibleProviderConfig): NarrativeProvider => {
+export const createOpenAiCompatibleProvider = (
+  config: OpenAiCompatibleProviderConfig,
+): NarrativeProvider => {
   const base = config.endpoint.endsWith('/') ? config.endpoint : config.endpoint + '/';
   const url = new URL('chat/completions', base);
   return {

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { EventFeedback } from '@football/contracts';
 import { EventFeedbackPanel } from '../../src/event-choice/EventFeedbackPanel';
@@ -91,5 +91,56 @@ describe('EventFeedbackPanel', () => {
 
     await user.click(screen.getByRole('button', { name: '继续推进' }));
     expect(onContinue).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('EventFeedbackPanel AI polish', () => {
+  const polishedDraft = {
+    response: '（润色）你把事情说清楚了，训练场的空气终于松动下来。',
+    participantResponses: [{ personId: 'coach-main', text: '（润色）愿意说开，是成熟的表现。' }],
+    followUp: '（润色）教练会在接下来两周观察你们的沟通。',
+  };
+
+  it('swaps authored text for provider polish in display only', async () => {
+    const client = { polish: vi.fn(async () => polishedDraft) };
+    render(
+      <EventFeedbackPanel
+        feedback={feedback}
+        onContinue={() => {}}
+        narrativeClient={client}
+        playerName="林河"
+      />,
+    );
+
+    await waitFor(() =>
+      expect(
+        screen.getByText('（润色）你把事情说清楚了，训练场的空气终于松动下来。'),
+      ).toBeVisible(),
+    );
+    expect(screen.queryByText(feedback.response)).toBeNull();
+    expect(screen.getByText('（润色）愿意说开，是成熟的表现。')).toBeVisible();
+    expect(screen.getByText('陈放：“那我们别把误会带进下一场比赛。”')).toBeVisible();
+    expect(screen.getByText('（润色）教练会在接下来两周观察你们的沟通。')).toBeVisible();
+    expect(screen.getByText('成功')).toBeVisible();
+    expect(screen.getByText('信心')).toBeDefined();
+  });
+
+  it('keeps authored text when no client is configured or polish fails', async () => {
+    const failing = { polish: vi.fn(async () => null) };
+    const failingView = render(
+      <EventFeedbackPanel
+        feedback={feedback}
+        onContinue={() => {}}
+        narrativeClient={failing}
+        playerName="林河"
+      />,
+    );
+    await waitFor(() => expect(failing.polish).toHaveBeenCalled());
+    expect(screen.getByText(feedback.response)).toBeVisible();
+    failingView.unmount();
+
+    const plainView = render(<EventFeedbackPanel feedback={feedback} onContinue={() => {}} />);
+    expect(screen.getByText(feedback.response)).toBeVisible();
+    plainView.unmount();
   });
 });

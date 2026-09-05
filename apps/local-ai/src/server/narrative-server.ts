@@ -1,10 +1,5 @@
 import { createHash } from 'node:crypto';
-import {
-  createServer,
-  type IncomingMessage,
-  type Server,
-  type ServerResponse,
-} from 'node:http';
+import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { NarrativePolishRequestSchema, type NarrativePolishRequest } from '@football/contracts';
 import type { NarrativeAdapterResult } from '../providers/types';
 import { getLocalNarrativeHealth } from './health';
@@ -36,10 +31,7 @@ export const createNarrativeServer = (options: NarrativeServerOptions): Server =
     });
   });
 
-  const handle = async (
-    request: IncomingMessage,
-    response: ServerResponse,
-  ): Promise<void> => {
+  const handle = async (request: IncomingMessage, response: ServerResponse): Promise<void> => {
     const url = request.url ?? '';
     if (request.method === 'GET' && (url === '/health' || url === '/health/')) {
       respondJson(response, 200, {
@@ -94,10 +86,7 @@ const respondJson = (response: ServerResponse, status: number, payload: unknown)
   response.end(JSON.stringify(payload));
 };
 
-const readBody = (
-  request: IncomingMessage,
-  byteLimit: number,
-): Promise<string | null> =>
+const readBody = (request: IncomingMessage, byteLimit: number): Promise<string | null> =>
   new Promise((resolve) => {
     const chunks: Buffer[] = [];
     let total = 0;
@@ -120,7 +109,9 @@ const canonicalStringify = (value: unknown): string => {
     const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) =>
       a.localeCompare(b),
     );
-    return '{' + entries.map(([k, v]) => `${JSON.stringify(k)}:${canonicalStringify(v)}`).join(',') + '}';
+    return (
+      '{' + entries.map(([k, v]) => `${JSON.stringify(k)}:${canonicalStringify(v)}`).join(',') + '}'
+    );
   }
   return JSON.stringify(value) ?? 'null';
 };

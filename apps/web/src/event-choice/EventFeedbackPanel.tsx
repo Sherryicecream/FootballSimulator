@@ -1,13 +1,18 @@
+import { useEffect, useState } from 'react';
 import type { EventFeedback } from '@football/contracts';
+import { buildNarrativePolishRequest, type NarrativePolishOutput } from '@football/contracts';
 import { SceneBanner } from '../design-system/SceneBanner';
 import { FootballGlyph, type FootballGlyphName } from '../design-system/FootballGlyph';
 import type { SceneKind } from '../design-system/scene-types';
+import type { LocalNarrativeClient } from '../narration/local-ai-client';
 
 interface EventFeedbackPanelProps {
   feedback: EventFeedback;
   nextEvents?: readonly { id: string; title: string }[];
   sceneKind?: SceneKind;
   onContinue: () => void;
+  narrativeClient?: LocalNarrativeClient | undefined;
+  playerName?: string | undefined;
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -71,7 +76,44 @@ export function EventFeedbackPanel({
   nextEvents = [],
   sceneKind = 'neutral',
   onContinue,
+  narrativeClient,
+  playerName,
 }: EventFeedbackPanelProps) {
+  const [polished, setPolished] = useState<NarrativePolishOutput | null>(null);
+  useEffect(() => {
+    setPolished(null);
+    if (!narrativeClient || !playerName) return;
+    let cancelled = false;
+    // AI 只润色显示文案：请求由持久化的作者反馈构造，结果不写入存档、不参与机械判定。
+    const polishRequest = buildNarrativePolishRequest({
+      kind: 'event-feedback',
+      eventTitle: feedback.title,
+      choiceText: feedback.choiceText,
+      playerName,
+      participants: feedback.participantResponses.map(({ personId, personName, role }) => ({
+        personId,
+        personName,
+        role,
+      })),
+      draft: {
+        response: feedback.response,
+        participantResponses: feedback.participantResponses,
+        followUp: feedback.followUp,
+      },
+    });
+    void narrativeClient.polish(polishRequest).then((draft) => {
+      if (!cancelled) setPolished(draft);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [narrativeClient, playerName, feedback]);
+
+  const responseText = polished?.response ?? feedback.response;
+  const followUpText = polished?.followUp ?? feedback.followUp;
+  const polishedTextFor = (participant: { personId: string; text: string }): string =>
+    polished?.participantResponses.find((line) => line.personId === participant.personId)?.text ??
+    participant.text;
   const resultTone: ResultTone = feedback.resultTone ?? feedback.outcome?.outcome ?? 'neutral';
   const resultToneLabel = RESULT_TONE_LABELS[resultTone];
   const resultTitle = feedback.resultTitle ?? feedback.outcome?.label ?? '事件暂告一段落';
@@ -131,7 +173,7 @@ export function EventFeedbackPanel({
           </strong>
         </div>
         <h2 className="event-feedback-result-title">{resultTitle}</h2>
-        <p>{feedback.response}</p>
+        <p>{responseText}</p>
       </article>
 
       <section className="event-feedback-section" aria-label="人物回应">
@@ -155,7 +197,7 @@ export function EventFeedbackPanel({
                     <small>{ROLE_LABELS[participant.role] ?? '相关人物'}</small>
                   </span>
                 </div>
-                <p>{participant.text}</p>
+                <p>{polishedTextFor(participant)}</p>
               </article>
             ))}
           </div>
@@ -225,7 +267,7 @@ export function EventFeedbackPanel({
 
       <article className="event-feedback-follow-up">
         <span className="event-feedback-kicker">后续影响</span>
-        <p>{feedback.followUp}</p>
+        <p>{followUpText}</p>
       </article>
 
       {nextEvents.length > 0 && (
