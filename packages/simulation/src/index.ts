@@ -27,6 +27,7 @@ export { pickYouthEventForWeek } from './career/event-integration';
 export {
   buildMatchMomentEvent,
   isImportantMatchContext,
+  pickMatchMomentForWeek,
 } from './career/match-moment';
 export type { YouthEventPickResult } from './career/event-integration';
 export { simulateMatch } from './match/match-engine';

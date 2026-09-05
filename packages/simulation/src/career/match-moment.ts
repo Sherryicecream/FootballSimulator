@@ -4,6 +4,7 @@ import type {
   MatchContext,
   YouthEventInstance,
 } from '@football/contracts';
+import { createSeededRandomSource } from '../randomness';
 import type { ChoiceResolutionAttribute } from '@football/contracts';
 
 export interface ImportantMatchInput {
@@ -12,20 +13,13 @@ export interface ImportantMatchInput {
   played: boolean;
 }
 
-const PRO_LEAGUE_STRENGTH_THRESHOLD = 82;
-const YOUTH_STRENGTH_THRESHOLD = 75;
+const LEAGUE_STRENGTH_THRESHOLD = 82;
 
-const isProfessionalCompetition = (competitionId: string | undefined): boolean =>
-  competitionId === 'domestic-cup' || (competitionId?.startsWith('pro-') ?? false);
-
-/** 重要比赛判定：国内杯淘汰赛、或达到阶段门槛的强强对话；球员必须实际出场。 */
+/** 重要比赛判定：国内杯淘汰赛、或达到门槛的强强对话（青训/职业同门槛）；球员必须实际出场。 */
 export const isImportantMatchContext = (input: ImportantMatchInput): boolean => {
   if (!input.played) return false;
   if (input.competitionId === 'domestic-cup') return true;
-  const threshold = isProfessionalCompetition(input.competitionId)
-    ? PRO_LEAGUE_STRENGTH_THRESHOLD
-    : YOUTH_STRENGTH_THRESHOLD;
-  return input.opponentStrength >= threshold;
+  return input.opponentStrength >= LEAGUE_STRENGTH_THRESHOLD;
 };
 
 const MATCH_SUMMARY = /^(.+?)\s+(\d+):(\d+)(?:；|;)/;
@@ -62,21 +56,21 @@ const intent = (input: PositionIntentInput) => ({
     volatility: 5,
     stateModifiers: ZERO_STATE_MODIFIERS,
     outcomes: {
-    success: {
-      label: '高光时刻',
-      effects: { confidence: 3, coachTrust: 2, morale: 2 },
-      response: input.success,
-    },
-    partial: {
-      label: '差之毫厘',
-      effects: { confidence: 1, coachTrust: 1 },
-      response: input.partial,
-    },
-    failure: {
-      label: '陷入困境',
-      effects: { confidence: -2, coachTrust: -1, morale: -1 },
-      response: input.failure,
-    },
+      success: {
+        label: '高光时刻',
+        effects: { confidence: 3, coachTrust: 2, morale: 2 },
+        response: input.success,
+      },
+      partial: {
+        label: '差之毫厘',
+        effects: { confidence: 1, coachTrust: 1 },
+        response: input.partial,
+      },
+      failure: {
+        label: '陷入困境',
+        effects: { confidence: -2, coachTrust: -1, morale: -1 },
+        response: input.failure,
+      },
     },
   },
 });
@@ -271,7 +265,10 @@ interface MatchOutcome {
   opponentScore: string;
 }
 
-const parseMatchOutcome = (fact: CareerLedgerEntryV2, context: MatchContext): MatchOutcome | null => {
+const parseMatchOutcome = (
+  fact: CareerLedgerEntryV2,
+  context: MatchContext,
+): MatchOutcome | null => {
   const match = MATCH_SUMMARY.exec(fact.summary);
   if (!match) return null;
   const ownScore = context.isHome ? match[2]! : match[3]!;
@@ -320,4 +317,51 @@ export const buildMatchMomentEvent = (
     nextEventIds: [],
     interaction: 'decision',
   };
+};
+
+const SUPPRESSION_SEED_OFFSET = 9100;
+const GENERATION_PROBABILITY = 0.5;
+
+const hashText = (text: string): number => {
+  let hash = 0;
+  for (let index = 0; index < text.length; index += 1) {
+    hash = (hash * 31 + text.charCodeAt(index)) % 2147483647;
+  }
+  return hash;
+};
+
+export interface MatchMomentPickResult<S = CareerSaveV2Like> {
+  save: S;
+  event: YouthEventInstance;
+}
+
+/**
+ * 扫描本周比赛事实，从重要比赛中抽取一个交互关键时刻。
+ * 抑制概率由种子与比赛事实地址派生：同种子同事实判定一致，读档重入不漂移，也不消费主随机序列。
+ */
+export const pickMatchMomentForWeek = <S extends CareerSaveV2Like>(
+  save: S,
+  facts: readonly CareerLedgerEntryV2[],
+): MatchMomentPickResult<S> | null => {
+  for (const fact of facts) {
+    if (fact.type !== 'match' && fact.type !== 'pro-match') continue;
+    const event = buildMatchMomentEvent(save, fact);
+    if (!event) continue;
+    const gateRng = createSeededRandomSource(
+      save.randomState.seed + SUPPRESSION_SEED_OFFSET + hashText(`${fact.weekKey}:${fact.id}`),
+    );
+    if (gateRng.next() >= GENERATION_PROBABILITY) continue;
+    return {
+      save: {
+        ...save,
+        story: { ...save.story, pendingEvent: event },
+        monthlyAdvance: {
+          ...save.monthlyAdvance,
+          status: 'awaiting-decision',
+        },
+      },
+      event,
+    };
+  }
+  return null;
 };

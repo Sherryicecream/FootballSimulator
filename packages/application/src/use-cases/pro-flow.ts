@@ -29,6 +29,7 @@ import {
   isEligibleForNationalTeam,
   mergeDevelopmentAccrual,
   pickYouthEventForWeek,
+  pickMatchMomentForWeek,
   reviewPromise,
   settleMonthlyDevelopment,
   simulateProfessionalWeek,
@@ -286,6 +287,20 @@ export const advanceProMonth = <S extends CareerSaveV4Like>(
     matchIds = save.monthlyAdvance.matchIds;
     const canInterrupt = save.proSeason!.currentMonth === monthKey && !save.proSeason!.completed;
     factsDuringMonth.push(...transition.facts.map(({ id }) => id));
+    const matchMoment = pickMatchMomentForWeek(save, transition.facts);
+    if (matchMoment && canInterrupt) {
+      return {
+        status: 'awaiting-decision',
+        save: {
+          ...matchMoment.save,
+          monthlyAdvance: {
+            ...matchMoment.save.monthlyAdvance,
+            interactiveEventCount: save.monthlyAdvance.interactiveEventCount + 1,
+          },
+        },
+        event: matchMoment.event,
+      };
+    }
     const eventPick = pickYouthEventForWeek(
       canInterrupt ? [...events] : [],
       save,

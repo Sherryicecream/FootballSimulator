@@ -26,6 +26,7 @@ import {
   clearEventFeedback,
   completeYouthSeason,
   enterOffseason,
+  submitCareerDecision,
 } from '../../src/index';
 import { createSave, content, finishSeason } from '../fixtures/youth-save';
 import { buildCareerReview } from '@football/application';
@@ -79,13 +80,33 @@ function signedProSave(overrides: Partial<CareerSaveV4> = {}): CareerSaveV4 {
   });
   return { ...v4, ...overrides };
 }
+
+/** 模拟玩家处理待决关键时刻：提交第一个选项并确认反馈（与 web 流程一致）。 */
+function resolveAwaitingMoment<S extends CareerSaveV4>(outcome: {
+  save: S;
+  event: { eventId: string; storyId: string | null; choices: { id: string }[] };
+}): S {
+  if (outcome.event.storyId !== 'match-moment') {
+    throw new Error('测试赛季出现未处理事件');
+  }
+  const submitted = submitCareerDecision(
+    outcome.save,
+    outcome.event.eventId,
+    outcome.event.choices[0]!.id,
+  );
+  return clearEventFeedback(submitted) as S;
+}
+
 function finishProfessionalSeason<S extends CareerSaveV4>(save: S): S {
   let current = save;
   let guard = 0;
   while (!current.proSeason?.completed && guard < 20) {
     const outcome = advanceProMonth(current, content.clubs, []);
-    if (outcome.status === 'awaiting-decision') throw new Error('测试赛季出现未处理事件');
-    current = outcome.save;
+    if (outcome.status === 'awaiting-decision') {
+      current = resolveAwaitingMoment(outcome);
+    } else {
+      current = outcome.save;
+    }
     guard += 1;
   }
   if (!current.proSeason?.completed) throw new Error('测试赛季未在月度推进中完成');
@@ -559,16 +580,18 @@ describe('职业赛季流程', () => {
     let guard = 0;
     while (!save.proSeason!.completed && guard < 20) {
       const outcome = advanceProMonth(save, content.clubs, []);
-      expect(outcome.status).not.toBe('awaiting-decision');
-      if (outcome.status !== 'awaiting-decision') {
-        declineChanges.push(
-          ...outcome.report.attributeChanges.filter(
-            ({ attribute, oldValue, newValue }) =>
-              ['pace', 'stamina', 'agility', 'strength'].includes(attribute) && newValue < oldValue,
-          ),
-        );
-        save = outcome.save;
+      if (outcome.status === 'awaiting-decision') {
+        save = resolveAwaitingMoment(outcome);
+        guard += 1;
+        continue;
       }
+      declineChanges.push(
+        ...outcome.report.attributeChanges.filter(
+          ({ attribute, oldValue, newValue }) =>
+            ['pace', 'stamina', 'agility', 'strength'].includes(attribute) && newValue < oldValue,
+        ),
+      );
+      save = outcome.save;
       guard += 1;
     }
     expect(declineChanges.length).toBeGreaterThan(0);
@@ -579,8 +602,12 @@ describe('职业赛季流程', () => {
     let guard = 0;
     while (!save.proSeason!.completed && guard < 20) {
       const outcome = advanceProMonth(save, content.clubs, []);
-      expect(outcome.status).not.toBe('awaiting-decision');
-      if (outcome.status !== 'awaiting-decision') save = outcome.save;
+      if (outcome.status === 'awaiting-decision') {
+        save = resolveAwaitingMoment(outcome);
+        guard += 1;
+        continue;
+      }
+      save = outcome.save;
       guard += 1;
     }
     expect(save.proSeason!.completed).toBe(true);
@@ -651,8 +678,12 @@ describe('职业赛季流程', () => {
     let guard = 0;
     while (!save.proSeason!.completed && guard < 20) {
       const outcome = advanceProMonth(save, content.clubs, []);
-      expect(outcome.status).not.toBe('awaiting-decision');
-      if (outcome.status !== 'awaiting-decision') save = outcome.save;
+      if (outcome.status === 'awaiting-decision') {
+        save = resolveAwaitingMoment(outcome);
+        guard += 1;
+        continue;
+      }
+      save = outcome.save;
       guard += 1;
     }
     expect(save.proSeason!.completed).toBe(true);
@@ -687,8 +718,12 @@ describe('职业赛季流程', () => {
     let guard = 0;
     while (!save.proSeason!.completed && guard < 20) {
       const outcome = advanceProMonth(save, content.clubs, []);
-      expect(outcome.status).not.toBe('awaiting-decision');
-      if (outcome.status !== 'awaiting-decision') save = outcome.save;
+      if (outcome.status === 'awaiting-decision') {
+        save = resolveAwaitingMoment(outcome);
+        guard += 1;
+        continue;
+      }
+      save = outcome.save;
       guard += 1;
     }
     save = {
@@ -722,8 +757,12 @@ describe('职业赛季流程', () => {
     let guard = 0;
     while (!first.proSeason!.completed && guard < 20) {
       const outcome = advanceProMonth(first, content.clubs, []);
-      expect(outcome.status).not.toBe('awaiting-decision');
-      if (outcome.status !== 'awaiting-decision') first = outcome.save;
+      if (outcome.status === 'awaiting-decision') {
+        first = resolveAwaitingMoment(outcome, first);
+        guard += 1;
+        continue;
+      }
+      first = outcome.save;
       guard += 1;
     }
     first = {
@@ -740,8 +779,12 @@ describe('职业赛季流程', () => {
     guard = 0;
     while (!second.proSeason!.completed && guard < 20) {
       const outcome = advanceProMonth(second, content.clubs, []);
-      expect(outcome.status).not.toBe('awaiting-decision');
-      if (outcome.status !== 'awaiting-decision') second = outcome.save;
+      if (outcome.status === 'awaiting-decision') {
+        second = resolveAwaitingMoment(outcome, second);
+        guard += 1;
+        continue;
+      }
+      second = outcome.save;
       guard += 1;
     }
     second = {
@@ -791,8 +834,12 @@ describe('职业赛季流程', () => {
     let guard = 0;
     while (!save.proSeason!.completed && guard < 20) {
       const outcome = advanceProMonth(save, content.clubs, []);
-      expect(outcome.status).not.toBe('awaiting-decision');
-      if (outcome.status !== 'awaiting-decision') save = outcome.save;
+      if (outcome.status === 'awaiting-decision') {
+        save = resolveAwaitingMoment(outcome);
+        guard += 1;
+        continue;
+      }
+      save = outcome.save;
       guard += 1;
     }
     const settled = completeProfessionalSeason(save).save;
@@ -806,8 +853,12 @@ describe('职业赛季流程', () => {
     let guard = 0;
     while (!save.proSeason!.completed && guard < 20) {
       const outcome = advanceProMonth(save, content.clubs, []);
-      expect(outcome.status).not.toBe('awaiting-decision');
-      if (outcome.status !== 'awaiting-decision') save = outcome.save;
+      if (outcome.status === 'awaiting-decision') {
+        save = resolveAwaitingMoment(outcome);
+        guard += 1;
+        continue;
+      }
+      save = outcome.save;
       guard += 1;
     }
     const settled = completeProfessionalSeason(save).save;

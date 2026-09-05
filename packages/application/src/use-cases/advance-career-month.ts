@@ -12,6 +12,7 @@ import {
   createSeededRandomSource,
   buildMatchdayMoments,
   pickYouthEventForWeek,
+  pickMatchMomentForWeek,
   buildMonthlyMomentum,
   buildTrainingFeedback,
   buildStoryProgress,
@@ -92,6 +93,20 @@ export const advanceCareerMonth = <
       },
     };
     const canInterrupt = save.season.currentMonth === monthKey && !save.season.completed;
+    const matchMoment = pickMatchMomentForWeek(save, transition.facts);
+    if (matchMoment && canInterrupt) {
+      return {
+        status: 'awaiting-decision',
+        save: {
+          ...matchMoment.save,
+          monthlyAdvance: {
+            ...matchMoment.save.monthlyAdvance,
+            interactiveEventCount: save.monthlyAdvance.interactiveEventCount + 1,
+          },
+        },
+        event: matchMoment.event,
+      };
+    }
     const eventPick = pickYouthEventForWeek(canInterrupt ? events : [], save);
     save = eventPick.save;
     if (eventPick.event?.interaction === 'automatic') {
