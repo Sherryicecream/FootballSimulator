@@ -13,3 +13,6 @@ artifacts/
 .env.*
 !.env.example
 *.log
+
+# archived one-off patches from past sessions
+artifacts/patch-archive/
