@@ -1,7 +1,7 @@
 import type { EventDefinition } from '@football/contracts';
 import { createAuthoredResolution } from './authored-outcomes';
 
-const asiaCondition = { requireOverseas: true, overseasRegions: ['asia'] } as const;
+const asiaCondition = { requireOverseas: true, overseasRegions: ['asia'] as ('europe' | 'asia')[] };
 
 /** asia-career：东亚（日本/韩国）留洋生涯事件，仅在留洋亚洲期间触发。 */
 export const asiaCareerEvents: EventDefinition[] = [

@@ -1,7 +1,7 @@
 import type { EventDefinition } from '@football/contracts';
 import { createAuthoredResolution } from './authored-outcomes';
 
-const europeCondition = { requireOverseas: true, overseasRegions: ['europe'] } as const;
+const europeCondition = { requireOverseas: true, overseasRegions: ['europe'] as ('europe' | 'asia')[] };
 
 /** europe-career：欧洲留洋生涯事件，仅在留洋欧洲期间触发。 */
 export const europeCareerEvents: EventDefinition[] = [
