@@ -25,9 +25,9 @@ export const asiaCareerEvents: EventDefinition[] = [
         text: '坚持每周参加语言课，把日常用语一条条记下来',
         riskLabel: '低',
         effects: { closeness: 1, confidence: 1 },
-                response: '你把语言课坚持了下来；能不能听懂更衣室，要看这几个月的功课做得怎么样。',
+        response: '你把语言课坚持了下来；能不能听懂更衣室，要看这几个月的功课做得怎么样。',
         followUp: '语言的学习曲线各不相同；教练和队友会根据你的进度调整和你的沟通方式。',
-resolution: createAuthoredResolution('decision', 55, {
+        resolution: createAuthoredResolution('decision', 55, {
           success: {
             label: '语言上手',
             effects: { closeness: 3, confidence: 2, coachTrust: 1 },
@@ -53,7 +53,8 @@ resolution: createAuthoredResolution('decision', 55, {
           failure: {
             label: '课业吃力',
             effects: { morale: -1, confidence: -1 },
-            response: '连续的客场比赛让你缺了两节课，再回到教室时已经跟不上了，你把课本合上时有些沮丧。',
+            response:
+              '连续的客场比赛让你缺了两节课，再回到教室时已经跟不上了，你把课本合上时有些沮丧。',
             followUp: '语言课暂时搁置了；在听懂队友之前，你只能用跑动和手势证明自己。',
           },
         }),
@@ -89,8 +90,7 @@ resolution: createAuthoredResolution('decision', 55, {
         text: '全程参加，并学着用当地话向球迷问好',
         riskLabel: '低',
         effects: { closeness: 2, confidence: 1 },
-        response:
-          '你那句发音不太标准的问候让看台笑成一片，也记住了你。签名会长队排到了场馆门口。',
+        response: '你那句发音不太标准的问候让看台笑成一片，也记住了你。签名会长队排到了场馆门口。',
         followUp: '球迷文化在这片联赛里是真实的第九人；下一次主场比赛，你会听到更响的加油声。',
       },
       {
@@ -124,9 +124,9 @@ resolution: createAuthoredResolution('decision', 55, {
         text: '申请明天以恢复课代替合练，先把长途飞行的影响排掉',
         riskLabel: '低',
         effects: { fatigue: -1 },
-                response: '你按恢复方案调整了训练；长途赛程的影响需要几天才能看清。',
+        response: '你按恢复方案调整了训练；长途赛程的影响需要几天才能看清。',
         followUp: '队医会跟踪你的恢复数据；下一个比赛周会检验这份安排。',
-resolution: createAuthoredResolution('stamina', 52, {
+        resolution: createAuthoredResolution('stamina', 52, {
           success: {
             label: '恢复到位',
             effects: { fitness: 2, fatigue: -3 },
@@ -213,8 +213,7 @@ resolution: createAuthoredResolution('stamina', 52, {
         text: '接受连线，坦率聊留洋的得与失',
         riskLabel: '低',
         effects: { confidence: 2, respect: 1 },
-        response:
-          '你聊了语言、饮食和每一次坐替补席的心情。播出后，评论区都在说"这个球员很真实"。',
+        response: '你聊了语言、饮食和每一次坐替补席的心情。播出后，评论区都在说"这个球员很真实"。',
         followUp: '坦诚为你赢得了观众；也提醒着你，国门之外的每一场球都有人认真看着。',
       },
       {
@@ -248,9 +247,9 @@ resolution: createAuthoredResolution('stamina', 52, {
         text: '公开表态：赛季结束前只考虑现在的球队',
         riskLabel: '中',
         effects: { coachTrust: 1 },
-                response: '你对转会传闻表明了态度；舆论会放大其中的一部分。',
+        response: '你对转会传闻表明了态度；舆论会放大其中的一部分。',
         followUp: '表态之后，你的每一场比赛都会被放在显微镜下。',
-resolution: createAuthoredResolution('decision', 58, {
+        resolution: createAuthoredResolution('decision', 58, {
           success: {
             label: '立场赢得信任',
             effects: { coachTrust: 3, respect: 2 },

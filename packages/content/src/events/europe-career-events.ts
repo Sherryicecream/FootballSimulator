@@ -1,7 +1,10 @@
 import type { EventDefinition } from '@football/contracts';
 import { createAuthoredResolution } from './authored-outcomes';
 
-const europeCondition = { requireOverseas: true, overseasRegions: ['europe'] as ('europe' | 'asia')[] };
+const europeCondition = {
+  requireOverseas: true,
+  overseasRegions: ['europe'] as ('europe' | 'asia')[],
+};
 
 /** europe-career：欧洲留洋生涯事件，仅在留洋欧洲期间触发。 */
 export const europeCareerEvents: EventDefinition[] = [
@@ -25,14 +28,13 @@ export const europeCareerEvents: EventDefinition[] = [
         text: '主动邀请邻位的队友留下来互相加练喂球',
         riskLabel: '中',
         effects: { closeness: 1 },
-                response: '你主动向队友发出了加练邀请；更衣室的回应需要时间确认。',
+        response: '你主动向队友发出了加练邀请；更衣室的回应需要时间确认。',
         followUp: '主动是融入的第一步；接下来的合练会给出回应。',
-resolution: createAuthoredResolution('composure', 58, {
+        resolution: createAuthoredResolution('composure', 58, {
           success: {
             label: '融入更快',
             effects: { closeness: 3, trust: 2, confidence: 2 },
-            response:
-              '加练结束后，他用生硬的外语对你说了句"干得不错"，然后把耳机分了一只给你听。',
+            response: '加练结束后，他用生硬的外语对你说了句"干得不错"，然后把耳机分了一只给你听。',
             responses: [
               {
                 speakerRole: 'teammate',
@@ -125,9 +127,9 @@ resolution: createAuthoredResolution('composure', 58, {
         text: '按教练组的要求改，先在训练里练一百次简化出球',
         riskLabel: '中',
         effects: { coachTrust: 1 },
-                response: '你开始按教练组的要求调整处理球习惯；改起来没那么快。',
+        response: '你开始按教练组的要求调整处理球习惯；改起来没那么快。',
         followUp: '体系的信任要用训练一场一场攒回来。',
-resolution: createAuthoredResolution('decision', 60, {
+        resolution: createAuthoredResolution('decision', 60, {
           success: {
             label: '适配见效',
             effects: { coachTrust: 3, form: 2 },
@@ -150,7 +152,8 @@ resolution: createAuthoredResolution('decision', 60, {
           failure: {
             label: '一时别扭',
             effects: { form: -2, confidence: -1 },
-            response: '强行简化让你的传球变得平庸，连续两场你都没了存在感。教练把你叫去单独谈了一次。',
+            response:
+              '强行简化让你的传球变得平庸，连续两场你都没了存在感。教练把你叫去单独谈了一次。',
             followUp: '改变需要代价；关键是别在最艰难的时候停下。',
           },
         }),
@@ -175,8 +178,7 @@ resolution: createAuthoredResolution('decision', 60, {
     interaction: 'decision',
     baseWeight: 20,
     title: '当地媒体首访',
-    description:
-      '本地晚报想采访这位"从东方来的新援"。俱乐部公关问你：是自己上，还是带翻译。',
+    description: '本地晚报想采访这位"从东方来的新援"。俱乐部公关问你：是自己上，还是带翻译。',
     condition: { ...europeCondition },
     participantRoles: ['assistant-coach'],
     cooldownWeeks: 12,
@@ -195,8 +197,7 @@ resolution: createAuthoredResolution('decision', 60, {
         text: '带上翻译，把想说的说完整',
         riskLabel: '低',
         effects: { morale: 1 },
-        response:
-          '翻译帮你把每一句话都说得流畅妥帖。报道很正面，只是引用里少了你自己的语气。',
+        response: '翻译帮你把每一句话都说得流畅妥帖。报道很正面，只是引用里少了你自己的语气。',
         followUp: '稳妥的选择；等语言跟上，你随时可以自己来。',
       },
     ],
@@ -256,9 +257,9 @@ resolution: createAuthoredResolution('decision', 60, {
         text: '把聚光灯变成动力，按自己的节奏踢这场球',
         riskLabel: '中',
         effects: { confidence: 1 },
-                response: '你带着聚光灯上场，结果由九十分钟决定。',
+        response: '你带着聚光灯上场，结果由九十分钟决定。',
         followUp: '无论这场的成色如何，球探的报告已经写下了第一笔。',
-resolution: createAuthoredResolution('composure', 62, {
+        resolution: createAuthoredResolution('composure', 62, {
           success: {
             label: '身价之夜',
             effects: { confidence: 3, coachTrust: 2, respect: 2 },
@@ -275,7 +276,8 @@ resolution: createAuthoredResolution('composure', 62, {
           partial: {
             label: '中规中矩',
             effects: { confidence: 1 },
-            response: '你踢了一场扎实的比赛，没有失误也没有高光。球探的记录本上写了几行字，合上了。',
+            response:
+              '你踢了一场扎实的比赛，没有失误也没有高光。球探的记录本上写了几行字，合上了。',
             followUp: '他们还会再来的；把状态保持住，机会不会只敲一次门。',
           },
           failure: {

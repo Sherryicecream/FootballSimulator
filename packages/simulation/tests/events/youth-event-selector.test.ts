@@ -431,14 +431,22 @@ describe('pro-phase event conditions', () => {
     expect(filterEligibleYouthEvents([asia, europe], base, { currentClub: asiaClub })).toEqual([]);
     expect(filterEligibleYouthEvents([asia], { ...base, ...overseasState })).toEqual([]);
     expect(
-      filterEligibleYouthEvents([asia, europe], { ...base, ...overseasState }, {
-        currentClub: asiaClub,
-      }).map(({ id }) => id),
+      filterEligibleYouthEvents(
+        [asia, europe],
+        { ...base, ...overseasState },
+        {
+          currentClub: asiaClub,
+        },
+      ).map(({ id }) => id),
     ).toEqual(['asia-language-class']);
     expect(
-      filterEligibleYouthEvents([asia, europe], { ...base, ...overseasState }, {
-        currentClub: europeClub,
-      }).map(({ id }) => id),
+      filterEligibleYouthEvents(
+        [asia, europe],
+        { ...base, ...overseasState },
+        {
+          currentClub: europeClub,
+        },
+      ).map(({ id }) => id),
     ).toEqual(['europe-locker-room']);
   });
 

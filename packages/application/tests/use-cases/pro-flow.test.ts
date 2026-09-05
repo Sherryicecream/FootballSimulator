@@ -861,10 +861,7 @@ describe('职业赛季流程', () => {
 });
 
 describe('职业期事件内容接入', () => {
-  const inlineProEvent = (
-    id: string,
-    condition: Record<string, unknown>,
-  ): EventDefinition => ({
+  const inlineProEvent = (id: string, condition: Record<string, unknown>): EventDefinition => ({
     id,
     version: 1,
     category: 'asia-career',

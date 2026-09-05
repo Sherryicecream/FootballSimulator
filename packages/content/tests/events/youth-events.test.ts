@@ -105,8 +105,12 @@ describe('pro-phase event coverage', () => {
   });
 
   it('provides japanese and korean overseas clubs for asia-career events', () => {
-    expect(overseasClubs.filter((club) => club.overseasRegion === 'asia').length).toBeGreaterThanOrEqual(4);
-    expect(overseasClubs.filter((club) => club.overseasRegion === 'europe').length).toBeGreaterThanOrEqual(10);
+    expect(
+      overseasClubs.filter((club) => club.overseasRegion === 'asia').length,
+    ).toBeGreaterThanOrEqual(4);
+    expect(
+      overseasClubs.filter((club) => club.overseasRegion === 'europe').length,
+    ).toBeGreaterThanOrEqual(10);
     for (const club of overseasClubs) {
       expect(club.overseas).toBe(true);
     }

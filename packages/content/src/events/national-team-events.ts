@@ -47,8 +47,7 @@ export const nationalTeamEvents: EventDefinition[] = [
     interaction: 'decision',
     baseWeight: 22,
     title: '主帅定位对话',
-    description:
-      '国家队主教练把你叫到房间，关上门问你："说说看，你在国家队想成为什么样的球员？"',
+    description: '国家队主教练把你叫到房间，关上门问你："说说看，你在国家队想成为什么样的球员？"',
     condition: { requireNationalTeam: true },
     participantRoles: ['youth-coach'],
     cooldownWeeks: 12,
@@ -58,9 +57,9 @@ export const nationalTeamEvents: EventDefinition[] = [
         text: '直言想竞争主力位置，并说出自己的依据',
         riskLabel: '中',
         effects: { confidence: 1 },
-                response: '你向主教练表明了竞争主力的想法；答复不会马上到来。',
+        response: '你向主教练表明了竞争主力的想法；答复不会马上到来。',
         followUp: '国家队的轮换名单会在接下来的训练里逐步成形。',
-resolution: createAuthoredResolution('composure', 60, {
+        resolution: createAuthoredResolution('composure', 60, {
           success: {
             label: '获得认可',
             effects: { confidence: 3, respect: 2, fatigue: 1 },
@@ -93,8 +92,7 @@ resolution: createAuthoredResolution('composure', 60, {
         text: '表示服从任何安排，把定位交给教练决定',
         riskLabel: '低',
         effects: { coachTrust: 2, confidence: -1 },
-        response:
-          '主教练欣赏你的态度："团队需要这样的人。"你成了训练里哪里需要去哪里的那一个。',
+        response: '主教练欣赏你的态度："团队需要这样的人。"你成了训练里哪里需要去哪里的那一个。',
         followUp: '可靠是无声的通行证；只是心里的那个位置，还得自己找机会去争。',
       },
     ],
@@ -119,9 +117,9 @@ resolution: createAuthoredResolution('composure', 60, {
         text: '把身体数据交给队医，按渐进方案恢复',
         riskLabel: '低',
         effects: { fatigue: -1 },
-                response: '你把窗口后的身体管理交给了恢复方案；效果几天后见分晓。',
+        response: '你把窗口后的身体管理交给了恢复方案；效果几天后见分晓。',
         followUp: '俱乐部教练在等一个完整状态的你；别让疲劳把机会变成风险。',
-resolution: createAuthoredResolution('stamina', 54, {
+        resolution: createAuthoredResolution('stamina', 54, {
           success: {
             label: '状态回来',
             effects: { fitness: 2, fatigue: -3 },
@@ -183,8 +181,7 @@ resolution: createAuthoredResolution('stamina', 54, {
         text: '把话题拉回每一场比赛',
         riskLabel: '低',
         effects: { coachTrust: 1 },
-        response:
-          '你只谈下一场比赛和眼前的训练。采访发出来很短，教练组却把这篇报道转发了内部群。',
+        response: '你只谈下一场比赛和眼前的训练。采访发出来很短，教练组却把这篇报道转发了内部群。',
         followUp: '谦逊是国家队最不缺的品格，也是最难保持的品格。',
       },
     ],
@@ -218,8 +215,7 @@ resolution: createAuthoredResolution('stamina', 54, {
         text: '道谢但先去加练，把课程改天再补',
         riskLabel: '中',
         effects: { trust: 1, closeness: -1 },
-        response:
-          '你感谢了他的好意，说想先把身体练到位。他点点头没说什么，录像室的灯亮到了很晚。',
+        response: '你感谢了他的好意，说想先把身体练到位。他点点头没说什么，录像室的灯亮到了很晚。',
         followUp: '勤奋没错；只是有些课，错过一期要等下一次集训。',
       },
     ],
