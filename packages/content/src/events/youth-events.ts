@@ -4,6 +4,9 @@ import { balancedOneOffEvents } from './one-off-events';
 import { shortStoryEvents } from './story-events';
 import { trajectoryEvents } from './trajectory-events';
 import { branchingStoryEvents } from './branching-story-events';
+import { asiaCareerEvents } from './asia-career-events';
+import { europeCareerEvents } from './europe-career-events';
+import { nationalTeamEvents } from './national-team-events';
 
 const legacyYouthEvents: EventDefinition[] = [
   {
@@ -1086,6 +1089,9 @@ export const youthEvents: EventDefinition[] = [
   ...shortStoryEvents,
   ...trajectoryEvents,
   ...branchingStoryEvents,
+  ...asiaCareerEvents,
+  ...europeCareerEvents,
+  ...nationalTeamEvents,
 ];
 
 export function getYouthEvents(): EventDefinition[] {

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { getYouthEvents } from '../../src/events/youth-events';
+import { overseasClubs } from '../../src/clubs';
 import { getYouthContent } from '../../src';
 
 describe('youthEvents', () => {
@@ -76,5 +77,58 @@ describe('youthEvents', () => {
     );
 
     expect(missing).toEqual([]);
+  });
+});
+
+describe('pro-phase event coverage', () => {
+  it('covers asia-career, europe-career and national-team categories', () => {
+    const events = getYouthEvents();
+    const countBy = (category: string) =>
+      events.filter((event) => event.category === category).length;
+    expect(countBy('asia-career')).toBeGreaterThanOrEqual(6);
+    expect(countBy('europe-career')).toBeGreaterThanOrEqual(6);
+    expect(countBy('national-team')).toBeGreaterThanOrEqual(5);
+  });
+
+  it('every pro-phase event gates on overseas or national-team state', () => {
+    const events = getYouthEvents().filter((event) =>
+      ['asia-career', 'europe-career', 'national-team'].includes(event.category),
+    );
+    expect(events.length).toBeGreaterThanOrEqual(17);
+    for (const event of events) {
+      const gated =
+        event.condition.requireOverseas === true ||
+        event.condition.requireNationalTeam === true ||
+        typeof event.condition.minCaps === 'number';
+      expect(gated).toBe(true);
+    }
+  });
+
+  it('provides japanese and korean overseas clubs for asia-career events', () => {
+    expect(overseasClubs.filter((club) => club.overseasRegion === 'asia').length).toBeGreaterThanOrEqual(4);
+    expect(overseasClubs.filter((club) => club.overseasRegion === 'europe').length).toBeGreaterThanOrEqual(10);
+    for (const club of overseasClubs) {
+      expect(club.overseas).toBe(true);
+    }
+  });
+
+  it('key pro-phase choices provide three-tier authored resolutions', () => {
+    const withResolution = getYouthEvents().filter(
+      (event) =>
+        ['asia-career', 'europe-career', 'national-team'].includes(event.category) &&
+        event.choices.some((choice) => choice.resolution),
+    );
+    expect(withResolution.length).toBeGreaterThanOrEqual(6);
+    for (const event of withResolution) {
+      for (const choice of event.choices) {
+        if (choice.resolution) {
+          expect(Object.keys(choice.resolution.outcomes).sort()).toEqual([
+            'failure',
+            'partial',
+            'success',
+          ]);
+        }
+      }
+    }
   });
 });

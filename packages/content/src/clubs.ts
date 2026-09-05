@@ -207,7 +207,7 @@ function club(
 }
 
 /** 海外虚构俱乐部（欧陆次级集团，层级 4–8）：留洋目标，不参与国内同层联赛。 */
-export const overseasClubs: ClubProfile[] = [
+const europeanOverseasClubs: ClubProfile[] = [
   club(
     'ov-albion-rovers',
     '阿尔比恩流浪者',
@@ -276,4 +276,14 @@ export const overseasClubs: ClubProfile[] = [
     33,
   ),
   club('ov-fk-granit', '花岗岩足球会', 4, 'dongbei', ['FULL_BACK', 'CENTER_BACK'], 'stable', 31),
-].map((entry) => ({ ...entry, overseas: true }));
+].map((entry) => ({ ...entry, overseas: true, overseasRegion: 'europe' as const }));
+
+/** 东亚海外俱乐部（日本/韩国，层级 6–8）：asia-career 内容的留洋目标。 */
+const asianOverseasClubs: ClubProfile[] = [
+  club('ov-sakura-frontier', '樱前线', 8, 'japan', ['FORWARD', 'WINGER'], 'contending', 78),
+  club('ov-baekho-athletic', '白虎竞技', 7, 'korea', ['MIDFIELDER', 'FULL_BACK'], 'stable', 66),
+  club('ov-kansai-wave', '关西浪潮', 6, 'japan', ['WINGER', 'MIDFIELDER'], 'rebuilding', 58),
+  club('ov-mokpo-marine', '木浦海运', 6, 'korea', ['CENTER_BACK', 'FORWARD'], 'stable', 54),
+].map((entry) => ({ ...entry, overseas: true, overseasRegion: 'asia' as const }));
+
+export const overseasClubs: ClubProfile[] = [...europeanOverseasClubs, ...asianOverseasClubs];
