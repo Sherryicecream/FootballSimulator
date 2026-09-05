@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { migrateCareerSaveV5 } from '@football/contracts';
-import type { CareerSaveV4 } from '@football/contracts';
+import type { CareerSaveV4, EventDefinition } from '@football/contracts';
 import {
   acceptRenewal,
   advanceProMonth,
@@ -21,7 +21,12 @@ import {
   generateContractOffers,
   signContract,
 } from '../../src/use-cases/contract-flow';
-import { clearEventFeedback, completeYouthSeason, enterOffseason } from '../../src/index';
+import {
+  advanceCareerMonth,
+  clearEventFeedback,
+  completeYouthSeason,
+  enterOffseason,
+} from '../../src/index';
 import { createSave, content, finishSeason } from '../fixtures/youth-save';
 import { buildCareerReview } from '@football/application';
 import { advanceDomesticCup, createDomesticCup } from '@football/simulation';
@@ -852,5 +857,102 @@ describe('职业赛季流程', () => {
         `pro-${pro.startDate.slice(0, 4)}-${cupFixture.id}`,
       ]),
     );
+  });
+});
+
+describe('职业期事件内容接入', () => {
+  const inlineProEvent = (
+    id: string,
+    condition: Record<string, unknown>,
+  ): EventDefinition => ({
+    id,
+    version: 1,
+    category: 'asia-career',
+    rarity: 'common',
+    theme: 'relationships',
+    interaction: 'decision',
+    baseWeight: 100,
+    title: id,
+    description: id,
+    condition: condition as EventDefinition['condition'],
+    choices: [{ id: 'continue', text: '继续', riskLabel: '低', effects: {} }],
+    cooldownWeeks: 4,
+  });
+
+  it('职业月度推进把当前俱乐部传入事件评估：留洋亚洲可命中 asia-career 事件', () => {
+    const asiaClubs = [0, 1, 2, 3].map((index) => ({
+      ...content.clubs[0]!,
+      id: `asia-test-${index + 1}`,
+      name: `亚洲测试${index + 1}`,
+      overseas: true,
+      overseasRegion: 'asia' as const,
+    }));
+    const clubs = [...content.clubs, ...asiaClubs];
+    const asiaEvent = inlineProEvent('asia-language-class', {
+      requireOverseas: true,
+      overseasRegions: ['asia'],
+    });
+    const europeCanary = inlineProEvent('europe-canary-check', {
+      requireOverseas: true,
+      overseasRegions: ['europe'],
+    });
+
+    let hit = 0;
+    for (let seed = 1; seed <= 60; seed += 1) {
+      const initial = signedProSave();
+      const save = startProfessionalSeason(
+        {
+          ...initial,
+          randomState: { ...initial.randomState, seed },
+          contract: {
+            ...initial.contract!,
+            clubId: asiaClubs[0]!.id,
+            clubName: asiaClubs[0]!.name,
+            clubTier: asiaClubs[0]!.tier,
+            overseas: true,
+          },
+          overseasSince: '2025-07-01',
+        },
+        clubs,
+      );
+      let current = save;
+      let guard = 0;
+      while (guard < 3) {
+        const outcome = advanceProMonth(current, clubs, [asiaEvent, europeCanary]);
+        if (outcome.status === 'awaiting-decision') {
+          expect(outcome.event.eventId).toBe('asia-language-class');
+          hit += 1;
+          break;
+        }
+        if (outcome.status !== 'month-complete') break;
+        current = outcome.save;
+        guard += 1;
+      }
+      if (hit > 0) break;
+    }
+    expect(hit).toBeGreaterThan(0);
+  });
+
+  it('青训存档（无留洋与国家队状态）不会命中职业期事件', () => {
+    const asiaEvent: EventDefinition = {
+      ...inlineProEvent('asia-language-class', {}),
+      condition: { requireOverseas: true, overseasRegions: ['asia'] },
+    };
+    const nationalEvent: EventDefinition = {
+      ...inlineProEvent('national-squad-room', {}),
+      category: 'national-team',
+      condition: { requireNationalTeam: true },
+    };
+    const base = createSave(7);
+    let hit = 0;
+    for (let seed = 1; seed <= 30; seed += 1) {
+      const outcome = advanceCareerMonth(
+        { ...base, randomState: { ...base.randomState, seed } },
+        content.academies,
+        [asiaEvent, nationalEvent],
+      );
+      if (outcome.status === 'awaiting-decision') hit += 1;
+    }
+    expect(hit).toBe(0);
   });
 });

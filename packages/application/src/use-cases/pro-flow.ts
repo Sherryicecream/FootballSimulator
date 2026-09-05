@@ -230,6 +230,7 @@ export const advanceProMonth = <S extends CareerSaveV4Like>(
   const pro = initialSave.proSeason;
   if (!pro) throw new Error('职业赛季状态缺失');
   if (pro.completed) throw new Error('职业赛季已经结束');
+  const currentClub = clubs.find(({ id }) => id === pro.clubId);
   if (initialSave.story.pendingEvent) {
     return {
       status: 'awaiting-decision',
@@ -285,7 +286,11 @@ export const advanceProMonth = <S extends CareerSaveV4Like>(
     matchIds = save.monthlyAdvance.matchIds;
     const canInterrupt = save.proSeason!.currentMonth === monthKey && !save.proSeason!.completed;
     factsDuringMonth.push(...transition.facts.map(({ id }) => id));
-    const eventPick = pickYouthEventForWeek(canInterrupt ? [...events] : [], save);
+    const eventPick = pickYouthEventForWeek(
+      canInterrupt ? [...events] : [],
+      save,
+      currentClub ? { currentClub } : {},
+    );
     save = eventPick.save;
     if (eventPick.event?.interaction === 'automatic') {
       save = resolveCareerEvent(
