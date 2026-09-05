@@ -205,3 +205,16 @@ describe('pickMatchMomentForWeek', () => {
     expect(pickMatchMomentForWeek(save, [])).toBeNull();
   });
 });
+
+describe('pickMatchMomentForWeek monthly cap', () => {
+  it('never generates beyond the two-decision monthly cap', () => {
+    const facts = [matchFact({ opponentStrength: 82 })];
+    for (let count = 2; count <= 3; count += 1) {
+      const base = createYouthSave();
+      const save = createYouthSave({
+        monthlyAdvance: { ...base.monthlyAdvance, interactiveEventCount: count },
+      });
+      expect(pickMatchMomentForWeek(save, facts)).toBeNull();
+    }
+  });
+});

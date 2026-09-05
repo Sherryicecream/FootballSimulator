@@ -51,7 +51,11 @@ import { ProOffseasonPanel } from '../career-dashboard/ProOffseasonPanel';
 import { CareerReviewPage } from '../career-dashboard/CareerReviewPage';
 import { AgentPreferencesForm } from '../career-dashboard/AgentPreferencesForm';
 import { OfferComparisonPanel } from '../career-dashboard/OfferComparisonPanel';
-import { sceneKindForTheme } from '../career-dashboard/career-presentation';
+import {
+  isMatchMomentEventId,
+  matchMomentSceneKind,
+  sceneKindForTheme,
+} from '../career-dashboard/career-presentation';
 import { SceneBanner } from '../design-system/SceneBanner';
 import { createBootstrapContent } from './bootstrap-dependencies';
 import {
@@ -100,7 +104,12 @@ export function App() {
   const pendingEventDefinition = activeEventId
     ? youthContent.events.find(({ id }) => id === activeEventId)
     : undefined;
-  const eventSceneKind = sceneKindForTheme(pendingEventDefinition?.theme);
+  const eventSceneKind =
+    matchMomentSceneKind(save?.story.pendingEvent ?? null) ??
+    (save?.story.pendingFeedback && isMatchMomentEventId(save.story.pendingFeedback.eventId)
+      ? 'match'
+      : null) ??
+    sceneKindForTheme(pendingEventDefinition?.theme);
   const canContinueYouth = save ? canContinueYouthSeason(save) : false;
   const pendingFeedbackNextEvents =
     save?.story.pendingFeedback?.nextEventIds?.flatMap((eventId) => {

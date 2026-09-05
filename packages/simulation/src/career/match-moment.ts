@@ -343,6 +343,8 @@ export const pickMatchMomentForWeek = <S extends CareerSaveV2Like>(
   save: S,
   facts: readonly CareerLedgerEntryV2[],
 ): MatchMomentPickResult<S> | null => {
+  // 关键时刻占用月度交互名额，与事件共用"每月最多 2 个"上限。
+  if ((save.monthlyAdvance.interactiveEventCount ?? 0) >= 2) return null;
   for (const fact of facts) {
     if (fact.type !== 'match' && fact.type !== 'pro-match') continue;
     const event = buildMatchMomentEvent(save, fact);

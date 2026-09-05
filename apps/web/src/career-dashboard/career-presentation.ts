@@ -306,3 +306,19 @@ const limitHighlight = (line: string): string => {
   const limited = clean.slice(0, 79);
   return `${limited.replace(/[，、：；]$/g, '')}。`;
 };
+
+/** 关键时刻事件标识前缀（simulation 生成的 pendingEvent/eventId 约定）。 */
+export const MATCH_MOMENT_EVENT_PREFIX = 'match-moment-';
+
+export const isMatchMomentEventId = (eventId: string): boolean =>
+  eventId.startsWith(MATCH_MOMENT_EVENT_PREFIX);
+
+/** 待决关键时刻使用比赛纪录片场景；非关键时刻返回 null 交给常规主题映射。 */
+export const matchMomentSceneKind = (
+  pendingEvent: {
+    storyId: string | null;
+  } | null,
+): SceneKind | null => {
+  if (pendingEvent?.storyId !== 'match-moment') return null;
+  return 'match';
+};
