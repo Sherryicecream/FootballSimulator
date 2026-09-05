@@ -116,3 +116,171 @@ describe('career review replay', () => {
     ).toBe(true);
   });
 });
+
+describe('career review dimensions and behind-the-scenes', () => {
+  const baseSave = (overrides: Record<string, unknown> = {}) =>
+    CareerSaveV5Schema.parse({
+      ...migrateCareerSaveV5(createYouthSave()),
+      careerPhase: 'retired',
+      retiredOn: '2038-06-30',
+      ...overrides,
+    });
+
+  it('exposes all eight dimensions with valid ranges and rating labels', () => {
+    const review = buildCareerReview(baseSave());
+    expect(review.dimensions.map(({ key }) => key)).toEqual([
+      'competition',
+      'team-honours',
+      'individual',
+      'loyalty',
+      'national-team',
+      'off-pitch',
+      'relationships',
+      'legendary',
+    ]);
+    for (const dimension of review.dimensions) {
+      expect(dimension.score).toBeGreaterThanOrEqual(0);
+      expect(dimension.score).toBeLessThanOrEqual(100);
+      expect(['卓越', '出色', '合格', '平凡']).toContain(dimension.ratingLabel);
+      expect(dimension.label.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('scores profiles according to the documented formulas', () => {
+    const loyalSave = baseSave({
+      player: {
+        ...migrateCareerSaveV5(createYouthSave()).player,
+        reputation: 65,
+      },
+      clubHistory: [
+        {
+          clubId: 'pro-club-1',
+          clubName: '东海职业',
+          from: '2027-07-01',
+          to: null,
+          seasons: 12,
+          appearances: 220,
+          goals: 60,
+        },
+      ],
+      nationalTeam: { capped: true, caps: 30, goals: 8, debutOn: '2030-09-01' },
+    });
+    const loyal = buildCareerReview(loyalSave);
+    expect(loyal.dimensions.find(({ key }) => key === 'competition')).toMatchObject({
+      score: 65,
+      ratingLabel: '出色',
+    });
+    expect(loyal.dimensions.find(({ key }) => key === 'loyalty')).toMatchObject({ score: 90 });
+    expect(loyal.dimensions.find(({ key }) => key === 'national-team')).toMatchObject({
+      score: Math.min(100, 30 * 2.5 + 8),
+    });
+
+    const wanderer = baseSave({
+      clubHistory: [1, 2, 3, 4, 5].map((index) => ({
+        clubId: `pro-club-${index}`,
+        clubName: `俱乐部${index}`,
+        from: `${2027 + index}-07-01`,
+        to: `${2028 + index}-06-30`,
+        seasons: 1,
+        appearances: 20,
+        goals: 3,
+      })),
+      loanHistory: [
+        {
+          seasonId: 'pro-2032',
+          parentClubId: 'pro-club-2',
+          parentClubName: '俱乐部2',
+          loanClubId: 'pro-club-9',
+          loanClubName: '俱乐部9',
+          from: '2032-07-01',
+          to: '2033-05-31',
+          appearances: 18,
+          goals: 2,
+          assists: 1,
+          minutes: 1400,
+          competitionTier: 5,
+          outcomeEvidenceId: 'pro-2032-loan-return',
+        },
+      ],
+      nationalTeam: null,
+    });
+    const wandererReview = buildCareerReview(wanderer);
+    expect(wandererReview.dimensions.find(({ key }) => key === 'loyalty')).toMatchObject({
+      score: 20,
+    });
+    expect(wandererReview.dimensions.find(({ key }) => key === 'national-team')).toMatchObject({
+      score: 0,
+    });
+  });
+
+  it('reveals potential fulfillment and hidden traits from the save', () => {
+    const raw = migrateCareerSaveV5(createYouthSave());
+    const save = baseSave();
+    const review = buildCareerReview(save);
+    expect(review.behindTheScenes.potentials.map(({ group }) => group)).toEqual([
+      'technical',
+      'physical',
+      'mental',
+    ]);
+    const shooting = review.behindTheScenes.potentials
+      .flatMap(({ items }) => items)
+      .find(({ key }) => key === 'shooting');
+    expect(shooting).toMatchObject({
+      potential: raw.player.development.attributePotential.technical.shooting,
+      achieved: raw.player.attributes.technical.shooting,
+    });
+    const traitValue = (key: string) =>
+      review.behindTheScenes.traits.find(({ key: traitKey }) => traitKey === key)?.value;
+    const traitRaw = (key: string) =>
+      review.behindTheScenes.traits.find(({ key: traitKey }) => traitKey === key)?.rawValue;
+    expect(traitRaw('maturationPace')).toBe(raw.player.development.maturationPace);
+    expect(traitValue('professionalism')).toBe(
+      String(raw.player.development.professionalism),
+    );
+    expect(traitRaw('injuryProneness')).toBe(String(raw.player.development.injuryProneness));
+  });
+
+  it('lists evidence-backed missed opportunities and stays honest when none exist', () => {
+    const missedSave = baseSave({
+      story: {
+        ...migrateCareerSaveV5(createYouthSave()).story,
+        completedStoryIds: ['national-team-debut'],
+      },
+      nationalTeam: null,
+      promiseReviews: [
+        {
+          seasonId: 'pro-2030',
+          share: 0.4,
+          promisedShare: 0.6,
+          status: 'broken',
+          cause: 'injury',
+          evaluatedOn: '2031-06-30',
+        },
+      ],
+      freeAgentSeasons: 2,
+      ledger: [
+        {
+          id: 'health-severe-2030',
+          weekKey: '2030-W22',
+          type: 'health',
+          summary: '重伤：膝盖韧带，预计休战 24 周',
+          participantIds: [],
+        },
+      ],
+    });
+    const missedIds = buildCareerReview(missedSave).behindTheScenes.missedOpportunities.map(
+      ({ id }) => id,
+    );
+    expect(missedIds).toEqual(
+      expect.arrayContaining([
+        'declined-national-debut',
+        'broken-promise-injury',
+        'free-agent-seasons',
+        'severe-injury',
+      ]),
+    );
+
+    const cleanReview = buildCareerReview(baseSave());
+    expect(cleanReview.behindTheScenes.missedOpportunities).toEqual([]);
+  });
+});

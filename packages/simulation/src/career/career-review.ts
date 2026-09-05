@@ -25,10 +25,65 @@ export interface CareerGoal {
   evidenceIds: string[];
 }
 
+export type CareerDimensionKey =
+  | 'competition'
+  | 'team-honours'
+  | 'individual'
+  | 'loyalty'
+  | 'national-team'
+  | 'off-pitch'
+  | 'relationships'
+  | 'legendary';
+
+export interface CareerDimension {
+  key: CareerDimensionKey;
+  label: string;
+  score: number;
+  ratingLabel: string;
+  evidenceIds: string[];
+}
+
+export interface CareerPotentialItem {
+  key: string;
+  label: string;
+  potential: number;
+  achieved: number;
+}
+
+export interface CareerPotentialGroup {
+  group: 'technical' | 'physical' | 'mental';
+  label: string;
+  items: CareerPotentialItem[];
+  fulfillment: number;
+}
+
+export interface CareerTraitReveal {
+  key: string;
+  label: string;
+  value: string;
+  rawValue: string;
+  note: string;
+}
+
+export interface CareerMissedOpportunity {
+  id: string;
+  label: string;
+  detail: string;
+  evidenceIds: string[];
+}
+
+export interface CareerBehindTheScenes {
+  potentials: CareerPotentialGroup[];
+  traits: CareerTraitReveal[];
+  missedOpportunities: CareerMissedOpportunity[];
+}
+
 export interface CareerReviewData {
   tier: CareerTier;
   tierLabel: string;
   commentary: string;
+  dimensions: CareerDimension[];
+  behindTheScenes: CareerBehindTheScenes;
   seasons: number;
   replay: CareerReplayMoment[];
   goals: CareerGoal[];
@@ -88,11 +143,14 @@ export const buildCareerReview = (save: CareerSaveV5Like): CareerReviewData => {
   ]);
   const honours = save.seasonHistory.flatMap(({ honours: seasonHonours }) => seasonHonours);
 
+  const replay = buildReplay(save);
   return {
     tier,
     tierLabel: TIER_LABELS[tier],
     commentary: COMMENTARY[tier],
-    replay: buildReplay(save),
+    dimensions: buildDimensions(save, honours, replay),
+    behindTheScenes: buildBehindTheScenes(save),
+    replay,
     goals: buildGoals(save),
     seasons: save.seasonHistory.length,
     totals: save.totals,
@@ -226,4 +284,261 @@ const buildGoals = (save: CareerSaveV5Like): CareerGoal[] => {
     },
   ];
   return goals.map((goal) => ({ ...goal, status: goalStatus(goal.progress, goal.target) }));
+};
+
+const ATTRIBUTE_GROUP_LABELS: Record<'technical' | 'physical' | 'mental', string> = {
+  technical: '技术',
+  physical: '身体',
+  mental: '精神',
+};
+
+const ATTRIBUTE_LABELS: Record<string, string> = {
+  firstTouch: '停球',
+  dribbling: '盘带',
+  passing: '传球',
+  shooting: '射门',
+  defending: '防守',
+  aerialAbility: '空中能力',
+  pace: '速度',
+  strength: '力量',
+  stamina: '耐力',
+  agility: '灵活',
+  offTheBall: '跑位',
+  vision: '视野',
+  decision: '决策',
+  composure: '镇定',
+  determination: '意志',
+  discipline: '纪律',
+};
+
+const MATURATION_LABELS: Record<string, string> = {
+  early: '早熟',
+  normal: '常规',
+  late: '晚熟',
+};
+
+const clampScore = (value: number): number => Math.max(0, Math.min(100, Math.round(value)));
+
+const ratingLabelFor = (score: number): string =>
+  score >= 80 ? '卓越' : score >= 65 ? '出色' : score >= 45 ? '合格' : '平凡';
+
+const dimension = (
+  key: CareerDimensionKey,
+  label: string,
+  rawScore: number,
+  evidenceIds: string[] = [],
+): CareerDimension => {
+  const score = clampScore(rawScore);
+  return { key, label, score, ratingLabel: ratingLabelFor(score), evidenceIds };
+};
+
+const HONOUR_WEIGHTS: Record<SeasonHonour['kind'], number> = {
+  'league-champion': 25,
+  'cup-champion': 18,
+  promotion: 8,
+  relegation: -5,
+};
+
+const buildDimensions = (
+  save: CareerSaveV5Like,
+  honours: SeasonHonour[],
+  replay: CareerReplayMoment[],
+): CareerDimension[] => {
+  const legendaryEvidence = replay.filter(
+    ({ kind, sourceType }) =>
+      kind === 'international' ||
+      (kind === 'match' &&
+        save.ledger.some(
+          (entry) =>
+            entry.id ===
+            replay.find(({ evidenceId }) => evidenceId === entry.id)?.evidenceId,
+        )),
+  );
+  const legendaryMatchCount = replay.filter(({ kind }) => kind === 'match').length;
+  const championCount = honours.filter(
+    ({ kind }) => kind === 'league-champion' || kind === 'cup-champion',
+  ).length;
+
+  const clubIds = new Set([
+    ...save.clubHistory.map(({ clubId }) => clubId),
+    ...save.loanHistory.map(({ loanClubId }) => loanClubId),
+  ]);
+  const clubCount = Math.max(clubIds.size, 1);
+  const loyaltyBase = clubCount === 1 ? 90 : clubCount === 2 ? 60 : clubCount <= 4 ? 40 : 25;
+  const loyaltyScore = loyaltyBase - (save.loanHistory.length > 0 ? 5 : 0);
+
+  const proRatings = save.seasonHistory
+    .filter(({ seasonId }) => seasonId.startsWith('pro-'))
+    .map(({ avgRating }) => avgRating)
+    .filter((rating): rating is number => rating !== null);
+  const avgProRating =
+    proRatings.length > 0 ? proRatings.reduce((a, b) => a + b, 0) / proRatings.length : 0;
+  const doubleDigitGoalSeasons = save.seasonHistory.filter(({ goals }) => goals >= 10).length;
+
+  const relationshipValues = save.relationships.persons.flatMap(({ relationship }) => [
+    relationship.trust,
+    relationship.respect,
+    relationship.closeness,
+  ]);
+  const relationshipScore =
+    relationshipValues.length > 0
+      ? relationshipValues.reduce((a, b) => a + b, 0) / relationshipValues.length
+      : 0;
+
+  const legendaryScore =
+    legendaryEvidence.length * 12 + legendaryMatchCount * 6 + championCount * 12;
+
+  return [
+    dimension('competition', '竞技水平', save.player.reputation),
+    dimension(
+      'team-honours',
+      '团队荣誉',
+      honours.reduce((total, { kind }) => total + HONOUR_WEIGHTS[kind], 0),
+      honours.map(({ evidenceId }) => evidenceId),
+    ),
+    dimension(
+      'individual',
+      '个人表现',
+      (avgProRating - 6.0) * 60 + doubleDigitGoalSeasons * 10,
+      save.seasonHistory.filter(({ seasonId }) => seasonId.startsWith('pro-')).map(({ seasonId }) => seasonId),
+    ),
+    dimension('loyalty', '忠诚与身份', loyaltyScore, [...clubIds]),
+    dimension(
+      'national-team',
+      '国家队贡献',
+      (save.nationalTeam?.caps ?? 0) * 2.5 + (save.nationalTeam?.goals ?? 0),
+      save.ledger.filter(({ type }) => type === 'national-debut').map(({ id }) => id),
+    ),
+    dimension(
+      'off-pitch',
+      '财富与场外人生',
+      save.story.completedStoryIds.length * 8 + (save.overseasSince !== null ? 15 : 0),
+      save.ledger.filter(({ type }) => type === 'event' || type === 'decision').map(({ id }) => id),
+    ),
+    dimension('relationships', '人际关系', relationshipScore),
+    dimension('legendary', '传奇时刻', legendaryScore),
+  ];
+};
+
+const buildBehindTheScenes = (save: CareerSaveV5Like): CareerBehindTheScenes => {
+  const groups: CareerPotentialGroup['group'][] = ['technical', 'physical', 'mental'];
+  const potentials = groups.map((group) => {
+    const attributeRecord = save.player.attributes[group] as Record<string, number>;
+    const potentialRecord = save.player.development.attributePotential[group] as Record<
+      string,
+      number
+    >;
+    const items = Object.keys(potentialRecord).map((key) => ({
+      key,
+      label: ATTRIBUTE_LABELS[key] ?? key,
+      potential: potentialRecord[key] ?? 0,
+      achieved: attributeRecord[key] ?? 0,
+    }));
+    const potentialMean =
+      items.reduce((total, { potential }) => total + potential, 0) / Math.max(items.length, 1);
+    const achievedMean =
+      items.reduce((total, { achieved }) => total + achieved, 0) / Math.max(items.length, 1);
+    return {
+      group,
+      label: ATTRIBUTE_GROUP_LABELS[group],
+      items,
+      fulfillment: potentialMean > 0 ? clampScore((achievedMean / potentialMean) * 100) : 0,
+    };
+  });
+
+  const traits: CareerTraitReveal[] = [
+    {
+      key: 'maturationPace',
+      label: '成长节奏',
+      value: MATURATION_LABELS[save.player.development.maturationPace] ?? '常规',
+      rawValue: save.player.development.maturationPace,
+      note: '决定成长曲线早晚的隐藏倾向，退役后公开。',
+    },
+    {
+      key: 'professionalism',
+      label: '职业素养',
+      value: String(save.player.development.professionalism),
+      rawValue: String(save.player.development.professionalism),
+      note: '影响训练收益与状态管理的长期稳定性。',
+    },
+    {
+      key: 'stability',
+      label: '稳定性',
+      value: String(save.player.development.stability),
+      rawValue: String(save.player.development.stability),
+      note: '影响表现波动的幅度。',
+    },
+    {
+      key: 'pressureResistance',
+      label: '抗压能力',
+      value: String(save.player.development.pressureResistance),
+      rawValue: String(save.player.development.pressureResistance),
+      note: '影响重要场合的临场发挥。',
+    },
+    {
+      key: 'adaptability',
+      label: '适应力',
+      value: String(save.player.development.adaptability),
+      rawValue: String(save.player.development.adaptability),
+      note: '影响转会与留洋后的融入速度。',
+    },
+    {
+      key: 'injuryProneness',
+      label: '伤病倾向',
+      value: String(save.player.development.injuryProneness),
+      rawValue: String(save.player.development.injuryProneness),
+      note: '影响伤病风险的隐藏体质。',
+    },
+  ];
+
+  const missedOpportunities: CareerMissedOpportunity[] = [];
+  for (const review of save.promiseReviews) {
+    if (review.status !== 'broken') continue;
+    const causeLabels: Record<string, string> = {
+      injury: '伤病',
+      club: '俱乐部原因',
+      player: '自身原因',
+    };
+    missedOpportunities.push({
+      id: `broken-promise-${review.cause}`,
+      label: `承诺未能兑现（${causeLabels[review.cause] ?? review.cause}）`,
+      detail: `${review.seasonId} 赛季的出场承诺最终兑现 ${Math.round(review.share * 100)}%（承诺 ${Math.round(review.promisedShare * 100)}%）。`,
+      evidenceIds: [review.seasonId],
+    });
+  }
+  if (
+    save.story.completedStoryIds.includes('national-team-debut') &&
+    save.nationalTeam?.capped !== true
+  ) {
+    missedOpportunities.push({
+      id: 'declined-national-debut',
+      label: '婉拒过国家队首召',
+      detail: '你曾经拒绝了一次国家队征召，此后再没有等到下一次窗口。',
+      evidenceIds: save.ledger
+        .filter(({ summary }) => summary.includes('国家队'))
+        .slice(-3)
+        .map(({ id }) => id),
+    });
+  }
+  if (save.freeAgentSeasons > 0) {
+    missedOpportunities.push({
+      id: 'free-agent-seasons',
+      label: '自由球员滞留',
+      detail: `生涯中有 ${save.freeAgentSeasons} 个休赛期未能及时找到下家，错过了在状态好时续约或转会的时机。`,
+      evidenceIds: [],
+    });
+  }
+  const severeInjuryFacts = save.ledger
+    .filter(({ type, summary }) => type === 'health' && summary.includes('重伤'))
+    .slice(-5);
+  if (severeInjuryFacts.length > 0) {
+    missedOpportunities.push({
+      id: 'severe-injury',
+      label: '严重伤病的代价',
+      detail: `生涯共记录 ${severeInjuryFacts.length} 次严重伤病，每一次都改变了后续的出场与成长轨迹。`,
+      evidenceIds: severeInjuryFacts.map(({ id }) => id),
+    });
+  }
+
+  return { potentials, traits, missedOpportunities };
 };
