@@ -24,6 +24,10 @@ export { initializePlayerState } from './career/initial-state';
 export { advanceCareerWeek } from './career/weekly-advance';
 export { pickEventForWeek } from './career/event-integration';
 export { pickYouthEventForWeek } from './career/event-integration';
+export {
+  buildMatchMomentEvent,
+  isImportantMatchContext,
+} from './career/match-moment';
 export type { YouthEventPickResult } from './career/event-integration';
 export { simulateMatch } from './match/match-engine';
 export { simulateYouthMatch } from './match/youth-match';
