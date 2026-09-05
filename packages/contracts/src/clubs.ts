@@ -10,6 +10,7 @@ export const ClubProfileSchema = z.strictObject({
   positionalNeeds: z.array(z.string().min(1).max(40)).max(6),
   youthCycle: z.enum(['rebuilding', 'stable', 'contending']),
   overseas: z.boolean().default(false),
+  overseasRegion: z.enum(['europe', 'asia']).optional(),
   wageBudget: z.number().int().min(0).max(100),
 });
 export type ClubProfile = z.infer<typeof ClubProfileSchema>;

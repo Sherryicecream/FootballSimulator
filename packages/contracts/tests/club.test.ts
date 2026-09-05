@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { ClubDefinitionSchema } from '../src/club';
+import { ClubProfileSchema } from '../src/clubs';
 
 describe('ClubDefinition', () => {
   it('validates a club definition', () => {
@@ -30,5 +31,35 @@ describe('ClubDefinition', () => {
         tacticalStyle: 'balanced',
       }),
     ).toThrow();
+  });
+});
+
+describe('ClubProfile', () => {
+  const baseProfile = {
+    id: 'ov-sakura-frontier',
+    name: '樱前线',
+    tier: 7,
+    regionId: 'japan',
+    positionalNeeds: ['FORWARD'],
+    youthCycle: 'stable',
+    overseas: true,
+    wageBudget: 60,
+  };
+
+  it('接受海外区域标记', () => {
+    const asia = ClubProfileSchema.parse({ ...baseProfile, overseasRegion: 'asia' });
+    const europe = ClubProfileSchema.parse({ ...baseProfile, overseasRegion: 'europe' });
+    expect(asia.overseasRegion).toBe('asia');
+    expect(europe.overseasRegion).toBe('europe');
+  });
+
+  it('允许俱乐部不设置海外区域', () => {
+    const parsed = ClubProfileSchema.parse(baseProfile);
+    expect(parsed.overseas).toBe(true);
+    expect(parsed.overseasRegion).toBeUndefined();
+  });
+
+  it('拒绝非法海外区域', () => {
+    expect(() => ClubProfileSchema.parse({ ...baseProfile, overseasRegion: 'america' })).toThrow();
   });
 });

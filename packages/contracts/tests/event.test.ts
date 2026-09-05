@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { EventDefinitionSchema, EventChoiceSchema, StoryStateSchema } from '../src/event';
+import {
+  EventDefinitionSchema,
+  EventChoiceSchema,
+  EventConditionSchema,
+  StoryStateSchema,
+} from '../src/event';
 
 describe('EventChoice', () => {
   it('验证事件选项', () => {
@@ -64,5 +69,44 @@ describe('StoryState', () => {
       pendingDelayedEffects: [],
     });
     expect(valid.completedStoryIds).toContain('coach_challenge_01');
+  });
+});
+
+describe('职业期事件条件', () => {
+  it('接受留洋、海外区域与国家队条件字段', () => {
+    const condition = EventConditionSchema.parse({
+      requireOverseas: true,
+      overseasRegions: ['asia'],
+      requireNationalTeam: true,
+      minCaps: 5,
+    });
+    expect(condition.requireOverseas).toBe(true);
+    expect(condition.overseasRegions).toEqual(['asia']);
+    expect(condition.requireNationalTeam).toBe(true);
+    expect(condition.minCaps).toBe(5);
+  });
+
+  it('requireFactType 接受职业比赛事实', () => {
+    const condition = EventConditionSchema.parse({ requireFactType: 'pro-match' });
+    expect(condition.requireFactType).toBe('pro-match');
+  });
+
+  it('拒绝非法海外区域', () => {
+    expect(() => EventConditionSchema.parse({ overseasRegions: ['america'] })).toThrow();
+  });
+
+  it('完整事件定义可携带职业期条件', () => {
+    const valid = EventDefinitionSchema.parse({
+      id: 'asia-language-class',
+      version: 1,
+      category: 'asia-career',
+      rarity: 'common',
+      title: '东亚语言课',
+      description: '俱乐部为外援安排了当地语言课程。',
+      condition: { requireOverseas: true, overseasRegions: ['asia'] },
+      choices: [{ id: 'attend', text: '参加语言课', riskLabel: '低', effects: { confidence: 1 } }],
+    });
+    expect(valid.condition.requireOverseas).toBe(true);
+    expect(valid.condition.overseasRegions).toEqual(['asia']);
   });
 });

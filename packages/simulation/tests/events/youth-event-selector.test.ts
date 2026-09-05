@@ -373,3 +373,126 @@ describe('weekly youth event flow controls', () => {
     throw new Error('测试种子中没有触发事件');
   };
 });
+
+describe('pro-phase event conditions', () => {
+  const proEvent = (
+    id: string,
+    category: EventDefinition['category'],
+    condition: EventDefinition['condition'],
+  ): EventDefinition => ({
+    ...mediaEvent,
+    id,
+    category,
+    title: id,
+    condition,
+  });
+  const asiaClub = {
+    id: 'ov-sakura-frontier',
+    name: '樱前线',
+    tier: 7,
+    regionId: 'japan',
+    positionalNeeds: ['FORWARD'],
+    youthCycle: 'stable',
+    overseas: true,
+    overseasRegion: 'asia',
+    wageBudget: 60,
+  } as const;
+  const europeClub = {
+    id: 'ov-albion-rovers',
+    name: '阿尔比恩流浪者',
+    tier: 8,
+    regionId: 'shanghai',
+    positionalNeeds: ['FORWARD'],
+    youthCycle: 'contending',
+    overseas: true,
+    overseasRegion: 'europe',
+    wageBudget: 92,
+  } as const;
+  const overseasState = {
+    overseasSince: '2028-08-01',
+    nationalTeam: null,
+  } as const;
+  const cappedState = {
+    overseasSince: null,
+    nationalTeam: { capped: true, caps: 12, goals: 3, debutOn: '2029-03-01' },
+  } as const;
+
+  it('gates overseas events by overseas status and region context', () => {
+    const asia = proEvent('asia-language-class', 'asia-career', {
+      requireOverseas: true,
+      overseasRegions: ['asia'],
+    });
+    const europe = proEvent('europe-locker-room', 'europe-career', {
+      requireOverseas: true,
+      overseasRegions: ['europe'],
+    });
+    const base = createYouthSave();
+
+    expect(filterEligibleYouthEvents([asia, europe], base, { currentClub: asiaClub })).toEqual([]);
+    expect(filterEligibleYouthEvents([asia], { ...base, ...overseasState })).toEqual([]);
+    expect(
+      filterEligibleYouthEvents([asia, europe], { ...base, ...overseasState }, {
+        currentClub: asiaClub,
+      }).map(({ id }) => id),
+    ).toEqual(['asia-language-class']);
+    expect(
+      filterEligibleYouthEvents([asia, europe], { ...base, ...overseasState }, {
+        currentClub: europeClub,
+      }).map(({ id }) => id),
+    ).toEqual(['europe-locker-room']);
+  });
+
+  it('gates national-team events by capped status and caps', () => {
+    const squadRoom = proEvent('national-squad-room', 'national-team', {
+      requireNationalTeam: true,
+    });
+    const mentor = proEvent('national-veteran-mentor', 'national-team', { minCaps: 20 });
+    const base = createYouthSave();
+
+    expect(filterEligibleYouthEvents([squadRoom, mentor], base)).toEqual([]);
+    expect(
+      filterEligibleYouthEvents([squadRoom, mentor], {
+        ...base,
+        nationalTeam: { capped: false, caps: 0, goals: 0, debutOn: null },
+      }),
+    ).toEqual([]);
+    expect(
+      filterEligibleYouthEvents([squadRoom, mentor], { ...base, ...cappedState }).map(
+        ({ id }) => id,
+      ),
+    ).toEqual(['national-squad-room']);
+    expect(
+      filterEligibleYouthEvents([squadRoom, mentor], {
+        ...base,
+        nationalTeam: { capped: true, caps: 25, goals: 5, debutOn: '2029-03-01' },
+      }).map(({ id }) => id),
+    ).toEqual(['national-squad-room', 'national-veteran-mentor']);
+  });
+
+  it('keeps existing youth events eligible under the extended filter', () => {
+    const base = createYouthSave();
+    expect(filterEligibleYouthEvents([mediaEvent], base, { currentClub: asiaClub })).toEqual(
+      filterEligibleYouthEvents([mediaEvent], base),
+    );
+  });
+
+  it('passes the current club context through pickYouthEventForWeek', () => {
+    const asia = proEvent('asia-language-class', 'asia-career', {
+      requireOverseas: true,
+      overseasRegions: ['asia'],
+    });
+    let triggered = 0;
+    for (let seed = 1; seed <= 100; seed += 1) {
+      const base = createYouthSave();
+      const save = {
+        ...base,
+        ...overseasState,
+        monthlyAdvance: { ...base.monthlyAdvance, interactiveEventCount: 0 },
+        randomState: { seed, sequencePosition: 0 },
+      };
+      const result = pickYouthEventForWeek([asia], save, { currentClub: asiaClub });
+      if (result.event) triggered += 1;
+    }
+    expect(triggered).toBeGreaterThanOrEqual(30);
+  });
+});

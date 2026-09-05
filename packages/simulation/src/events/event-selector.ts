@@ -1,4 +1,9 @@
-import type { CareerSaveV2Like, EventDefinition, StoryState } from '@football/contracts';
+import type {
+  CareerSaveV2Like,
+  ClubProfile,
+  EventDefinition,
+  StoryState,
+} from '@football/contracts';
 import type { SeededRandomSource } from '../randomness/seeded-random-source';
 
 export interface PlayerContext {
@@ -9,9 +14,21 @@ export interface PlayerContext {
   storyState: StoryState;
 }
 
+/** 职业期事件状态切片：青训存档缺失相应字段时按"未留洋/未入选"处理。 */
+export interface ProPhaseEventState {
+  overseasSince?: string | null;
+  nationalTeam?: { capped: boolean; caps: number } | null;
+}
+
+/** 事件评估上下文：职业推进方提供当前俱乐部档案，青训推进方可省略。 */
+export interface YouthEventFilterContext {
+  currentClub?: Pick<ClubProfile, 'id' | 'overseas' | 'overseasRegion'>;
+}
+
 export function filterEligibleYouthEvents(
   events: EventDefinition[],
-  save: CareerSaveV2Like,
+  save: CareerSaveV2Like & ProPhaseEventState,
+  context: YouthEventFilterContext = {},
 ): EventDefinition[] {
   const legacyEligible = filterEligibleEvents(events, {
     age: save.player.age,
@@ -80,6 +97,22 @@ export function filterEligibleYouthEvents(
     if (!within(save.player.development.professionalism, condition.minProfessionalism, undefined))
       return false;
     if (!within(save.player.development.stability, condition.minStability, undefined)) return false;
+    if (
+      condition.requireOverseas !== undefined &&
+      Boolean(save.overseasSince) !== condition.requireOverseas
+    )
+      return false;
+    if (condition.overseasRegions && condition.overseasRegions.length > 0) {
+      const region = save.overseasSince ? context.currentClub?.overseasRegion : undefined;
+      if (!region || !condition.overseasRegions.includes(region)) return false;
+    }
+    if (
+      condition.requireNationalTeam !== undefined &&
+      Boolean(save.nationalTeam?.capped) !== condition.requireNationalTeam
+    )
+      return false;
+    if (condition.minCaps !== undefined && (save.nationalTeam?.caps ?? 0) < condition.minCaps)
+      return false;
     return true;
   });
 }

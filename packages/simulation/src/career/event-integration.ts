@@ -13,6 +13,7 @@ import {
   filterEligibleYouthEvents,
   selectEvent,
   selectYouthEvent,
+  type YouthEventFilterContext,
 } from '../events/event-selector';
 import { createSeededRandomSource } from '../randomness';
 import type { PlayerContext } from '../events/event-selector';
@@ -50,6 +51,7 @@ const decrementThemeCooldowns = (cooldowns: Record<string, number>): Record<stri
 export const pickYouthEventForWeek = <S extends YouthWeekInputShape>(
   events: readonly EventDefinition[],
   save: S,
+  context: YouthEventFilterContext = {},
 ): YouthEventPickResult<S> => {
   const cooldownsByEventId = decrementEventCooldowns(save.story.cooldownsByEventId);
   const themeCooldownsByTheme = decrementThemeCooldowns(save.story.themeCooldownsByTheme ?? {});
@@ -59,13 +61,15 @@ export const pickYouthEventForWeek = <S extends YouthWeekInputShape>(
     ...save,
     story: { ...save.story, cooldownsByEventId, themeCooldownsByTheme },
   };
-  const eligible = filterEligibleYouthEvents([...events], selectionSave).filter((definition) => {
-    const interaction = definition.interaction ?? 'decision';
-    const isActiveDecisionFollowUp =
-      interaction === 'decision' && save.story.activeStorylines.includes(definition.id);
-    if (isActiveDecisionFollowUp && save.monthlyAdvance.interactiveEventCount > 0) return false;
-    return interaction === 'automatic' || save.monthlyAdvance.interactiveEventCount < 2;
-  });
+  const eligible = filterEligibleYouthEvents([...events], selectionSave, context).filter(
+    (definition) => {
+      const interaction = definition.interaction ?? 'decision';
+      const isActiveDecisionFollowUp =
+        interaction === 'decision' && save.story.activeStorylines.includes(definition.id);
+      if (isActiveDecisionFollowUp && save.monthlyAdvance.interactiveEventCount > 0) return false;
+      return interaction === 'automatic' || save.monthlyAdvance.interactiveEventCount < 2;
+    },
+  );
   const activeFollowUps = eligible.filter((definition) =>
     save.story.activeStorylines.includes(definition.id),
   );

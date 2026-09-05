@@ -159,6 +159,7 @@ export const EventConditionSchema = z.object({
     .enum([
       'training',
       'match',
+      'pro-match',
       'health',
       'event',
       'decision',
@@ -204,6 +205,10 @@ export const EventConditionSchema = z.object({
   maxCoachEvaluation: z.number().int().min(0).max(100).optional(),
   minProfessionalism: z.number().int().min(0).max(100).optional(),
   minStability: z.number().int().min(0).max(100).optional(),
+  requireOverseas: z.boolean().optional(),
+  overseasRegions: z.array(z.enum(['europe', 'asia'])).optional(),
+  requireNationalTeam: z.boolean().optional(),
+  minCaps: z.number().int().min(0).optional(),
 });
 
 export const EventDefinitionSchema = z.object({
