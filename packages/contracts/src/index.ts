@@ -17,3 +17,4 @@ export * from './clubs';
 export * from './narration';
 export * from './professional';
 export * from './career-expansion';
+export * from './career-end';
