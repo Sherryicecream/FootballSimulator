@@ -79,9 +79,12 @@ export const startProfessionalSeason = <S extends CareerSaveV4Like>(
   const startDate = `${year}-08-01`;
   const effectiveTier =
     activeLoan?.loanClubTier ?? save.proSeason?.nextClubTier ?? contract.clubTier;
-  const competitionId = `${club.overseas ? 'pro-overseas-tier' : 'pro-tier'}-${effectiveTier}`;
+  // 海外联赛按区域分组（M11 模块 1）：留洋亚洲/欧洲只在同区域俱乐部间比赛。
+  const competitionId = `${club.overseas ? `pro-overseas-${club.overseasRegion ?? 'europe'}-tier` : 'pro-tier'}-${effectiveTier}`;
   const eligibleClubs = clubs.filter(
-    ({ overseas }) => Boolean(overseas) === Boolean(club.overseas),
+    ({ overseas, overseasRegion }) =>
+      Boolean(overseas) === Boolean(club.overseas) &&
+      (club.overseas ? overseasRegion === club.overseasRegion : true),
   );
   const sameTierClubs = eligibleClubs.filter(({ tier }) => tier === effectiveTier);
   const nearbyClubs = eligibleClubs.filter(({ tier }) => Math.abs(tier - effectiveTier) <= 1);

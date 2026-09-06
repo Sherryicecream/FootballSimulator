@@ -284,6 +284,14 @@ const asianOverseasClubs: ClubProfile[] = [
   club('ov-baekho-athletic', '白虎竞技', 7, 'korea', ['MIDFIELDER', 'FULL_BACK'], 'stable', 66),
   club('ov-kansai-wave', '关西浪潮', 6, 'japan', ['WINGER', 'MIDFIELDER'], 'rebuilding', 58),
   club('ov-mokpo-marine', '木浦海运', 6, 'korea', ['CENTER_BACK', 'FORWARD'], 'stable', 54),
+  club('ov-kanto-frontier', '关东前线', 8, 'japan', ['WINGER', 'FULL_BACK'], 'contending', 81),
+  club('ov-hanseong-arrows', '汉城箭', 8, 'korea', ['MIDFIELDER', 'FORWARD'], 'contending', 76),
+  club('ov-chiba-ports', '千叶港务', 7, 'japan', ['CENTER_BACK', 'WINGER'], 'stable', 64),
+  club('ov-andong-stones', '安东石阵', 6, 'korea', ['FULL_BACK', 'MIDFIELDER'], 'rebuilding', 56),
+  club('ov-baekdu-miners', '白头矿工', 5, 'korea', ['FORWARD', 'CENTER_BACK'], 'stable', 46),
+  club('ov-seto-marine', '濑户海运', 5, 'japan', ['MIDFIELDER', 'WINGER'], 'stable', 42),
+  club('ov-halla-cranes', '汉拿山鹤', 4, 'korea', ['WINGER', 'FULL_BACK'], 'rebuilding', 33),
+  club('ov-ou-backwoods', '奥羽原野', 4, 'japan', ['CENTER_BACK', 'MIDFIELDER'], 'stable', 30),
 ].map((entry) => ({ ...entry, overseas: true, overseasRegion: 'asia' as const }));
 
 export const overseasClubs: ClubProfile[] = [...europeanOverseasClubs, ...asianOverseasClubs];

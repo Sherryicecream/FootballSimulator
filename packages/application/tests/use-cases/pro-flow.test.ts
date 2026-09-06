@@ -637,6 +637,7 @@ describe('职业赛季流程', () => {
       id: `overseas-test-${index + 1}`,
       name: `Overseas Test ${index + 1}`,
       overseas: true,
+      overseasRegion: 'europe' as const,
     }));
     const initial = signedProSave();
     const save = {
@@ -651,7 +652,7 @@ describe('职业赛季流程', () => {
     };
     const next = startProfessionalSeason(save, [...content.clubs, ...overseasLeague]);
 
-    expect(next.proSeason!.competitionId).toBe('pro-overseas-tier-5');
+    expect(next.proSeason!.competitionId).toBe('pro-overseas-europe-tier-5');
     expect(next.proSeason!.fixtures).toHaveLength(
       overseasLeague.length * (overseasLeague.length - 1),
     );
@@ -1002,5 +1003,77 @@ describe('职业期事件内容接入', () => {
       if (outcome.status === 'awaiting-decision') hit += 1;
     }
     expect(hit).toBe(0);
+  });
+});
+
+describe('海外联赛区域分组', () => {
+  const asianClubs = [0, 1, 2, 3, 4, 5].map((index) => ({
+    ...content.clubs[0]!,
+    id: `asia-group-${index + 1}`,
+    name: `亚洲测试${index + 1}`,
+    tier: 4 + (index % 2),
+    overseas: true,
+    overseasRegion: 'asia' as const,
+  }));
+  const europeanClubs = [0, 1, 2, 3].map((index) => ({
+    ...content.clubs[1]!,
+    id: `europe-group-${index + 1}`,
+    name: `欧洲测试${index + 1}`,
+    tier: 5,
+    overseas: true,
+    overseasRegion: 'europe' as const,
+  }));
+  const allClubs = [...content.clubs, ...asianClubs, ...europeanClubs];
+
+  it('亚洲俱乐部开赛：联赛只含亚洲俱乐部且竞赛标识带区域', () => {
+    const initial = signedProSave();
+    const save = startProfessionalSeason(
+      {
+        ...initial,
+        contract: {
+          ...initial.contract!,
+          clubId: asianClubs[0]!.id,
+          clubName: asianClubs[0]!.name,
+          clubTier: asianClubs[0]!.tier,
+          overseas: true,
+        },
+        overseasSince: '2025-07-01',
+      },
+      allClubs,
+    );
+    expect(save.proSeason!.competitionId).toBe('pro-overseas-asia-tier-4');
+    const leagueClubIds = new Set(
+      save.proSeason!.fixtures.flatMap(({ homeClubId, awayClubId }) => [homeClubId, awayClubId]),
+    );
+    for (const clubId of leagueClubIds) {
+      const club = allClubs.find(({ id }) => id === clubId);
+      expect(club?.overseasRegion).toBe('asia');
+    }
+  });
+
+  it('欧洲俱乐部开赛：联赛只含欧洲俱乐部', () => {
+    const initial = signedProSave();
+    const save = startProfessionalSeason(
+      {
+        ...initial,
+        contract: {
+          ...initial.contract!,
+          clubId: europeanClubs[0]!.id,
+          clubName: europeanClubs[0]!.name,
+          clubTier: 5,
+          overseas: true,
+        },
+        overseasSince: '2025-07-01',
+      },
+      allClubs,
+    );
+    expect(save.proSeason!.competitionId).toBe('pro-overseas-europe-tier-5');
+    const leagueClubIds = new Set(
+      save.proSeason!.fixtures.flatMap(({ homeClubId, awayClubId }) => [homeClubId, awayClubId]),
+    );
+    for (const clubId of leagueClubIds) {
+      const club = allClubs.find(({ id }) => id === clubId);
+      expect(club?.overseasRegion).toBe('europe');
+    }
   });
 });

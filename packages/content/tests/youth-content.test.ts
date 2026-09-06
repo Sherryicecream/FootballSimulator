@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { getYouthContent, validateYouthContent } from '../src';
 import { balancedOneOffEvents } from '../src';
 import { shortStoryEvents, trajectoryEvents } from '../src';
+import { overseasClubs } from '../src/clubs';
 
 describe('validateYouthContent', () => {
   it('accepts the bundled fictional youth content', () => {
@@ -245,6 +246,24 @@ describe('文案编码完整性', () => {
       expect(event.description).not.toContain('\uFFFD');
       for (const choice of event.choices) {
         expect(choice.text).not.toContain('\uFFFD');
+      }
+    }
+  });
+});
+
+describe('overseas club regions', () => {
+  it('lets every overseas tier 4-8 form a league inside its region', () => {
+    for (const region of ['europe', 'asia'] as const) {
+      const regional = overseasClubs.filter(({ overseasRegion }) => overseasRegion === region);
+      expect(regional.length).toBeGreaterThanOrEqual(10);
+      for (const tier of [4, 5, 6, 7, 8]) {
+        const nearby = regional.filter(
+          ({ tier: clubTier }) => Math.abs(clubTier - tier) <= 1,
+        ).length;
+        expect(`区域 ${region} 层级 ${tier} 附近俱乐部数`).toBe(
+          `区域 ${region} 层级 ${tier} 附近俱乐部数`,
+        );
+        expect(nearby).toBeGreaterThanOrEqual(4);
       }
     }
   });
