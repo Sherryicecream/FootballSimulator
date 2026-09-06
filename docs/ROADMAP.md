@@ -108,4 +108,6 @@
 - M10 模块 9 验收：全量 pnpm test 通过（115 个测试文件、578 个用例，架构 10/10）；pnpm typecheck、pnpm lint、pnpm format:check、pnpm build 通过；pnpm test:e2e 通过 18/18；直连 1,000 季报告 artifacts/youth-balance-m10-review-dimensions.json 与模块 8 逐位一致（回顾生成率 100%）。balance 1,000 季用例超时上限放宽至 30 分钟（分布断言不变），避免满载机器波动被误报为分布回归。
 - M10 模块 10（PWA 与离线）已完成：`manifest.webmanifest`（standalone、主题色、SVG 图标）、零依赖手写 service worker（预缓存应用外壳、导航回退、同源资产 cache-first、版本化缓存清理，仅生产构建注册）、离线状态指示条（离线时提示数据保存在本机、AI 润色暂不可用）。离线时除 AI 叙事外全部功能可玩（spec §24）。
 - M10 性能（rng 快进）已完成：Mulberry32 步进为常量，新增 O(1) `skip` 替换 4 处周推进随机序列重放（O(n²)→O(n)）；1,000 季报告与优化前逐位一致，决定性与平衡分布零变化。
+- 10,000 段生涯平衡验收（spec §25.2）已完成：`pnpm balance:youth -- --runs 10000 --seed-start 1 --output artifacts/youth-balance-10000-release.json`。完成率 100%（无崩溃、无无效状态）、回顾生成率 100%、主题覆盖率 100%、每月最多 2 个决策；国家队出场占比 29.78%（spec 15–30% 上限内）、重伤率 0.85%、独立事件组合 9,971/10,000、独立故事组合 88（不同种子显著差异化）；毕业率 60.2%、职业承诺兑现率 97.1%、留洋占比 25.6%、退役年龄中位 30，与 1,000 季基线一致。报告见 artifacts/youth-balance-10000-release.json。spec §25.2 中"世界级球员 1–5%""严重伤病致极早退役 <1%"两项尚无对应度量指标，列入后续指标化任务。
+- balance 测试串行化：`pnpm test:unit` 改为先跑 domain/web/local-ai 项目、再单独跑 balance 项目。此前四项目并行时 balance worker 与其余约 100 个测试文件争抢 CPU，1,000 季用例被饿到接近一小时且随机超时；串行后稳定在约 5 分钟内完成。
 - 已知脆弱性（预先存在，非本模块引入）：全量 pnpm test 中的 balance 1,000 季用例对机器负载敏感，在满载环境可能触及 600 秒测试超时（单独运行 balance 项目约 4.5 分钟通过，直连 balance 命令约 8–10 分钟）；验证耗时问题保留为独立任务。
