@@ -1,8 +1,5 @@
 export { getRegionProfile, getKeyRegions, getAllRegions } from './regions';
 export { getYouthEvents } from './events/youth-events';
-export { balancedOneOffEvents } from './events/one-off-events';
-export { shortStoryEvents } from './events/story-events';
-export { trajectoryEvents } from './events/trajectory-events';
 export { youthAcademies } from './academies';
 export { youthClubs, overseasClubs } from './clubs';
 export { youthAgents } from './agent-archetypes';

@@ -1,9 +1,6 @@
+// 由既有 TS 内容源一次性生成（M11 模块 3 内容外置）；编辑后经 zod 校验生效。
 import type { EventDefinition } from '@football/contracts';
 
-/**
- * 选择级分支故事：每个节点只描述当前场景，下一幕由玩家的选择决定。
- * 分支事件继续使用已有事实条件和显式 effects，便于回放、读档和批量模拟。
- */
 export const branchingStoryEvents: EventDefinition[] = [
   {
     id: 'selection-bubble-opening',
@@ -30,7 +27,10 @@ export const branchingStoryEvents: EventDefinition[] = [
         id: 'ask-plan',
         text: '请教练给出一份明确的训练计划',
         riskLabel: 'low',
-        effects: { coachTrust: 2, confidence: 1 },
+        effects: {
+          coachTrust: 2,
+          confidence: 1,
+        },
         nextEventIds: ['selection-bubble-plan'],
         response:
           '你没有追问自己是不是已经被选中，而是请教练把差距拆成可以每天检查的动作。谈话结束时，名单仍未公布，但你至少知道下一次训练该证明什么。',
@@ -47,7 +47,11 @@ export const branchingStoryEvents: EventDefinition[] = [
         id: 'take-risk',
         text: '主动要求参加更高强度的合练',
         riskLabel: 'high',
-        effects: { confidence: 4, fatigue: 5, coachTrust: 1 },
+        effects: {
+          confidence: 4,
+          fatigue: 5,
+          coachTrust: 1,
+        },
         nextEventIds: ['selection-bubble-test'],
         response:
           '你直接要求和更高年龄段的队伍合练。第一个回合你被对手的速度逼得仓促出球，第二个回合却靠提前观察赢回了位置；教练记下了两种结果。',
@@ -85,7 +89,11 @@ export const branchingStoryEvents: EventDefinition[] = [
         id: 'follow-detail',
         text: '按三个片段逐项复盘，不追求一次改完',
         riskLabel: 'low',
-        effects: { coachTrust: 3, confidence: 2, fatigue: 1 },
+        effects: {
+          coachTrust: 3,
+          confidence: 2,
+          fatigue: 1,
+        },
         response:
           '你把录像里的问题拆成三个小目标，每次训练只盯住一个。改变并不显眼，但到周末时，你在接球前多出的那一次观察已经不再需要提醒。',
         responses: [
@@ -100,7 +108,11 @@ export const branchingStoryEvents: EventDefinition[] = [
         id: 'own-priority',
         text: '保留一个问题，优先打磨自己最有把握的优势',
         riskLabel: 'medium',
-        effects: { confidence: 3, coachTrust: 1, fatigue: -1 },
+        effects: {
+          confidence: 3,
+          coachTrust: 1,
+          fatigue: -1,
+        },
         response:
           '你没有平均分配时间，而是先把最擅长的前插和接应做得更有威胁。教练看见了取舍，也提醒你不能永远用优势掩盖短板。',
         responses: [
@@ -137,7 +149,11 @@ export const branchingStoryEvents: EventDefinition[] = [
         id: 'simplify',
         text: '先用简单处理站稳节奏',
         riskLabel: 'low',
-        effects: { coachTrust: 3, confidence: 1, fatigue: -1 },
+        effects: {
+          coachTrust: 3,
+          confidence: 1,
+          fatigue: -1,
+        },
         response:
           '你先用一脚出球和提前回收把节奏稳定下来，直到对手不再轻易从你的身后切入。没有高光镜头，但你终于没有被强度带着走。',
         responses: [
@@ -152,7 +168,11 @@ export const branchingStoryEvents: EventDefinition[] = [
         id: 'force-impact',
         text: '主动寻找一两个改变比赛的冒险回合',
         riskLabel: 'high',
-        effects: { confidence: 4, fatigue: 4, coachTrust: -1 },
+        effects: {
+          confidence: 4,
+          fatigue: 4,
+          coachTrust: -1,
+        },
         response:
           '你主动寻找纵深传球和提前前插，有一脚传球撕开了防线，也有两次冒险让球队差点丢掉转换机会。教练没有否定勇气，只把失误圈了出来。',
         responses: [
@@ -176,7 +196,11 @@ export const branchingStoryEvents: EventDefinition[] = [
     title: '回归训练的第一天',
     description:
       '队医允许你恢复部分合练，但没有批准你立刻回到完整对抗。教练在场边等你决定今天要把回归推进到哪一步。',
-    condition: { requireActiveInjury: true, requirePersonRole: 'youth-coach', minWeek: 8 },
+    condition: {
+      requireActiveInjury: true,
+      requirePersonRole: 'youth-coach',
+      minWeek: 8,
+    },
     participantRoles: ['youth-coach'],
     storyId: 'recovery-return-opened',
     cooldownWeeks: 16,
@@ -185,7 +209,11 @@ export const branchingStoryEvents: EventDefinition[] = [
         id: 'follow-load',
         text: '按队医给出的负荷逐步恢复',
         riskLabel: 'low',
-        effects: { fatigue: -5, coachTrust: 2, morale: 1 },
+        effects: {
+          fatigue: -5,
+          coachTrust: 2,
+          morale: 1,
+        },
         nextEventIds: ['recovery-return-check'],
         response:
           '你把今天的目标从“证明自己已经好了”改成“完成规定负荷”。看着队友进入对抗，你有些不甘，但离场时身体没有发出新的警报。',
@@ -201,7 +229,11 @@ export const branchingStoryEvents: EventDefinition[] = [
         id: 'push-return',
         text: '请求提前加入小组对抗',
         riskLabel: 'high',
-        effects: { fatigue: 6, confidence: 3, coachTrust: -2 },
+        effects: {
+          fatigue: 6,
+          confidence: 3,
+          coachTrust: -2,
+        },
         nextEventIds: ['recovery-return-setback'],
         response:
           '你请求提前加入小组对抗，前几次触球让你重新找回比赛感，但一次急停后的紧绷提醒所有人：感觉回来，不等于身体已经准备好。',
@@ -240,7 +272,11 @@ export const branchingStoryEvents: EventDefinition[] = [
         id: 'protect-next-match',
         text: '主动申请减少下一场的对抗负荷',
         riskLabel: 'low',
-        effects: { fatigue: -4, coachTrust: 2, confidence: 1 },
+        effects: {
+          fatigue: -4,
+          coachTrust: 2,
+          confidence: 1,
+        },
         response:
           '你把最后一组动作的感觉如实告诉教练，接受下一场先从替补或短时间出场开始。回归没有被取消，只是多了一层保护。',
         responses: [
@@ -255,7 +291,11 @@ export const branchingStoryEvents: EventDefinition[] = [
         id: 'prove-full',
         text: '要求立刻按正常强度参加比赛',
         riskLabel: 'medium',
-        effects: { confidence: 3, fatigue: 4, coachTrust: -1 },
+        effects: {
+          confidence: 3,
+          fatigue: 4,
+          coachTrust: -1,
+        },
         response:
           '你争取按正常强度回到比赛名单。教练同意给你机会，却把热身和出场时间写得比你期待的更保守。',
         responses: [
@@ -293,7 +333,11 @@ export const branchingStoryEvents: EventDefinition[] = [
         id: 'accept-reset',
         text: '接受重新评估，先把恢复做完整',
         riskLabel: 'low',
-        effects: { fatigue: -8, morale: -1, coachTrust: 1 },
+        effects: {
+          fatigue: -8,
+          morale: -1,
+          coachTrust: 1,
+        },
         response:
           '你接受重新评估，把想尽快回到比赛的急切写进恢复日志，而不是带进下一次对抗。回归进度慢了，身体却重新回到可控范围。',
         responses: [
@@ -309,7 +353,11 @@ export const branchingStoryEvents: EventDefinition[] = [
         id: 'hide-discomfort',
         text: '淡化不适，坚持按原计划训练',
         riskLabel: 'high',
-        effects: { fatigue: 8, morale: -3, coachTrust: -4 },
+        effects: {
+          fatigue: 8,
+          morale: -3,
+          coachTrust: -4,
+        },
         response:
           '你试图把不适说成“没什么”，但动作质量很快暴露了问题。教练叫停训练，重新把你从对抗名单里划掉。',
         responses: [

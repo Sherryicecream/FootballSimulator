@@ -42,6 +42,9 @@ const HONOUR_GLYPHS: Record<SeasonHonour['kind'], FootballGlyphName> = {
   'cup-champion': 'match',
   promotion: 'form',
   relegation: 'warning',
+  'asian-cup-champion': 'coach-trust',
+  'world-cup-champion': 'coach-trust',
+  'world-cup-runner-up': 'coach-trust',
 };
 
 const tierMovementLabel = (currentTier: number | undefined, nextTier: number | null): string => {

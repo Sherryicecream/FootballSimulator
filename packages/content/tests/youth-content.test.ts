@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { getYouthContent, validateYouthContent } from '../src';
-import { balancedOneOffEvents } from '../src';
-import { shortStoryEvents, trajectoryEvents } from '../src';
+import { balancedOneOffEvents } from '../data/events/one-off';
+import { shortStoryEvents } from '../data/events/story';
+import { trajectoryEvents } from '../data/events/trajectory';
 import { overseasClubs } from '../src/clubs';
 
 describe('validateYouthContent', () => {

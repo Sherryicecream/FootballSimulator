@@ -1,3 +1,4 @@
+// 由既有 TS 内容源一次性生成（M11 模块 3 内容外置）；编辑后经 zod 校验生效。
 import type { EventDefinition } from '@football/contracts';
 
 export const trajectoryEvents: EventDefinition[] = [
@@ -11,7 +12,11 @@ export const trajectoryEvents: EventDefinition[] = [
     baseWeight: 8,
     title: '提前到来的关注',
     description: '你的成长速度超出同龄人的预期，教练组开始讨论是否让你提前接受更高强度的训练。',
-    condition: { maturationPaces: ['early'], minCoachEvaluation: 60, minWeek: 8 },
+    condition: {
+      maturationPaces: ['early'],
+      minCoachEvaluation: 60,
+      minWeek: 8,
+    },
     participantRoles: ['youth-coach'],
     cooldownWeeks: 24,
     choices: [
@@ -19,7 +24,11 @@ export const trajectoryEvents: EventDefinition[] = [
         id: 'step-up',
         text: '接受更高强度的训练安排',
         riskLabel: 'medium',
-        effects: { confidence: 3, coachTrust: 3, fatigue: 5 },
+        effects: {
+          confidence: 3,
+          coachTrust: 3,
+          fatigue: 5,
+        },
         responses: [
           {
             speakerRole: 'youth-coach',
@@ -34,7 +43,11 @@ export const trajectoryEvents: EventDefinition[] = [
         id: 'steady-growth',
         text: '保持现有节奏，继续夯实基础',
         riskLabel: 'low',
-        effects: { confidence: 2, coachTrust: 1, fatigue: -1 },
+        effects: {
+          confidence: 2,
+          coachTrust: 1,
+          fatigue: -1,
+        },
         responses: [
           {
             speakerRole: 'youth-coach',
@@ -72,7 +85,11 @@ export const trajectoryEvents: EventDefinition[] = [
         id: 'seize-window',
         text: '主动增加针对性训练',
         riskLabel: 'medium',
-        effects: { confidence: 4, coachTrust: 2, fatigue: 4 },
+        effects: {
+          confidence: 4,
+          coachTrust: 2,
+          fatigue: 4,
+        },
         responses: [
           {
             speakerRole: 'youth-coach',
@@ -88,7 +105,11 @@ export const trajectoryEvents: EventDefinition[] = [
         id: 'protect-rhythm',
         text: '维持稳定节奏，避免操之过急',
         riskLabel: 'low',
-        effects: { confidence: 2, morale: 2, fatigue: -2 },
+        effects: {
+          confidence: 2,
+          morale: 2,
+          fatigue: -2,
+        },
         responses: [
           {
             speakerRole: 'youth-coach',
