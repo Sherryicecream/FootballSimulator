@@ -86,7 +86,7 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
   if (save.story.pendingEvent) throw new Error('有待处理事件，不能继续推进');
 
   const rng = createSeededRandomSource(save.randomState.seed);
-  for (let index = 0; index < save.randomState.sequencePosition; index += 1) rng.next();
+  rng.skip(save.randomState.sequencePosition);
 
   const nextWeek = pro.currentWeek + 1;
   const weekKey = `${pro.startDate.slice(0, 4)}-W${String(nextWeek).padStart(2, '0')}`;

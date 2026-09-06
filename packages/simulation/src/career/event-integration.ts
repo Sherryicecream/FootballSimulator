@@ -56,7 +56,7 @@ export const pickYouthEventForWeek = <S extends YouthWeekInputShape>(
   const cooldownsByEventId = decrementEventCooldowns(save.story.cooldownsByEventId);
   const themeCooldownsByTheme = decrementThemeCooldowns(save.story.themeCooldownsByTheme ?? {});
   const rng = createSeededRandomSource(save.randomState.seed);
-  for (let index = 0; index < save.randomState.sequencePosition; index += 1) rng.next();
+  rng.skip(save.randomState.sequencePosition);
   const selectionSave: S = {
     ...save,
     story: { ...save.story, cooldownsByEventId, themeCooldownsByTheme },

@@ -33,7 +33,7 @@ export const simulateYouthWeek = <S extends YouthWeekInputShape>(
   if (save.story.pendingEvent) throw new Error('有待处理事件，不能继续推进');
 
   const rng = createSeededRandomSource(save.randomState.seed);
-  for (let index = 0; index < save.randomState.sequencePosition; index += 1) rng.next();
+  rng.skip(save.randomState.sequencePosition);
   const nextWeek = save.season.currentWeek + 1;
   const weekKey = `${save.season.startDate.slice(0, 4)}-W${String(nextWeek).padStart(2, '0')}`;
   const fixture = save.season.fixtures.find(

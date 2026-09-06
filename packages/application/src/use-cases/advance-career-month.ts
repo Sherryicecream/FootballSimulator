@@ -135,7 +135,7 @@ export const advanceCareerMonth = <
     participantIds: [],
   };
   const pathwayRng = createSeededRandomSource(save.randomState.seed);
-  for (let index = 0; index < save.randomState.sequencePosition; index += 1) pathwayRng.next();
+  pathwayRng.skip(save.randomState.sequencePosition);
   const pathway = advanceFirstTeamPathway(save, pathwayRng);
   save = {
     ...save,

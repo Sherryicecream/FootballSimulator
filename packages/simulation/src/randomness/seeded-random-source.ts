@@ -13,6 +13,8 @@ export interface SeededRandomSource {
   shuffle<T>(items: readonly T[]): T[];
   /** Current sequence position */
   getPosition(): number;
+  /** Fast-forward the sequence; bit-identical to calling next() count times (Mulberry32 步进为常量). */
+  skip(count: number): void;
 }
 
 export const createSeededRandomSource = (seed: number): SeededRandomSource => {
@@ -26,6 +28,14 @@ export const createSeededRandomSource = (seed: number): SeededRandomSource => {
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     position++;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+
+  const skip = (count: number): void => {
+    if (count <= 0) return;
+    // Mulberry32 每步 state 前进同一常量，跳过 k 步 = 直接加上 k 次常量（mod 2^32），
+    // 与连续调用 k 次 next() 产生完全相同的后续序列。
+    state = (state + Math.imul(count, 0x6d2b79f5)) | 0;
+    position += count;
   };
 
   const nextInt = (min: number, max: number): number => {
@@ -64,5 +74,5 @@ export const createSeededRandomSource = (seed: number): SeededRandomSource => {
 
   const getPosition = (): number => position;
 
-  return { next, nextInt, pick, pickWeighted, shuffle, getPosition };
+  return { next, nextInt, pick, pickWeighted, shuffle, getPosition, skip };
 };
