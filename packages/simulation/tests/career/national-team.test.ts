@@ -31,7 +31,7 @@ describe('national team eligibility', () => {
     expect(
       isEligibleForNationalTeam({
         ...eligibleSave(),
-        player: { ...eligibleSave().player, reputation: 59 },
+        player: { ...eligibleSave().player, reputation: 55 },
       }),
     ).toBe(false);
     expect(

@@ -58,7 +58,7 @@ export const reviewPromise = (save: CareerSaveV4Like): PromiseReviewOutcome | nu
   let summary: string;
   if (kept) {
     trustDelta = 5;
-    reputationDelta = 3;
+    reputationDelta = 1;
     summary = `承诺兑现：出场份额 ${Math.round(share * 100)}%（承诺 ${Math.round(promisedShare * 100)}%），俱乐部与你的互信加深。`;
   } else if (cause === 'club') {
     trustDelta = -5;

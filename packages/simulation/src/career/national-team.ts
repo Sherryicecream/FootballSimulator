@@ -4,7 +4,8 @@ import type { SeededRandomSource } from '../randomness';
 /** 国家队资格（设计 §7）：年龄 ≤35、声望 ≥60、上季联赛出场 ≥15。 */
 export const isEligibleForNationalTeam = (save: CareerSaveV5Like): boolean => {
   if (save.player.age > 35) return false;
-  if (save.player.reputation < 60) return false;
+  // 声望经济 v2 后国家队门槛同步下调（M7 设计 §7 修订：60 → 56）。
+  if (save.player.reputation < 56) return false;
   if (save.proSeasonStats.leagueAppearances < 15) return false;
   return true;
 };

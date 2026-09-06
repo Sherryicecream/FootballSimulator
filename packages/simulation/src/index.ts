@@ -24,6 +24,7 @@ export { initializePlayerState } from './career/initial-state';
 export { advanceCareerWeek } from './career/weekly-advance';
 export { pickEventForWeek } from './career/event-integration';
 export { pickYouthEventForWeek } from './career/event-integration';
+export { applyReputationGain, leagueTierFactor } from './career/reputation';
 export {
   buildMatchMomentEvent,
   isImportantMatchContext,

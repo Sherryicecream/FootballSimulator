@@ -36,6 +36,8 @@ export interface YouthSeasonMetrics {
   freeAgent: boolean;
   transferCount: number;
   retireAge: number | null;
+  retiredReputation: number;
+  earlyRetirement: boolean;
   overseasSpent: boolean;
   hadCaps: boolean;
   capCount: number;
@@ -104,6 +106,8 @@ export interface YouthBalanceReport {
     proCupHonourRate: number;
     proPromotionRate: number;
     proRelegationRate: number;
+    worldClassRate: number;
+    earlyRetirementRate: number;
   };
 }
 

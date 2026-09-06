@@ -60,6 +60,7 @@ type LifecycleOutcome = {
   freeAgent: boolean;
   transferCount: number;
   retireAge: number | null;
+  retiredReputation: number;
   overseasSpent: boolean;
   hadCaps: boolean;
   capCount: number;
@@ -189,6 +190,8 @@ export const runYouthSeasons = (runs: number, seedStart = 1): YouthBalanceReport
       freeAgent: lifecycle.freeAgent,
       transferCount: lifecycle.transferCount,
       retireAge: lifecycle.retireAge,
+      retiredReputation: lifecycle.retiredReputation,
+      earlyRetirement: lifecycle.retireAge != null && lifecycle.retireAge < 30,
       overseasSpent: lifecycle.overseasSpent,
       hadCaps: lifecycle.hadCaps,
       capCount: lifecycle.capCount,
@@ -353,6 +356,13 @@ export const runYouthSeasons = (runs: number, seedStart = 1): YouthBalanceReport
         graduatedMetrics.filter(({ overseasSpent }) => overseasSpent).length /
         Math.max(1, graduatedMetrics.length),
       nationalTeamShare: metrics.filter(({ hadCaps }) => hadCaps).length / runs,
+      // spec §25.2：默认写实度下世界级球员（退役声望 ≥70，含传奇）占比目标 1%–5%。
+      worldClassRate:
+        metrics.filter(
+          ({ retireAge, retiredReputation }) => retireAge != null && retiredReputation >= 70,
+        ).length / runs,
+      // spec §25.2/§11：伤病不得直接导致极早退役；阶段机只允许 ≥30 岁退役，该指标应恒为 0。
+      earlyRetirementRate: metrics.filter(({ earlyRetirement }) => earlyRetirement).length / runs,
       capsMedian: percentile(
         metrics.map(({ capCount }) => capCount),
         0.5,
@@ -414,6 +424,7 @@ const playLifecycle = (
     rejectedOfferSeasons,
     transferCount: 0,
     retireAge: null,
+    retiredReputation: 0,
     overseasSpent: false,
     hadCaps: false,
     capCount: 0,
@@ -449,6 +460,7 @@ const playLifecycle = (
       ...outcome,
       seasonsPlayed,
       rejectedOfferSeasons,
+      retiredReputation: save.player.reputation,
     });
     if (save.offseason.graduationEligible) {
       const priorities = ['playing-time', 'development', 'salary'] as const;
@@ -514,6 +526,7 @@ const playLifecycle = (
           overseasSpent: pro.overseasSpent,
           transferCount: pro.transferCount,
           retireAge: pro.retireAge,
+          retiredReputation: pro.retiredReputation,
           hadCaps: pro.hadCaps,
           capCount: pro.capCount,
           cupAppearances: pro.cupAppearances,
@@ -618,6 +631,7 @@ const playProfessionalLife = (
   freeAgent: boolean;
   transferCount: number;
   retireAge: number | null;
+  retiredReputation: number;
   hadCaps: boolean;
   capCount: number;
   cupAppearances: number;
@@ -850,6 +864,7 @@ const playProfessionalLife = (
     overseasSpent,
     transferCount,
     retireAge,
+    retiredReputation: save.player.reputation,
     hadCaps,
     capCount,
     cupAppearances,

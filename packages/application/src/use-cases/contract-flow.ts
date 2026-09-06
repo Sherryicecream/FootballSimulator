@@ -5,7 +5,12 @@ import {
   type CareerSaveV3Like,
   type YouthContentBundle,
 } from '@football/contracts';
-import { createSeededRandomSource, generateOffers } from '@football/simulation';
+import {
+  createSeededRandomSource,
+  generateOffers,
+  applyReputationGain,
+  leagueTierFactor,
+} from '@football/simulation';
 import { isFinalYouthSeason } from '@football/simulation';
 
 export const submitAgentPreferences = <S extends CareerSaveV3Like>(
@@ -66,8 +71,11 @@ export const signContract = <S extends CareerSaveV3Like>(save: S, offerId: strin
     player: {
       ...save.player,
       careerStage: 'PROFESSIONAL',
-      // 首份职业合同带来可见曝光；层级越高，媒体与球探覆盖越广。
-      reputation: Math.min(100, save.player.reputation + Math.max(4, offer.clubTier)),
+      // 首份职业合同带来可见曝光；层级越高，媒体与球探覆盖越广（声望经济 v2）。
+      reputation: applyReputationGain(
+        save.player.reputation,
+        Math.round(Math.max(4, offer.clubTier) * leagueTierFactor(offer.clubTier)),
+      ),
     },
     contract: {
       ...offer,

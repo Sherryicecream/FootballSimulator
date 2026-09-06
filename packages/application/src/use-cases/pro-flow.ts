@@ -37,6 +37,7 @@ import {
 } from '@football/simulation';
 import type { DevelopmentAccrual } from '@football/simulation';
 import { resolveCareerEvent } from './resolve-career-event';
+import { applyReputationGain, leagueTierFactor } from '@football/simulation';
 
 const ensureContract = (save: CareerSaveV4Like) => {
   if (!save.contract) throw new Error('没有生效的职业合同');
@@ -642,15 +643,13 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
     nationalTeam: save.nationalTeam,
     player: {
       ...save.player,
-      reputation: Math.max(
-        0,
-        Math.min(
-          100,
-          save.player.reputation +
-            Math.round(
-              ((outcome?.reputationDelta ?? 0) + visibilityReputationDelta) *
-                (save.overseasSince ? 1.2 : 1),
-            ),
+      // 声望经济 v2（设计 §6）：可见度按联赛层级加权，整体经衰减带入口。
+      reputation: applyReputationGain(
+        save.player.reputation,
+        Math.round(
+          ((outcome?.reputationDelta ?? 0) +
+            visibilityReputationDelta * leagueTierFactor(contract.clubTier)) *
+            (save.overseasSince ? 1.2 : 1),
         ),
       ),
     },
@@ -697,9 +696,9 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
     nationalTeam: nationalAccrual?.nationalTeam ?? next.nationalTeam,
     player: {
       ...next.player,
-      reputation: Math.max(
-        0,
-        Math.min(100, next.player.reputation + (nationalAccrual?.reputationDelta ?? 0)),
+      reputation: applyReputationGain(
+        next.player.reputation,
+        nationalAccrual?.reputationDelta ?? 0,
       ),
     },
     story: shouldOfferDebut
@@ -816,7 +815,7 @@ export const submitNationalTeamDecision = <S extends CareerSaveV5Like>(
     nationalTeam: accrual.nationalTeam,
     player: {
       ...resolved.player,
-      reputation: Math.min(100, resolved.player.reputation + accrual.reputationDelta),
+      reputation: applyReputationGain(resolved.player.reputation, accrual.reputationDelta),
     },
     ledger: [...resolved.ledger, fact],
   };

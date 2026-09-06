@@ -66,8 +66,13 @@ describe('youth balance runner', () => {
     expect(report.summary.overseasShare).toBeGreaterThanOrEqual(0.1);
     // 19 岁最后窗口扩大了已毕业样本的年龄构成，留洋占比允许到 40%。
     expect(report.summary.overseasShare).toBeLessThanOrEqual(0.4);
-    expect(report.summary.nationalTeamShare).toBeGreaterThanOrEqual(0.25);
-    expect(report.summary.nationalTeamShare).toBeLessThanOrEqual(0.5);
+    expect(report.summary.nationalTeamShare).toBeGreaterThanOrEqual(0.15);
+    // spec §25.2 国家队占比目标 15–30%；断言上沿留出抽样余量（n=1000 时 σ≈1.4%）。
+    expect(report.summary.nationalTeamShare).toBeLessThanOrEqual(0.34);
+    // spec §25.2：世界级球员（退役声望 ≥70）占比 1–5%；伤病不得直接导致极早退役。
+    expect(report.summary.worldClassRate).toBeGreaterThanOrEqual(0.01);
+    expect(report.summary.worldClassRate).toBeLessThanOrEqual(0.05);
+    expect(report.summary.earlyRetirementRate).toBeLessThan(0.01);
     expect(report.summary.reviewGeneratedRate).toBe(1);
     expect(report.summary.proCupAppearanceRate).toBeGreaterThan(0);
     expect(report.summary.proCupHonourRate).toBeGreaterThanOrEqual(0);
