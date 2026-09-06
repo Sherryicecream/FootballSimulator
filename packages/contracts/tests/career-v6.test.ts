@@ -1,8 +1,75 @@
 import { describe, expect, it } from 'vitest';
-import { CareerSaveV5Schema, CareerSaveV6Schema, migrateCareerSaveV6 } from '../src/index';
+import {
+  CareerSaveSchema,
+  CareerSaveV5Schema,
+  CareerSaveV6Schema,
+  migrateCareerSaveV6,
+} from '../src/index';
 import { buildYouthSaveV2Fixture } from './fixtures/youth-save-v2';
 
 describe('CareerSaveV6 terminal boundary', () => {
+  it('deterministically migrates a v1 save through v6', () => {
+    const v2 = buildYouthSaveV2Fixture();
+    const v1 = CareerSaveSchema.parse({
+      schemaVersion: 1,
+      contentVersion: 'bootstrap-1',
+      careerId: 'career-v1',
+      player: {
+        identity: v2.player.identity,
+        attributes: v2.player.attributes,
+        hiddenTraits: {
+          potential: 80,
+          stability: 60,
+          professionalism: 70,
+          pressureResistance: 60,
+          adaptability: 60,
+          injuryProneness: 20,
+        },
+        age: 16,
+        careerStage: 'YOUTH',
+        reputation: 10,
+      },
+      world: { currentDate: '2025-06-30', season: 2024, weekNumber: 44 },
+      context: {
+        academyId: 'home',
+        pendingOpportunity: null,
+        playerState: {
+          fitness: 80,
+          morale: 55,
+          coachTrust: 60,
+          fatigue: 12,
+          teamStatus: 'regular',
+        },
+        pendingEvent: null,
+        trainingFocus: null,
+        trainingIntensity: 'normal',
+      },
+      relationships: v2.relationships,
+      story: {
+        bootstrapOpportunityWeek: 2,
+        resolvedOpportunityIds: [],
+        completedStoryIds: [],
+        activeStorylines: [],
+        cooldowns: {},
+      },
+      ledger: [
+        {
+          type: 'career-started',
+          date: '2024-09-01',
+          playerName: '林河',
+          age: 16,
+          position: 'FORWARD',
+        },
+      ],
+      randomState: { seed: 42, sequencePosition: 7 },
+    });
+    const first = migrateCareerSaveV6(v1);
+    const second = migrateCareerSaveV6(v1);
+    expect(first).toEqual(second);
+    expect(first.ledger).toEqual(second.ledger);
+    expect(first.ledger).toHaveLength(1);
+    expect(first.randomState).toEqual(v1.randomState);
+  });
   it('migrates an active v5 save with no career ending', () => {
     const v5 = CareerSaveV5Schema.parse({
       ...buildYouthSaveV2Fixture(),
