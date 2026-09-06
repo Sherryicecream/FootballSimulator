@@ -3128,3 +3128,15 @@ fieldset {
   color: var(--color-ink);
   font-size: var(--text-xs);
 }
+
+.offline-chip {
+  margin: -6px 0 var(--space-md);
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(21, 33, 26, 0.85);
+  color: rgba(255, 255, 255, 0.78);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  text-align: center;
+}

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="足球生涯模拟器">
+  <rect width="512" height="512" rx="96" fill="#0a120d"/>
+  <circle cx="256" cy="256" r="152" fill="#e8e3d5"/>
+  <polygon points="256,186 316,230 293,300 219,300 196,230" fill="#0a120d"/>
+  <path d="M256 186 L256 118 M316 230 L382 208 M293 300 L332 358 M219 300 L180 358 M196 230 L130 208"
+        stroke="#0a120d" stroke-width="16" fill="none"/>
+  <path d="M130 208 A152 152 0 0 1 256 104 M382 208 A152 152 0 0 0 256 104 M332 358 A152 152 0 0 1 180 358"
+        stroke="#0a120d" stroke-width="12" fill="none" opacity="0.55"/>
+</svg>

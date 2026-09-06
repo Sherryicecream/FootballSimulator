@@ -5,6 +5,8 @@ declare module '*.css' {
 
 interface ImportMetaEnv {
   readonly VITE_LOCAL_AI_ENDPOINT?: string;
+  readonly PROD: boolean;
+  readonly DEV: boolean;
 }
 interface ImportMeta {
   readonly env: ImportMetaEnv;

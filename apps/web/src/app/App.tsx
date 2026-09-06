@@ -57,6 +57,7 @@ import {
   sceneKindForTheme,
 } from '../career-dashboard/career-presentation';
 import { SceneBanner } from '../design-system/SceneBanner';
+import { OfflineIndicator } from '../pwa/OfflineIndicator';
 import { createBootstrapContent } from './bootstrap-dependencies';
 import {
   createLocalNarrativeClientFromEnv,
@@ -469,6 +470,7 @@ export function App() {
   return (
     <main className="app">
       <h1>足球生涯模拟器</h1>
+      <OfflineIndicator />
       {error && (
         <div role="alert" className="error-card">
           {error}
