@@ -344,16 +344,7 @@ const buildDimensions = (
   honours: SeasonHonour[],
   replay: CareerReplayMoment[],
 ): CareerDimension[] => {
-  const legendaryEvidence = replay.filter(
-    ({ kind, sourceType }) =>
-      kind === 'international' ||
-      (kind === 'match' &&
-        save.ledger.some(
-          (entry) =>
-            entry.id ===
-            replay.find(({ evidenceId }) => evidenceId === entry.id)?.evidenceId,
-        )),
-  );
+  const legendaryEvidence = replay.filter(({ kind }) => kind === 'international');
   const legendaryMatchCount = replay.filter(({ kind }) => kind === 'match').length;
   const championCount = honours.filter(
     ({ kind }) => kind === 'league-champion' || kind === 'cup-champion',
@@ -400,7 +391,9 @@ const buildDimensions = (
       'individual',
       '个人表现',
       (avgProRating - 6.0) * 60 + doubleDigitGoalSeasons * 10,
-      save.seasonHistory.filter(({ seasonId }) => seasonId.startsWith('pro-')).map(({ seasonId }) => seasonId),
+      save.seasonHistory
+        .filter(({ seasonId }) => seasonId.startsWith('pro-'))
+        .map(({ seasonId }) => seasonId),
     ),
     dimension('loyalty', '忠诚与身份', loyaltyScore, [...clubIds]),
     dimension(

@@ -105,6 +105,94 @@ export function CareerReviewPage({
         </div>
       </dl>
 
+      <section className="review-dimensions" role="group" aria-label="生涯八维">
+        <div className="review-section-heading">
+          <span className="review-kicker">生涯结算</span>
+          <h3>生涯八维</h3>
+          <p>八个维度由存档数据直接计算；分数条与文字标签同时表达评价，不只靠颜色区分。</p>
+        </div>
+        <div className="review-dimension-grid">
+          {review.dimensions.map((dimension) => (
+            <article className="review-dimension-card" key={dimension.key}>
+              <header className="review-dimension-header">
+                <strong>{dimension.label}</strong>
+                <span>
+                  {dimension.ratingLabel} · {dimension.score}
+                </span>
+              </header>
+              <div
+                className="review-dimension-bar"
+                role="progressbar"
+                aria-valuenow={dimension.score}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={`${dimension.label}：${dimension.ratingLabel} ${dimension.score}`}
+              >
+                <span style={{ width: `${dimension.score}%` }} />
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="review-behind-the-scenes" role="group" aria-label="幕后档案">
+        <div className="review-section-heading">
+          <span className="review-kicker">退役解锁</span>
+          <h3>幕后档案</h3>
+          <p>这些信息在生涯进行中不可见，退役后完整公开，全部来自你的存档记录。</p>
+        </div>
+        <div className="review-potential-grid">
+          {review.behindTheScenes.potentials.map((group) => (
+            <article className="review-potential-card" key={group.group}>
+              <header className="review-potential-header">
+                <strong>潜力兑现</strong>
+                <span>
+                  {group.label} {group.fulfillment}%
+                </span>
+              </header>
+              <ul className="review-potential-list">
+                {group.items.map((item) => (
+                  <li key={item.key}>
+                    <span>{item.label}</span>
+                    <strong>
+                      {item.achieved} / {item.potential}
+                    </strong>
+                  </li>
+                ))}
+              </ul>
+            </article>
+          ))}
+        </div>
+        <div className="review-traits">
+          <h4>隐藏特质</h4>
+          <ul className="review-trait-list">
+            {review.behindTheScenes.traits.map((trait) => (
+              <li key={trait.key}>
+                <strong>
+                  {trait.label}：{trait.value}
+                </strong>
+                <span>{trait.note}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="review-missed">
+          <h4>错过的机会</h4>
+          {review.behindTheScenes.missedOpportunities.length > 0 ? (
+            <ul className="review-missed-list">
+              {review.behindTheScenes.missedOpportunities.map((item) => (
+                <li key={item.id}>
+                  <strong>{item.label}</strong>
+                  <p>{item.detail}</p>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="review-empty">没有记录在案的错过。</p>
+          )}
+        </div>
+      </section>
+
       <section className="review-honours" role="group" aria-label="生涯荣誉">
         <div className="review-section-heading">
           <span className="review-kicker">荣誉陈列室</span>

@@ -234,9 +234,7 @@ describe('career review dimensions and behind-the-scenes', () => {
     const traitRaw = (key: string) =>
       review.behindTheScenes.traits.find(({ key: traitKey }) => traitKey === key)?.rawValue;
     expect(traitRaw('maturationPace')).toBe(raw.player.development.maturationPace);
-    expect(traitValue('professionalism')).toBe(
-      String(raw.player.development.professionalism),
-    );
+    expect(traitValue('professionalism')).toBe(String(raw.player.development.professionalism));
     expect(traitRaw('injuryProneness')).toBe(String(raw.player.development.injuryProneness));
   });
 

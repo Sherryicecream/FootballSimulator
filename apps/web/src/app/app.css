@@ -3007,3 +3007,124 @@ fieldset {
   font-size: clamp(1.35rem, 4vw, 1.8rem);
   line-height: 1.2;
 }
+
+/* 生涯八维与幕后档案（M10 模块 9） */
+.review-dimension-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+}
+.review-dimension-card {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  background: linear-gradient(145deg, rgba(21, 33, 26, 0.92), rgba(9, 18, 13, 0.82));
+}
+.review-dimension-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.review-dimension-header strong {
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+}
+.review-dimension-header span {
+  color: var(--color-accent);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+}
+.review-dimension-bar {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+.review-dimension-bar span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-accent), rgba(255, 255, 255, 0.55));
+}
+.review-potential-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+.review-potential-card,
+.review-traits,
+.review-missed {
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  background: linear-gradient(145deg, rgba(21, 33, 26, 0.92), rgba(9, 18, 13, 0.82));
+}
+.review-potential-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.review-potential-header strong {
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+}
+.review-potential-header span {
+  color: var(--color-accent);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+}
+.review-potential-list,
+.review-trait-list,
+.review-missed-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.review-potential-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: var(--text-xs);
+}
+.review-traits h4,
+.review-missed h4 {
+  margin: 0 0 8px;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+}
+.review-trait-list li {
+  display: grid;
+  gap: 2px;
+}
+.review-trait-list strong {
+  color: var(--color-ink);
+  font-size: var(--text-xs);
+}
+.review-trait-list span,
+.review-missed-list p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.66);
+  font-size: var(--text-xs);
+}
+.review-missed-list li {
+  display: grid;
+  gap: 2px;
+  padding: 6px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.review-missed-list strong {
+  color: var(--color-ink);
+  font-size: var(--text-xs);
+}

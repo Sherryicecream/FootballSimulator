@@ -99,5 +99,7 @@ describe('youth balance runner', () => {
         expect(metric.loanContractStable).toBe(true);
       }
     }
-  }, 600_000);
+    // 1,000 季在进程内运行约 5-8 分钟；满载机器上波动更大，放宽到 30 分钟避免把
+    // 机器负载波动误报为分布回归（分布断言本身不变）。
+  }, 1_800_000);
 });

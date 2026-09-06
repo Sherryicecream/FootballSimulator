@@ -85,3 +85,45 @@ describe('CareerReviewPage', () => {
     expect(screen.getByRole('group', { name: '租借经历' })).toHaveTextContent('出场 12 次');
   });
 });
+
+describe('CareerReviewPage dimensions and behind-the-scenes', () => {
+  it('renders the eight career dimensions and the behind-the-scenes archive', () => {
+    const base = migrateCareerSaveV5(createYouthSave());
+    const save = CareerSaveV5Schema.parse({
+      ...base,
+      careerPhase: 'retired',
+      retiredOn: '2038-06-30',
+    });
+    render(<CareerReviewPage save={save} onNewCareer={() => {}} />);
+
+    expect(screen.getByRole('group', { name: '生涯八维' })).toBeDefined();
+    for (const label of ['竞技水平', '团队荣誉', '忠诚与身份', '国家队贡献', '传奇时刻']) {
+      expect(screen.getByText(label)).toBeDefined();
+    }
+    expect(screen.getAllByRole('progressbar').length).toBe(8);
+
+    expect(screen.getByRole('group', { name: '幕后档案' })).toBeDefined();
+    expect(screen.getAllByText('潜力兑现').length).toBe(3);
+    expect(screen.getByText('隐藏特质')).toBeDefined();
+    expect(screen.getByText('错过的机会')).toBeDefined();
+    expect(screen.getByText('没有记录在案的错过。')).toBeDefined();
+  });
+
+  it('lists evidence-backed missed opportunities when they exist', () => {
+    const base = migrateCareerSaveV5(createYouthSave());
+    const save = CareerSaveV5Schema.parse({
+      ...base,
+      careerPhase: 'retired',
+      retiredOn: '2038-06-30',
+      story: {
+        ...base.story,
+        completedStoryIds: ['national-team-debut'],
+      },
+      nationalTeam: null,
+      freeAgentSeasons: 1,
+    });
+    render(<CareerReviewPage save={save} onNewCareer={() => {}} />);
+    expect(screen.getByText('婉拒过国家队首召')).toBeDefined();
+    expect(screen.getByText('自由球员滞留')).toBeDefined();
+  });
+});
