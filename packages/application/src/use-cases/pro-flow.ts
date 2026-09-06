@@ -37,7 +37,11 @@ import {
 } from '@football/simulation';
 import type { DevelopmentAccrual } from '@football/simulation';
 import { resolveCareerEvent } from './resolve-career-event';
-import { applyReputationGain, leagueTierFactor } from '@football/simulation';
+import {
+  applyReputationGain,
+  leagueTierFactor,
+  simulateSummerTournament,
+} from '@football/simulation';
 
 const ensureContract = (save: CareerSaveV4Like) => {
   if (!save.contract) throw new Error('没有生效的职业合同');
@@ -744,6 +748,53 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
       : next.story,
     ledger: [...next.ledger, ...nationalFacts],
   };
+  // 国家队大赛（M11 模块 2）：已入选国脚在大赛年夏天经历亚洲杯/世界杯。
+  const tournamentYear = Number(next.proSeason!.endDate.slice(0, 4));
+  const tournament = simulateSummerTournament(next, tournamentYear);
+  if (tournament) {
+    const tournamentFactId = `national-tournament-${next.proSeason!.id}`;
+    const tournamentFact: CareerLedgerEntryV2 = {
+      id: tournamentFactId,
+      weekKey: `${tournamentYear}-W26`,
+      type: 'national-debut',
+      summary: tournament.summary,
+      participantIds: [],
+    };
+    const seasonHistory = [...next.seasonHistory];
+    const lastSeason = seasonHistory.at(-1);
+    if (lastSeason && tournament.honour) {
+      seasonHistory[seasonHistory.length - 1] = {
+        ...lastSeason,
+        honours: [
+          ...lastSeason.honours,
+          {
+            id: `${next.proSeason!.id}-tournament`,
+            kind: tournament.honour.kind,
+            label: tournament.honour.label,
+            seasonId: next.proSeason!.id,
+            clubId: next.proSeason!.clubId,
+            evidenceId: tournamentFactId,
+          },
+        ],
+      };
+    }
+    next = {
+      ...next,
+      nationalTeam: next.nationalTeam
+        ? {
+            ...next.nationalTeam,
+            caps: next.nationalTeam.caps + tournament.matchesPlayed,
+            goals: next.nationalTeam.goals + tournament.goals,
+          }
+        : next.nationalTeam,
+      player: {
+        ...next.player,
+        reputation: applyReputationGain(next.player.reputation, tournament.reputationDelta),
+      },
+      seasonHistory,
+      ledger: [...next.ledger, tournamentFact],
+    };
+  }
 
   if (expired) {
     const rng = createSeededRandomSource(next.randomState.seed + 7700);

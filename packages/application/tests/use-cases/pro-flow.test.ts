@@ -1077,3 +1077,58 @@ describe('海外联赛区域分组', () => {
     }
   });
 });
+
+describe('国家队大赛窗口', () => {
+  const playSeasonToSettlement = (signedOn: string) => {
+    const initial = signedProSave();
+    let save = startProfessionalSeason(
+      {
+        ...initial,
+        contract: {
+          ...initial.contract!,
+          signedOn,
+          contractYears: 2,
+        },
+        player: {
+          ...initial.player,
+          identity: { ...initial.player.identity, dateOfBirth: '2000-01-01' },
+          reputation: 60,
+        },
+      },
+      content.clubs,
+    );
+    let guard = 0;
+    while (!save.proSeason!.completed && guard < 20) {
+      const outcome = advanceProMonth(save, content.clubs, []);
+      if (outcome.status === 'awaiting-decision') {
+        save = resolveAwaitingMoment(outcome, save);
+        guard += 1;
+        continue;
+      }
+      save = outcome.save;
+      guard += 1;
+    }
+    return {
+      ...save,
+      player: { ...save.player, reputation: 60 },
+      proSeasonStats: { ...save.proSeasonStats, leagueAppearances: 15 },
+      nationalTeam: { capped: true, caps: 10, goals: 2, debutOn: `${signedOn.slice(0, 4)}-09-01` },
+    };
+  };
+
+  it('世界杯年结算：大赛出场计入国家队并写入账本', () => {
+    // pro-2029 在 2030 年夏天收官 → 世界杯窗口
+    const settled = completeProfessionalSeason(playSeasonToSettlement('2029-07-01')).save;
+    const fact = settled.ledger.find(({ id }) => id === 'national-tournament-pro-2029');
+    expect(fact).toBeDefined();
+    expect(fact!.summary).toContain('世界杯');
+    expect(settled.nationalTeam!.caps).toBeGreaterThanOrEqual(16);
+    expect(settled.nationalTeam!.goals).toBeGreaterThanOrEqual(2);
+  });
+
+  it('非大赛年结算：不产生大赛账本事实', () => {
+    // pro-2030 在 2031 年夏天收官 → 无大赛
+    const settled = completeProfessionalSeason(playSeasonToSettlement('2030-07-01')).save;
+    expect(settled.ledger.some(({ id }) => id === 'national-tournament-pro-2030')).toBe(false);
+  });
+});

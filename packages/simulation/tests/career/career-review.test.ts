@@ -282,3 +282,44 @@ describe('career review dimensions and behind-the-scenes', () => {
     expect(cleanReview.behindTheScenes.missedOpportunities).toEqual([]);
   });
 });
+
+describe('tournament honours in review', () => {
+  it('counts national tournament honours into team honours and legendary dimensions', () => {
+    const save = CareerSaveV5Schema.parse({
+      ...migrateCareerSaveV5(createYouthSave()),
+      careerPhase: 'retired',
+      retiredOn: '2038-06-30',
+      seasonHistory: [
+        {
+          seasonId: 'pro-2029',
+          age: 21,
+          status: 'retained',
+          appearances: 20,
+          goals: 4,
+          assists: 3,
+          avgRating: 7.0,
+          signals: ['professional-season'],
+          endedOn: '2030-06-30',
+          honours: [
+            {
+              id: 'pro-2029-asian-cup',
+              kind: 'asian-cup-champion',
+              label: '亚洲杯冠军',
+              seasonId: 'pro-2029',
+              clubId: 'pro-club-1',
+              evidenceId: 'national-tournament-pro-2029',
+            },
+          ],
+        },
+      ],
+    });
+    const review = buildCareerReview(save);
+    expect(review.honours.map(({ kind }) => kind)).toContain('asian-cup-champion');
+    expect(
+      review.dimensions.find(({ key }) => key === 'team-honours')?.score,
+    ).toBeGreaterThanOrEqual(5);
+    expect(review.dimensions.find(({ key }) => key === 'legendary')?.evidenceIds).toContain(
+      'national-tournament-pro-2029',
+    );
+  });
+});

@@ -25,6 +25,7 @@ export { advanceCareerWeek } from './career/weekly-advance';
 export { pickEventForWeek } from './career/event-integration';
 export { pickYouthEventForWeek } from './career/event-integration';
 export { applyReputationGain, leagueTierFactor } from './career/reputation';
+export { isTournamentYear, simulateSummerTournament } from './career/national-tournament';
 export {
   buildMatchMomentEvent,
   isImportantMatchContext,

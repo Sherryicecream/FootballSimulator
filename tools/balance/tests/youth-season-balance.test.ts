@@ -4,7 +4,8 @@ import { runYouthSeasons } from '../src/run-youth-seasons';
 describe('youth balance runner', () => {
   it('continues a non-expiring professional contract into the next season', () => {
     expect(() => runYouthSeasons(20, 1)).not.toThrow();
-  }, 30_000);
+    // 常态约 5 秒；放宽到 120 秒避免全量并行时的负载偶发超时。
+  }, 120_000);
 
   it('completes deterministic seasons and reports core distributions', () => {
     const report = runYouthSeasons(1000, 1);

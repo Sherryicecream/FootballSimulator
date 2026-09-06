@@ -337,6 +337,9 @@ const HONOUR_WEIGHTS: Record<SeasonHonour['kind'], number> = {
   'cup-champion': 18,
   promotion: 8,
   relegation: -5,
+  'asian-cup-champion': 24,
+  'world-cup-champion': 30,
+  'world-cup-runner-up': 12,
 };
 
 const buildDimensions = (
@@ -346,8 +349,8 @@ const buildDimensions = (
 ): CareerDimension[] => {
   const legendaryEvidence = replay.filter(({ kind }) => kind === 'international');
   const legendaryMatchCount = replay.filter(({ kind }) => kind === 'match').length;
-  const championCount = honours.filter(
-    ({ kind }) => kind === 'league-champion' || kind === 'cup-champion',
+  const championCount = honours.filter(({ kind }) =>
+    ['league-champion', 'cup-champion', 'asian-cup-champion', 'world-cup-champion'].includes(kind),
   ).length;
 
   const clubIds = new Set([
@@ -409,7 +412,12 @@ const buildDimensions = (
       save.ledger.filter(({ type }) => type === 'event' || type === 'decision').map(({ id }) => id),
     ),
     dimension('relationships', '人际关系', relationshipScore),
-    dimension('legendary', '传奇时刻', legendaryScore),
+    dimension(
+      'legendary',
+      '传奇时刻',
+      legendaryScore,
+      honours.map(({ evidenceId }) => evidenceId),
+    ),
   ];
 };
 
