@@ -44,6 +44,11 @@ export {
   returnFromLoan,
   signMarketOffer,
   signTransfer,
-  retire,
 } from './use-cases/transfer-flow';
+export {
+  canEndYouthCareer,
+  endProfessionalCareer,
+  endYouthCareer,
+  retire,
+} from './use-cases/end-career';
 export { buildCareerReview } from '@football/simulation';

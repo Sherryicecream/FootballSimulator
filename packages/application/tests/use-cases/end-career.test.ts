@@ -1,0 +1,181 @@
+import { describe, expect, it } from 'vitest';
+import { migrateCareerSaveV6 } from '@football/contracts';
+import {
+  completeYouthSeason,
+  enterOffseason,
+  generateContractOffers,
+  requestCareerMarket,
+  signContract,
+  startProfessionalSeason,
+  submitAgentPreferences,
+} from '../../src/index';
+import {
+  canEndYouthCareer,
+  endProfessionalCareer,
+  endYouthCareer,
+} from '../../src/use-cases/end-career';
+import { academies, content, createSave, finishSeason } from '../fixtures/youth-save';
+
+const professionalAttributes = {
+  technical: {
+    firstTouch: 70,
+    dribbling: 68,
+    passing: 66,
+    shooting: 72,
+    defending: 50,
+    aerialAbility: 60,
+  },
+  physical: { pace: 74, strength: 66, stamina: 70, agility: 68 },
+  mental: {
+    offTheBall: 72,
+    vision: 64,
+    decision: 66,
+    composure: 68,
+    determination: 74,
+    discipline: 70,
+  },
+};
+
+const finalYouthOffseason = ({ graduationEligible }: { graduationEligible: boolean }) => {
+  let save = finishSeason(createSave(42));
+  save = {
+    ...save,
+    player: {
+      ...save.player,
+      age: 20,
+      identity: { ...save.player.identity, dateOfBirth: '2005-01-01' },
+    },
+  };
+  const completed = completeYouthSeason(save);
+  const offseason = enterOffseason(completed.save, academies).save;
+  return migrateCareerSaveV6({
+    ...offseason,
+    offseason: { ...offseason.offseason!, graduationEligible },
+  });
+};
+
+const professionalOffseason = ({ age }: { age: number }) => {
+  let save = finishSeason(createSave(42));
+  save = {
+    ...save,
+    clubContext: { ...save.clubContext, coachEvaluation: 75, firstTeamStage: 'watchlist' },
+    player: { ...save.player, age: 18, attributes: professionalAttributes },
+    seasonStats: { appearances: 20, goals: 6, assists: 3, ratingSum: 145, ratingCount: 20 },
+  };
+  const completed = completeYouthSeason(save);
+  save = enterOffseason(completed.save, content.academies).save;
+  save = submitAgentPreferences(save, { leagueTierBias: 'balanced', priority: 'playing-time' });
+  save = generateContractOffers(save, content);
+  save = signContract(save, save.pendingOffers[0]!.id);
+  const started = startProfessionalSeason(migrateCareerSaveV6(save), content.clubs);
+  return migrateCareerSaveV6({
+    ...started,
+    careerPhase: 'pro-offseason',
+    proPhase: 'settled',
+    player: { ...started.player, age },
+    proSeason: {
+      ...started.proSeason!,
+      currentDate: started.proSeason!.endDate,
+      currentMonth: started.proSeason!.endDate.slice(0, 7),
+      currentWeek: 52,
+      completed: true,
+    },
+    proSeasonStats: {
+      ...started.proSeasonStats,
+      leagueAppearances: 20,
+      goals: 6,
+      assists: 3,
+      minutes: 1400,
+      ratingSum: 145,
+      ratingCount: 20,
+    },
+  });
+};
+
+describe('生涯终局用例', () => {
+  it('ends a final youth window without a professional contract', () => {
+    const save = finalYouthOffseason({ graduationEligible: false });
+    const ended = endYouthCareer(save);
+
+    expect(ended).toMatchObject({
+      careerPhase: 'retired',
+      retiredOn: save.season.endDate,
+      careerEnd: { kind: 'youth-no-contract', endedOn: save.season.endDate },
+    });
+    expect(ended.randomState).toEqual(save.randomState);
+    expect(ended.ledger.at(-1)).toMatchObject({
+      type: 'retirement',
+      id: `career-end-youth-${save.season.endDate}`,
+    });
+  });
+
+  it('rejects ending a youth career while another youth season remains available', () => {
+    const save = migrateCareerSaveV6({
+      ...finalYouthOffseason({ graduationEligible: false }),
+      careerPhase: 'offseason',
+      careerEnd: null,
+      retiredOn: null,
+      player: {
+        ...finalYouthOffseason({ graduationEligible: false }).player,
+        age: 18,
+        identity: {
+          ...finalYouthOffseason({ graduationEligible: false }).player.identity,
+          dateOfBirth: '2008-01-01',
+        },
+      },
+    });
+
+    expect(canEndYouthCareer(save)).toBe(false);
+    expect(() => endYouthCareer(save)).toThrow('青训生涯尚未达到结束条件');
+  });
+
+  it('allows a 22-year-old professional to retire only in the offseason', () => {
+    const save = professionalOffseason({ age: 22 });
+
+    expect(endProfessionalCareer(save, '2030-06-30').careerEnd?.kind).toBe('voluntary-retirement');
+    expect(() =>
+      endProfessionalCareer({ ...save, careerPhase: 'pro-season' }, '2030-06-30'),
+    ).toThrow('职业赛季进行中不能结束生涯');
+  });
+
+  it('allows market exit only for free agents', () => {
+    const save = professionalOffseason({ age: 22 });
+
+    expect(() => endProfessionalCareer(save, '2030-06-30', 'market-exit')).toThrow(
+      '只有自由球员可以离开职业足坛',
+    );
+    expect(
+      endProfessionalCareer({ ...save, careerPhase: 'free-agent' }, '2030-06-30', 'market-exit')
+        .careerEnd?.kind,
+    ).toBe('market-exit');
+  });
+
+  it('closes active club history and clears offers without advancing randomness', () => {
+    const save = requestCareerMarket(professionalOffseason({ age: 22 }), content, 'permanent');
+    const withClub = {
+      ...save,
+      clubHistory: [
+        {
+          clubId: save.contract!.clubId,
+          clubName: save.contract!.clubName,
+          from: save.contract!.signedOn,
+          to: null,
+          seasons: 1,
+          appearances: 20,
+          goals: 6,
+        },
+      ],
+    };
+
+    const ended = endProfessionalCareer(withClub, '2030-06-30');
+    expect(ended.pendingOffers).toEqual([]);
+    expect(ended.clubHistory[0]?.to).toBe('2030-06-30');
+    expect(ended.randomState).toEqual(withClub.randomState);
+  });
+
+  it('keeps duplicate terminal submission idempotent', () => {
+    const first = endYouthCareer(finalYouthOffseason({ graduationEligible: false }));
+
+    expect(endYouthCareer(first)).toEqual(first);
+  });
+});

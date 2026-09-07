@@ -4,7 +4,8 @@ import type {
   LoanHistoryEntry,
   YouthContentBundle,
 } from '@football/contracts';
-import { LoanHistoryEntrySchema } from '@football/contracts';
+import { LoanHistoryEntrySchema, migrateCareerSaveV6 } from '@football/contracts';
+import { endProfessionalCareer } from './end-career';
 import {
   createSeededRandomSource,
   generateProfessionalMarketOffers,
@@ -277,28 +278,7 @@ export const returnFromLoan = (
     ledger: [...save.ledger, fact],
   };
 };
-/** 宣布退役（30+ 可选）：永久性终态，需界面二次确认后才调用。 */
-export const retire = (save: CareerSaveV5Like, retiredOn: string): CareerSaveV5Like => {
-  if (save.careerPhase !== 'pro-offseason' && save.careerPhase !== 'free-agent') {
-    throw new Error(`非法阶段转移：当前阶段 ${save.careerPhase} 不能退役`);
-  }
-  if (save.player.age < 30) throw new Error('未满 30 岁不能宣布退役');
-  const clubHistory = save.clubHistory.map((entry) =>
-    entry.to === null ? { ...entry, to: retiredOn } : entry,
-  );
-  const fact: CareerLedgerEntryV2 = {
-    id: `retirement-${retiredOn}`,
-    weekKey: `${retiredOn.slice(0, 4)}-W30`,
-    type: 'retirement',
-    summary: `正式宣布退役，结束球员生涯`,
-    participantIds: [],
-  };
-  return {
-    ...save,
-    careerPhase: 'retired',
-    retiredOn,
-    pendingOffers: [],
-    clubHistory,
-    ledger: [...save.ledger, fact],
-  };
-};
+
+/** 兼容既有 v5 调用；应用入口公开 v6 终局用例。 */
+export const retire = <S extends CareerSaveV5Like>(save: S, retiredOn: string): S =>
+  endProfessionalCareer(migrateCareerSaveV6(save), retiredOn) as unknown as S;
