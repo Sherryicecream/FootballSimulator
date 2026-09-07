@@ -1,9 +1,55 @@
 import { describe, expect, it } from 'vitest';
-import { CareerSaveV5Schema, migrateCareerSaveV5 } from '@football/contracts';
+import { CareerSaveV5Schema, CareerSaveV6Schema, migrateCareerSaveV5 } from '@football/contracts';
 import { buildCareerReview } from '../../src/career/career-review';
 import { createYouthSave } from '../fixtures/youth-save';
 
+const youthNoContractReviewSave = () => {
+  const youthSave = migrateCareerSaveV5(createYouthSave());
+  return CareerSaveV6Schema.parse({
+    ...youthSave,
+    schemaVersion: 6,
+    careerPhase: 'retired',
+    retiredOn: '2027-06-30',
+    careerEnd: {
+      kind: 'youth-no-contract',
+      endedOn: '2027-06-30',
+      summary: '没有得到职业合同，青训生涯在这里结束。',
+      evidenceIds: ['career-end-youth-2027'],
+    },
+    clubHistory: [],
+    loanHistory: [],
+    totals: { appearances: 0, goals: 0, assists: 0, minutes: 0 },
+    ledger: [
+      ...youthSave.ledger,
+      {
+        id: 'career-end-youth-2027',
+        weekKey: '2027-W26',
+        type: 'retirement',
+        summary: '没有得到职业合同，青训生涯在这里结束。',
+        participantIds: [],
+      },
+    ],
+  });
+};
+
 describe('career review replay', () => {
+  it('builds an honest review for a youth career without a contract', () => {
+    const ended = youthNoContractReviewSave();
+    const review = buildCareerReview(ended);
+
+    expect(review.ending).toEqual({
+      kind: 'youth-no-contract',
+      label: '青训生涯结束',
+      summary: ended.careerEnd!.summary,
+      endedOn: ended.careerEnd!.endedOn,
+    });
+    expect(review.clubs).toBe(0);
+    expect(review.totals).toEqual({ appearances: 0, goals: 0, assists: 0, minutes: 0 });
+    expect(review.replay.some(({ evidenceId }) => evidenceId.startsWith('career-end-youth-'))).toBe(
+      true,
+    );
+  });
+
   it('builds an explainable replay and long-term goals from persisted career facts', () => {
     const save = CareerSaveV5Schema.parse({
       ...migrateCareerSaveV5(createYouthSave()),

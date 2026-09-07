@@ -1,4 +1,4 @@
-import type { CareerSaveV5 } from '@football/contracts';
+import type { CareerSaveV5, CareerSaveV6 } from '@football/contracts';
 import { buildCareerReview } from '@football/application';
 import { FootballGlyph } from '../design-system/FootballGlyph';
 import { SceneBanner } from '../design-system/SceneBanner';
@@ -28,10 +28,11 @@ export function CareerReviewPage({
   save,
   onNewCareer,
 }: {
-  save: CareerSaveV5;
+  save: CareerSaveV5 | CareerSaveV6;
   onNewCareer: () => void;
 }) {
   const review = buildCareerReview(save);
+  const isYouthOnlyEnding = review.ending?.kind === 'youth-no-contract';
   return (
     <section className="career-review" aria-label="生涯回顾">
       <SceneBanner
@@ -41,6 +42,14 @@ export function CareerReviewPage({
         title="生涯回顾"
         detail="从青训第一天到最后一次出场，重要选择都留在这份档案里。"
       />
+      {review.ending && (
+        <section className="review-ending" role="group" aria-label="生涯结局">
+          <span className="review-kicker">生涯结局</span>
+          <h2>{review.ending.label}</h2>
+          <p>{review.ending.summary}</p>
+          <time dateTime={review.ending.endedOn}>{review.ending.endedOn}</time>
+        </section>
+      )}
       <p className="review-tier">{review.tierLabel}</p>
       <p className="review-commentary">{review.commentary}</p>
 
@@ -78,7 +87,7 @@ export function CareerReviewPage({
       <h3>生涯总览</h3>
       <dl className="profile-facts">
         <div>
-          <dt>职业生涯</dt>
+          <dt>{isYouthOnlyEnding ? '青训赛季' : '职业生涯'}</dt>
           <dd>{review.seasons} 个赛季</dd>
         </div>
         <div>

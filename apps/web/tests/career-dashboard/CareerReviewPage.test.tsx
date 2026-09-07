@@ -1,10 +1,45 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { CareerSaveV5Schema, migrateCareerSaveV5 } from '@football/contracts';
+import { CareerSaveV5Schema, CareerSaveV6Schema, migrateCareerSaveV5 } from '@football/contracts';
 import { CareerReviewPage } from '../../src/career-dashboard/CareerReviewPage';
 import { createYouthSave } from '../../../../packages/simulation/tests/fixtures/youth-save';
 
 describe('CareerReviewPage', () => {
+  it('shows a youth-only ending without claiming a professional career', () => {
+    const youthSave = migrateCareerSaveV5(createYouthSave());
+    const save = CareerSaveV6Schema.parse({
+      ...youthSave,
+      schemaVersion: 6,
+      careerPhase: 'retired',
+      retiredOn: '2027-06-30',
+      careerEnd: {
+        kind: 'youth-no-contract',
+        endedOn: '2027-06-30',
+        summary: '没有得到职业合同，青训生涯在这里结束。',
+        evidenceIds: ['career-end-youth-2027'],
+      },
+      clubHistory: [],
+      loanHistory: [],
+      totals: { appearances: 0, goals: 0, assists: 0, minutes: 0 },
+      ledger: [
+        ...youthSave.ledger,
+        {
+          id: 'career-end-youth-2027',
+          weekKey: '2027-W26',
+          type: 'retirement',
+          summary: '没有得到职业合同，青训生涯在这里结束。',
+          participantIds: [],
+        },
+      ],
+    });
+
+    render(<CareerReviewPage save={save} onNewCareer={() => undefined} />);
+
+    expect(screen.getByText('青训生涯结束')).toBeInTheDocument();
+    expect(screen.getAllByText('没有得到职业合同，青训生涯在这里结束。').length).toBeGreaterThan(0);
+    expect(screen.queryByText('职业生涯')).not.toBeInTheDocument();
+  });
+
   it('shows long-term goals and explainable replay moments', () => {
     const base = migrateCareerSaveV5(createYouthSave());
     const save = CareerSaveV5Schema.parse({

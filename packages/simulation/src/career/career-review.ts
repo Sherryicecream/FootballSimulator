@@ -1,4 +1,10 @@
-import type { CareerLedgerEntryV2, CareerSaveV5Like, SeasonHonour } from '@football/contracts';
+import type {
+  CareerEndKind,
+  CareerLedgerEntryV2,
+  CareerSaveV5Like,
+  CareerSaveV6Like,
+  SeasonHonour,
+} from '@football/contracts';
 
 export type CareerTier = 'legend' | 'world-class' | 'national' | 'solid' | 'ordinary';
 export type CareerReplayMomentKind =
@@ -78,10 +84,18 @@ export interface CareerBehindTheScenes {
   missedOpportunities: CareerMissedOpportunity[];
 }
 
+export interface CareerReviewEnding {
+  kind: CareerEndKind;
+  label: string;
+  summary: string;
+  endedOn: string;
+}
+
 export interface CareerReviewData {
   tier: CareerTier;
   tierLabel: string;
   commentary: string;
+  ending: CareerReviewEnding | null;
   dimensions: CareerDimension[];
   behindTheScenes: CareerBehindTheScenes;
   seasons: number;
@@ -101,6 +115,12 @@ export interface CareerReviewData {
     avgRating: number | null;
   }>;
 }
+
+const END_LABELS: Record<CareerEndKind, string> = {
+  'youth-no-contract': '青训生涯结束',
+  'voluntary-retirement': '主动退役',
+  'market-exit': '离开职业足坛',
+};
 
 const TIER_LABELS: Record<CareerTier, string> = {
   legend: '传奇生涯',
@@ -124,7 +144,7 @@ const COMMENTARY: Record<CareerTier, string> = {
 };
 
 /** 生涯回顾（设计 §9）：完全由存档数据确定，可对账。 */
-export const buildCareerReview = (save: CareerSaveV5Like): CareerReviewData => {
+export const buildCareerReview = (save: CareerSaveV5Like | CareerSaveV6Like): CareerReviewData => {
   const reputation = save.player.reputation;
   const caps = save.nationalTeam?.caps ?? 0;
   const tier: CareerTier =
@@ -142,12 +162,22 @@ export const buildCareerReview = (save: CareerSaveV5Like): CareerReviewData => {
     ...save.loanHistory.map(({ loanClubId }) => loanClubId),
   ]);
   const honours = save.seasonHistory.flatMap(({ honours: seasonHonours }) => seasonHonours);
+  const careerEnd = 'careerEnd' in save ? save.careerEnd : null;
+  const ending = careerEnd
+    ? {
+        kind: careerEnd.kind,
+        label: END_LABELS[careerEnd.kind],
+        summary: careerEnd.summary,
+        endedOn: careerEnd.endedOn,
+      }
+    : null;
 
   const replay = buildReplay(save);
   return {
     tier,
     tierLabel: TIER_LABELS[tier],
     commentary: COMMENTARY[tier],
+    ending,
     dimensions: buildDimensions(save, honours, replay),
     behindTheScenes: buildBehindTheScenes(save),
     replay,
