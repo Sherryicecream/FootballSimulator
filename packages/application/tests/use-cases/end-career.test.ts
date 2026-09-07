@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { migrateCareerSaveV6 } from '@football/contracts';
+import { CareerSaveV5Schema, migrateCareerSaveV6 } from '@football/contracts';
 import {
   completeYouthSeason,
   enterOffseason,
@@ -17,6 +17,8 @@ import {
   endYouthCareer,
 } from '../../src/use-cases/end-career';
 import { academies, content, createSave, finishSeason } from '../fixtures/youth-save';
+
+type IsNever<T> = [T] extends [never] ? true : false;
 
 const professionalAttributes = {
   technical: {
@@ -176,9 +178,12 @@ describe('生涯终局用例', () => {
   });
 
   it('keeps public retirement compatible with a v5 caller while returning v6', () => {
-    const { careerEnd: _careerEnd, ...legacy } = professionalOffseason({ age: 22 });
-    const retired = retire({ ...legacy, schemaVersion: 5 }, '2030-06-30');
+    const { careerEnd: _careerEnd, ...v5Source } = professionalOffseason({ age: 22 });
+    const legacy = CareerSaveV5Schema.parse({ ...v5Source, schemaVersion: 5 });
+    const retired = retire(legacy, '2030-06-30');
 
+    const _schemaVersionIsNever: false = null as unknown as IsNever<typeof retired.schemaVersion>;
+    expect(retired.schemaVersion.toString()).toBe('6');
     expect(retired).toMatchObject({
       schemaVersion: 6,
       careerPhase: 'retired',

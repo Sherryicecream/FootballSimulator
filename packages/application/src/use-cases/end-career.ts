@@ -98,5 +98,5 @@ export const endProfessionalCareer = (
 };
 
 /** 兼容既有调用：职业休赛期或自由球员窗口可主动退役。 */
-export const retire = <S extends CareerSaveV5Like>(save: S, endedOn: string): CareerSaveV6 & S =>
-  endProfessionalCareer(migrateCareerSaveV6(save), endedOn) as CareerSaveV6 & S;
+export const retire = (save: CareerSaveV5Like, endedOn: string): CareerSaveV6 =>
+  endProfessionalCareer(migrateCareerSaveV6(save), endedOn);

@@ -3,6 +3,7 @@ import type {
   MonthlyReport,
   CareerSaveV4Like,
   CareerSaveV5Like,
+  CareerSaveV6,
   LoanHistoryEntry,
   ClubProfile,
   EventDefinition,
@@ -510,7 +511,7 @@ const buildSeasonOutcome = (
 /** 职业赛季结算：承诺对照、角色评估、合同年限递减、续约要约。 */
 export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
   save: S,
-): { save: S; review: ReturnType<typeof reviewPromise> } => {
+): { save: S | CareerSaveV6; review: ReturnType<typeof reviewPromise> } => {
   if (save.careerPhase !== 'pro-season') {
     throw new Error(`非法阶段转移：当前阶段 ${save.careerPhase} 不能结算职业赛季`);
   }
@@ -673,7 +674,7 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
     next = returnFromLoan(next, loanHistoryEntry) as S;
   }
   if (next.player.age >= 38) {
-    const forced = retireCareer(next, next.proSeason!.endDate) as S;
+    const forced = retireCareer(next, next.proSeason!.endDate);
     return { save: forced, review: outcome };
   }
 
