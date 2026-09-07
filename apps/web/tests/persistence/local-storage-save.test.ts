@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createLocalStorageCareerV4Port,
+  createLocalStorageCareerPort,
   createLocalStorageSavePort,
 } from '../../src/persistence/local-storage-save';
-import { migrateCareerSaveV5, type CareerSave } from '@football/contracts';
+import { migrateCareerSaveV5, migrateCareerSaveV6, type CareerSave } from '@football/contracts';
 
 const mockSave: CareerSave = {
   schemaVersion: 1,
@@ -161,3 +162,125 @@ describe('createLocalStorageSavePort', () => {
     expect(localStorage.getItem(key)).toBe('{damaged');
   });
 });
+
+describe('createLocalStorageCareerPort', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('writes a v6 wrapper with a timestamp', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-01T12:00:00.000Z'));
+
+    try {
+      const save = migrateCareerSaveV6(mockSave);
+      await createLocalStorageCareerPort().save(save.careerId, save);
+
+      expect(JSON.parse(localStorage.getItem('football-save-test-career') ?? '')).toMatchObject({
+        version: 6,
+        savedAt: '2026-03-01T12:00:00.000Z',
+        data: { schemaVersion: 6, careerId: 'test-career' },
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('loads a legacy wrapper without rewriting it', async () => {
+    const key = 'football-save-test-career';
+    const raw = JSON.stringify({ version: 1, savedAt: '2024-09-01T00:00:00.000Z', data: mockSave });
+    localStorage.setItem(key, raw);
+
+    const loaded = await createLocalStorageCareerPort().load('test-career');
+
+    expect(loaded).toMatchObject({
+      status: 'loaded',
+      slotId: 'test-career',
+      savedAt: '2024-09-01T00:00:00.000Z',
+      save: { schemaVersion: 6, careerId: 'test-career' },
+    });
+    expect(localStorage.getItem(key)).toBe(raw);
+  });
+
+  it('lists valid saves newest first and keeps damaged slots isolated', async () => {
+    localStorage.setItem('football-save-alpha', '{damaged');
+    localStorage.setItem('football-save-broken', '{damaged');
+    storeWrapped('older', migrateCareerSaveV6(mockSave), '2026-01-01T00:00:00.000Z');
+    storeWrapped(
+      'newer',
+      migrateCareerSaveV6({ ...mockSave, careerId: 'newer' }),
+      '2026-02-01T00:00:00.000Z',
+    );
+
+    const slots = await createLocalStorageCareerPort().list();
+
+    expect(slots.map(({ slotId }) => slotId)).toEqual(['newer', 'older', 'alpha', 'broken']);
+    expect(slots.at(-1)).toMatchObject({ status: 'invalid', slotId: 'broken', savedAt: null });
+    expect(localStorage.getItem('football-save-broken')).toBe('{damaged');
+  });
+
+  it('reports an empty slot with its requested id', async () => {
+    await expect(createLocalStorageCareerPort().load('missing')).resolves.toEqual({
+      status: 'empty',
+      slotId: 'missing',
+    });
+  });
+
+  it('rejects malformed v6 data before replacing the previous raw save', async () => {
+    const key = 'football-save-test-career';
+    const raw = JSON.stringify({ version: 6, savedAt: '2026-01-01T00:00:00.000Z', data: mockSave });
+    localStorage.setItem(key, raw);
+
+    await expect(
+      createLocalStorageCareerPort().save('test-career', {
+        ...migrateCareerSaveV6(mockSave),
+        careerId: '',
+      } as never),
+    ).rejects.toThrow();
+    expect(localStorage.getItem(key)).toBe(raw);
+  });
+
+  it('reports a failed write without replacing the previous raw save', async () => {
+    const port = createLocalStorageCareerPort();
+    const save = migrateCareerSaveV6(mockSave);
+    await port.save('test-career', save);
+    const raw = localStorage.getItem('football-save-test-career');
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementationOnce(() => {
+      throw new DOMException('quota', 'QuotaExceededError');
+    });
+
+    try {
+      await expect(port.save('test-career', { ...save, careerId: 'next-career' })).rejects.toThrow(
+        '存储空间不足，无法保存生涯',
+      );
+      expect(localStorage.getItem('football-save-test-career')).toBe(raw);
+    } finally {
+      setItem.mockRestore();
+    }
+  });
+
+  it('reports a failed delete without removing the raw save', async () => {
+    const port = createLocalStorageCareerPort();
+    const save = migrateCareerSaveV6(mockSave);
+    await port.save('test-career', save);
+    const raw = localStorage.getItem('football-save-test-career');
+    const removeItem = vi.spyOn(Storage.prototype, 'removeItem').mockImplementationOnce(() => {
+      throw new DOMException('blocked', 'SecurityError');
+    });
+
+    try {
+      await expect(port.delete('test-career')).rejects.toThrow('无法删除存档，请稍后重试');
+      expect(localStorage.getItem('football-save-test-career')).toBe(raw);
+    } finally {
+      removeItem.mockRestore();
+    }
+  });
+});
+
+const storeWrapped = (
+  slotId: string,
+  data: ReturnType<typeof migrateCareerSaveV6>,
+  savedAt: string,
+) => {
+  localStorage.setItem(`football-save-${slotId}`, JSON.stringify({ version: 6, savedAt, data }));
+};
