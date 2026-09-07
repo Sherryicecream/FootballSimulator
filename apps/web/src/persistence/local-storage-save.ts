@@ -78,7 +78,11 @@ export const createLocalStorageCareerPort = (): LocalStorageCareerPort => ({
 
     return records.sort((left, right) => {
       if (left.status === 'loaded' && right.status === 'loaded') {
-        return right.savedAt.localeCompare(left.savedAt);
+        const timeDifference = Date.parse(right.savedAt) - Date.parse(left.savedAt);
+        if (timeDifference !== 0) {
+          return timeDifference;
+        }
+        return left.slotId.localeCompare(right.slotId);
       }
       if (left.status === 'loaded') return -1;
       if (right.status === 'loaded') return 1;

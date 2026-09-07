@@ -219,6 +219,38 @@ describe('createLocalStorageCareerPort', () => {
     expect(localStorage.getItem('football-save-broken')).toBe('{damaged');
   });
 
+  it('sorts loaded slots by their timestamp instant with a slot-id tie-breaker', async () => {
+    storeWrapped(
+      'offset-later',
+      migrateCareerSaveV6({ ...mockSave, careerId: 'offset-later' }),
+      '2026-02-01T00:30:00-01:00',
+    );
+    storeWrapped(
+      'utc-earlier',
+      migrateCareerSaveV6({ ...mockSave, careerId: 'utc-earlier' }),
+      '2026-02-01T01:00:00.000Z',
+    );
+    storeWrapped(
+      'equal-b',
+      migrateCareerSaveV6({ ...mockSave, careerId: 'equal-b' }),
+      '2026-02-01T02:00:00+01:00',
+    );
+    storeWrapped(
+      'equal-a',
+      migrateCareerSaveV6({ ...mockSave, careerId: 'equal-a' }),
+      '2026-02-01T01:00:00.000Z',
+    );
+
+    const slots = await createLocalStorageCareerPort().list();
+
+    expect(slots.map(({ slotId }) => slotId)).toEqual([
+      'offset-later',
+      'equal-a',
+      'equal-b',
+      'utc-earlier',
+    ]);
+  });
+
   it('reports an empty slot with its requested id', async () => {
     await expect(createLocalStorageCareerPort().load('missing')).resolves.toEqual({
       status: 'empty',
