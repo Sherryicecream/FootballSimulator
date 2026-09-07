@@ -4,8 +4,7 @@ import type {
   LoanHistoryEntry,
   YouthContentBundle,
 } from '@football/contracts';
-import { LoanHistoryEntrySchema, migrateCareerSaveV6 } from '@football/contracts';
-import { endProfessionalCareer } from './end-career';
+import { LoanHistoryEntrySchema } from '@football/contracts';
 import {
   createSeededRandomSource,
   generateProfessionalMarketOffers,
@@ -279,6 +278,4 @@ export const returnFromLoan = (
   };
 };
 
-/** 兼容既有 v5 调用；应用入口公开 v6 终局用例。 */
-export const retire = <S extends CareerSaveV5Like>(save: S, retiredOn: string): S =>
-  endProfessionalCareer(migrateCareerSaveV6(save), retiredOn) as unknown as S;
+export { retire } from './end-career';

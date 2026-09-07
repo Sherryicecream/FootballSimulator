@@ -801,21 +801,19 @@ describe('职业赛季流程', () => {
     );
   });
 
-  it('retirement is terminal and requires the player to be at least 30', () => {
+  it('allows under-30 retirement and keeps repeat submission idempotent', () => {
     const base = signedProSave();
-    expect(() =>
-      retire(
-        { ...base, careerPhase: 'pro-offseason', player: { ...base.player, age: 29 } },
-        '2026-05-31',
-      ),
-    ).toThrow();
     const retired = retire(
-      { ...base, careerPhase: 'pro-offseason', player: { ...base.player, age: 30 } },
+      { ...base, careerPhase: 'pro-offseason', player: { ...base.player, age: 22 } },
       '2026-05-31',
     );
 
-    expect(retired.careerPhase).toBe('retired');
-    expect(() => retire(retired, '2026-05-31')).toThrow();
+    expect(retired).toMatchObject({
+      schemaVersion: 6,
+      careerPhase: 'retired',
+      careerEnd: { kind: 'voluntary-retirement', endedOn: '2026-05-31' },
+    });
+    expect(retire(retired, '2026-05-31')).toEqual(retired);
     expect(() => startProfessionalSeason(retired, content.clubs)).toThrow();
   });
 

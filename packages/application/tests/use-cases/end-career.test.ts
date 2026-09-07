@@ -4,7 +4,9 @@ import {
   completeYouthSeason,
   enterOffseason,
   generateContractOffers,
+  loadCareer,
   requestCareerMarket,
+  retire,
   signContract,
   startProfessionalSeason,
   submitAgentPreferences,
@@ -171,6 +173,24 @@ describe('生涯终局用例', () => {
     expect(ended.pendingOffers).toEqual([]);
     expect(ended.clubHistory[0]?.to).toBe('2030-06-30');
     expect(ended.randomState).toEqual(withClub.randomState);
+  });
+
+  it('keeps public retirement compatible with a v5 caller while returning v6', () => {
+    const { careerEnd: _careerEnd, ...legacy } = professionalOffseason({ age: 22 });
+    const retired = retire({ ...legacy, schemaVersion: 5 }, '2030-06-30');
+
+    expect(retired).toMatchObject({
+      schemaVersion: 6,
+      careerPhase: 'retired',
+      careerEnd: { kind: 'voluntary-retirement', endedOn: '2030-06-30' },
+    });
+  });
+
+  it('keeps ordinary loaded careers on v5 until terminal integration', () => {
+    const loaded = loadCareer(createSave(99), content);
+
+    expect(loaded.schemaVersion).toBe(5);
+    expect('careerEnd' in loaded).toBe(false);
   });
 
   it('keeps duplicate terminal submission idempotent', () => {
