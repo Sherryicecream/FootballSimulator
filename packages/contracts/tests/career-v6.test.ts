@@ -68,6 +68,7 @@ describe('CareerSaveV6 terminal boundary', () => {
     expect(first).toEqual(second);
     expect(first.ledger).toEqual(second.ledger);
     expect(first.ledger).toHaveLength(1);
+    expect(first.ledger[0].summary).toBe(JSON.stringify(v1.ledger[0]));
     expect(first.randomState).toEqual(v1.randomState);
   });
   it('migrates an active v5 save with no career ending', () => {
