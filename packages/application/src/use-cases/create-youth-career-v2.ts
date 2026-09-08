@@ -10,14 +10,13 @@ import {
   createSeededRandomSource,
   createYouthFixtures,
   initializeYouthRelationships,
-  isFinalYouthSeason,
 } from '@football/simulation';
 
 export const createYouthCareerV2 = (
   rawSave: unknown,
   rawContent: YouthContentBundle,
 ): CareerSaveV5 => {
-  const migrated = normalizeYouthAgeBoundary(migrateCareerSaveV5(rawSave));
+  const migrated = migrateCareerSaveV5(rawSave);
   const content = YouthContentBundleSchema.parse(rawContent);
   const academyId = resolveAcademyId(migrated, content);
   const competition = content.competitions.find(({ participatingAcademyIds }) =>
@@ -56,20 +55,6 @@ export const createYouthCareerV2 = (
       pendingFeedback: hydratePendingFeedback(migrated.story.pendingFeedback, content),
     },
   });
-};
-
-const normalizeYouthAgeBoundary = (save: CareerSaveV5): CareerSaveV5 => {
-  if (
-    !save.offseason ||
-    !isFinalYouthSeason(save.player.age) ||
-    save.offseason.graduationEligible
-  ) {
-    return save;
-  }
-  return {
-    ...save,
-    offseason: { ...save.offseason, graduationEligible: true },
-  };
 };
 
 const hydratePendingEvent = (

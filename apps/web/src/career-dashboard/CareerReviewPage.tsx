@@ -26,10 +26,10 @@ const replayKindLabels = {
 /** 生涯回顾页（设计 §9）：退役后的 MVP 终点。 */
 export function CareerReviewPage({
   save,
-  onNewCareer,
+  onOpenArchives,
 }: {
   save: CareerSaveV5 | CareerSaveV6;
-  onNewCareer: () => void;
+  onOpenArchives: () => void;
 }) {
   const review = buildCareerReview(save);
   const isYouthOnlyEnding = review.ending?.kind === 'youth-no-contract';
@@ -300,7 +300,7 @@ export function CareerReviewPage({
       </ul>
 
       <p className="review-footer">感谢你带来的这段旅程——足球的故事，到这里画上了句号。</p>
-      <button onClick={onNewCareer}>开始新生涯</button>
+      <button onClick={onOpenArchives}>返回生涯档案</button>
     </section>
   );
 }

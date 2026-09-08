@@ -1,9 +1,17 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { ContractOfferV3 } from '@football/contracts';
+import { completeYouthSeason, enterOffseason } from '@football/application';
+import { migrateCareerSaveV6, type ContractOfferV3 } from '@football/contracts';
 import { AgentPreferencesForm } from '../../src/career-dashboard/AgentPreferencesForm';
 import { OfferComparisonPanel } from '../../src/career-dashboard/OfferComparisonPanel';
 import { ContractCard } from '../../src/career-dashboard/ContractCard';
+import { OffseasonBriefing } from '../../src/career-dashboard/OffseasonBriefing';
+import { ProOffseasonPanel } from '../../src/career-dashboard/ProOffseasonPanel';
+import {
+  academies,
+  createSave,
+  finishSeason,
+} from '../../../../packages/application/tests/fixtures/youth-save';
 
 const offers: ContractOfferV3[] = [
   {
@@ -36,6 +44,33 @@ const loanOffer: ContractOfferV3 = {
   clubName: '镜湖潮汐',
   offerKind: 'loan',
   contractYears: 1,
+};
+
+const finalYouthOffseason = () => {
+  const completedSeason = finishSeason(createSave(42));
+  const finalYouthSeason = {
+    ...completedSeason,
+    player: {
+      ...completedSeason.player,
+      age: 20,
+      identity: { ...completedSeason.player.identity, dateOfBirth: '2005-01-01' },
+    },
+  };
+  const completed = completeYouthSeason(finalYouthSeason);
+  const offseason = enterOffseason(completed.save, academies).save;
+  return migrateCareerSaveV6({
+    ...offseason,
+    offseason: { ...offseason.offseason!, graduationEligible: false },
+  });
+};
+
+const age22ProfessionalOffseason = () => {
+  const save = migrateCareerSaveV6(createSave(99));
+  return {
+    ...save,
+    careerPhase: 'pro-offseason' as const,
+    player: { ...save.player, age: 22 },
+  };
 };
 
 describe('AgentPreferencesForm', () => {
@@ -115,5 +150,46 @@ describe('ContractCard', () => {
     expect(screen.getByText(/申海港联（层级 8）/)).toBeVisible();
     expect(screen.getByText(/剩余 1 年/)).toBeVisible();
     expect(screen.getByText(/无特殊承诺：已兑现/)).toBeVisible();
+  });
+});
+
+describe('terminal career actions', () => {
+  it('offers an explicit ending instead of a dead end after the final youth window', () => {
+    const onEndYouthCareer = vi.fn();
+    render(
+      <OffseasonBriefing
+        save={finalYouthOffseason()}
+        outcome={{
+          status: 'retained',
+          nextPath: 'professional-market',
+          signals: [],
+          summary: '青训年龄窗口已关闭。',
+        }}
+        academies={academies}
+        canContinueYouth={false}
+        onEndYouthCareer={onEndYouthCareer}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: '结束青训生涯' })).toBeVisible();
+    expect(screen.queryByText('本赛季已是青训阶段的最后窗口，请先处理职业市场机会。')).toBeNull();
+  });
+
+  it('allows a professional under 30 to open but cancel retirement confirmation', () => {
+    const onRetire = vi.fn();
+    render(
+      <ProOffseasonPanel
+        save={age22ProfessionalOffseason()}
+        onRetire={onRetire}
+        onStartNextSeason={vi.fn()}
+        onAcceptRenewal={vi.fn()}
+        onDeclineRenewal={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '宣布退役' }));
+    expect(screen.getByRole('alertdialog', { name: '退役确认' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: '继续职业生涯' }));
+    expect(onRetire).not.toHaveBeenCalled();
   });
 });

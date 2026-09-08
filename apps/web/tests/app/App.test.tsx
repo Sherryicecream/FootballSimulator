@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from '../../src/app/App';
-import { createCareerSave } from '@football/application';
+import { completeYouthSeason, createCareerSave, enterOffseason } from '@football/application';
+import { getYouthContent } from '@football/content';
 import { migrateCareerSaveV5, migrateCareerSaveV6 } from '@football/contracts';
 import type { CareerSave, MonthlyReport } from '@football/contracts';
 
@@ -504,8 +505,53 @@ describe('App', () => {
     expect(await screen.findByRole('region')).toBeDefined();
     expect(document.querySelector('.career-review')).not.toBeNull();
     expect(screen.queryByLabelText('5�S�w^~)�u')).toBeNull();
-    await user.click(screen.getByRole('button', { name: '开始新生涯' }));
+    await user.click(screen.getByRole('button', { name: '返回生涯档案' }));
     expect(await screen.findByRole('region', { name: '生涯档案' })).toBeDefined();
+    expect(readStoredSave(retired.careerId).careerPhase).toBe('retired');
+  });
+
+  it('stays in the final youth briefing when ending the career cannot be saved', async () => {
+    const user = userEvent.setup();
+    const finalYouth = createFinalYouthOffseason();
+    storeSave(finalYouth);
+
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: '继续林岳的生涯' }));
+    await user.click(await screen.findByRole('button', { name: '结束青训生涯' }));
+    localStorageMock.failNextSetItem();
+    await user.click(screen.getByRole('button', { name: '确认结束并查看回顾' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('保存失败');
+    expect(screen.getByRole('region', { name: '休赛期简报' })).toBeVisible();
+    expect(screen.queryByRole('region', { name: '生涯回顾' })).toBeNull();
+  });
+
+  it('commits a final youth ending before opening the review', async () => {
+    const user = userEvent.setup();
+    const finalYouth = createFinalYouthOffseason();
+    storeSave(finalYouth);
+
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: '继续林岳的生涯' }));
+    await user.click(await screen.findByRole('button', { name: '结束青训生涯' }));
+    await user.click(screen.getByRole('button', { name: '确认结束并查看回顾' }));
+
+    expect(await screen.findByRole('region', { name: '生涯回顾' })).toBeVisible();
+    expect(readStoredSave(finalYouth.careerId).careerEnd?.kind).toBe('youth-no-contract');
+  });
+
+  it('records an empty free-agent market exit separately from voluntary retirement', async () => {
+    const user = userEvent.setup();
+    const freeAgent = createEmptyFreeAgentSave();
+    storeSave(freeAgent);
+
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: '继续林岳的生涯' }));
+    await user.click(await screen.findByRole('button', { name: '结束职业生涯' }));
+    await user.click(screen.getByRole('button', { name: '确认离开职业足坛' }));
+
+    expect(await screen.findByRole('region', { name: '生涯回顾' })).toBeVisible();
+    expect(readStoredSave(freeAgent.careerId).careerEnd?.kind).toBe('market-exit');
   });
 
   it('restores a professional contract into the dashboard', async () => {
@@ -563,6 +609,38 @@ const createSaveWithPendingEvent = (): CareerSave => {
         resolvedChoiceId: null,
       },
     },
+  };
+};
+
+const createFinalYouthOffseason = () => {
+  const save = migrateCareerSaveV6(createCareerSave(startParams));
+  const youthContent = getYouthContent();
+  const academyId = youthContent.academies[0]?.id;
+  if (!academyId) throw new Error('测试内容缺少青训机构');
+  const finalYouthSeason = {
+    ...save,
+    player: {
+      ...save.player,
+      age: 20,
+      identity: { ...save.player.identity, dateOfBirth: '2005-01-01' },
+    },
+    season: { ...save.season, academyId, completed: true },
+  };
+  const completed = completeYouthSeason(finalYouthSeason);
+  const offseason = enterOffseason(completed.save, youthContent.academies).save;
+  return migrateCareerSaveV6({
+    ...offseason,
+    offseason: { ...offseason.offseason!, graduationEligible: false },
+  });
+};
+
+const createEmptyFreeAgentSave = () => {
+  const save = migrateCareerSaveV6(createCareerSave(startParams));
+  return {
+    ...save,
+    careerPhase: 'free-agent' as const,
+    player: { ...save.player, age: 22 },
+    pendingOffers: [],
   };
 };
 

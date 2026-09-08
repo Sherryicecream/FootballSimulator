@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import { CareerSaveV5Schema, CareerSaveV6Schema, migrateCareerSaveV5 } from '@football/contracts';
 import { CareerReviewPage } from '../../src/career-dashboard/CareerReviewPage';
 import { createYouthSave } from '../../../../packages/simulation/tests/fixtures/youth-save';
@@ -33,7 +33,7 @@ describe('CareerReviewPage', () => {
       ],
     });
 
-    render(<CareerReviewPage save={save} onNewCareer={() => undefined} />);
+    render(<CareerReviewPage save={save} onOpenArchives={() => undefined} />);
 
     expect(screen.getByText('青训生涯结束')).toBeInTheDocument();
     expect(screen.getAllByText('没有得到职业合同，青训生涯在这里结束。').length).toBeGreaterThan(0);
@@ -108,7 +108,7 @@ describe('CareerReviewPage', () => {
       ],
     });
 
-    render(<CareerReviewPage save={save} onNewCareer={() => undefined} />);
+    render(<CareerReviewPage save={save} onOpenArchives={() => undefined} />);
 
     expect(screen.getByRole('group', { name: '长期目标' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: '全生涯回放' })).toBeInTheDocument();
@@ -129,7 +129,7 @@ describe('CareerReviewPage dimensions and behind-the-scenes', () => {
       careerPhase: 'retired',
       retiredOn: '2038-06-30',
     });
-    render(<CareerReviewPage save={save} onNewCareer={() => {}} />);
+    render(<CareerReviewPage save={save} onOpenArchives={() => {}} />);
 
     expect(screen.getByRole('group', { name: '生涯八维' })).toBeDefined();
     for (const label of ['竞技水平', '团队荣誉', '忠诚与身份', '国家队贡献', '传奇时刻']) {
@@ -157,8 +157,22 @@ describe('CareerReviewPage dimensions and behind-the-scenes', () => {
       nationalTeam: null,
       freeAgentSeasons: 1,
     });
-    render(<CareerReviewPage save={save} onNewCareer={() => {}} />);
+    render(<CareerReviewPage save={save} onOpenArchives={() => {}} />);
     expect(screen.getByText('婉拒过国家队首召')).toBeDefined();
     expect(screen.getByText('自由球员滞留')).toBeDefined();
+  });
+
+  it('returns to archives from the review without starting a new career', () => {
+    const onOpenArchives = vi.fn();
+    const save = CareerSaveV5Schema.parse({
+      ...migrateCareerSaveV5(createYouthSave()),
+      careerPhase: 'retired',
+      retiredOn: '2038-06-30',
+    });
+    render(<CareerReviewPage save={save} onOpenArchives={onOpenArchives} />);
+
+    fireEvent.click(screen.getByRole('button', { name: '返回生涯档案' }));
+
+    expect(onOpenArchives).toHaveBeenCalledTimes(1);
   });
 });

@@ -23,14 +23,16 @@ import {
   generateContractOffers,
   acceptRenewal,
   advanceProMonth,
+  canEndYouthCareer,
   clearEventFeedback,
   completeProfessionalSeason,
   declineRenewal,
+  endProfessionalCareer,
+  endYouthCareer,
   generateFreeAgentOffers,
   loadCareer,
   rejectOffers,
   requestCareerMarket,
-  retire,
   signMarketOffer,
   signContract,
   signTransfer,
@@ -132,6 +134,7 @@ export function App() {
       : null) ??
     sceneKindForTheme(pendingEventDefinition?.theme);
   const canContinueYouth = save ? canContinueYouthSeason(save) : false;
+  const canEndYouth = save ? canEndYouthCareer(save) : false;
   const pendingFeedbackNextEvents =
     save?.story.pendingFeedback?.nextEventIds?.flatMap((eventId) => {
       const definition = youthContent.events.find(({ id }) => id === eventId);
@@ -527,16 +530,23 @@ export function App() {
       setError(message(caught));
     }
   };
-  const handleRetire = async () => {
-    if (step === 'free-agent' && !freeAgentRetireConfirm) {
-      setFreeAgentRetireConfirm(true);
-      return;
+  const handleEndYouthCareer = async () => {
+    if (!save) return;
+    setError(null);
+    try {
+      await commitCareer(endYouthCareer(save), () => setStep('retired'));
+    } catch (caught) {
+      setError(message(caught));
     }
+  };
+  const handleRetire = async (
+    kind: 'voluntary-retirement' | 'market-exit' = 'voluntary-retirement',
+  ) => {
     if (!save) return;
     setError(null);
     try {
       const date = save.proSeason?.endDate ?? new Date().toISOString().slice(0, 10);
-      await commitCareer(retire(save, date), () => {
+      await commitCareer(endProfessionalCareer(save, date, kind), () => {
         setFreeAgentRetireConfirm(false);
         setStep('retired');
       });
@@ -633,8 +643,10 @@ export function App() {
               outcome={outcome}
               academies={youthContent.academies}
               canContinueYouth={canContinueYouth}
+              canEndYouthCareer={canEndYouth}
               onStartNextSeason={handleStartNextSeason}
               onSeekOffers={handleSeekOffers}
+              onEndYouthCareer={handleEndYouthCareer}
             />
           )}
           {step === 'agent' && save && <AgentPreferencesForm onSubmit={handleAgentPreferences} />}
@@ -701,32 +713,33 @@ export function App() {
                   )}
                   <div className="offseason-actions">
                     <button onClick={handleWaitWindow}>等待下一个转会窗口</button>
-                    {save.player.age >= 30 && (
-                      <button className="secondary-action" onClick={handleRetire}>
-                        宣布退役
-                      </button>
-                    )}
+                    <button
+                      className="secondary-action"
+                      onClick={() => setFreeAgentRetireConfirm(true)}
+                    >
+                      结束职业生涯
+                    </button>
                   </div>
                 </>
               )}
-              {save.player.age >= 30 && save.pendingOffers.length > 0 && (
+              {save.pendingOffers.length > 0 && (
                 <div className="offseason-actions">
-                  <button className="secondary-action" onClick={handleRetire}>
+                  <button className="secondary-action" onClick={() => void handleRetire()}>
                     宣布退役
                   </button>
                 </div>
               )}
               {freeAgentRetireConfirm && (
-                <div>
-                  <p>退役是不可逆的，将结束当前生涯并生成回顾。</p>
-                  <button onClick={handleRetire}>确认退役</button>
+                <div role="alertdialog" aria-label="结束职业生涯确认">
+                  <p>职业市场没有合适机会。确定要离开职业足坛吗？</p>
+                  <button onClick={() => handleRetire('market-exit')}>确认离开职业足坛</button>
                   <button onClick={() => setFreeAgentRetireConfirm(false)}>继续寻找机会</button>
                 </div>
               )}
             </section>
           )}
           {step === 'retired' && save && (
-            <CareerReviewPage save={save} onNewCareer={openArchives} />
+            <CareerReviewPage save={save} onOpenArchives={openArchives} />
           )}
           {step === 'event' && save?.story.pendingEvent && (
             <EventChoicePanel

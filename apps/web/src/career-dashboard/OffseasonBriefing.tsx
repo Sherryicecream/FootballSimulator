@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { CareerSaveV4Like, YouthAcademyProfile } from '@football/contracts';
 import { SceneBanner } from '../design-system/SceneBanner';
 import type { YouthSeasonOutcome } from '@football/application';
@@ -7,8 +8,10 @@ interface OffseasonBriefingProps {
   outcome: YouthSeasonOutcome | null;
   academies: readonly YouthAcademyProfile[];
   canContinueYouth: boolean;
+  canEndYouthCareer?: boolean;
   onStartNextSeason?: (academyId?: string) => void;
   onSeekOffers?: () => void;
+  onEndYouthCareer?: () => void;
 }
 
 /** 补救路线 → 青训机构 pathway 的映射。 */
@@ -34,9 +37,12 @@ export function OffseasonBriefing({
   outcome,
   academies,
   canContinueYouth,
+  canEndYouthCareer,
   onStartNextSeason,
   onSeekOffers,
+  onEndYouthCareer,
 }: OffseasonBriefingProps) {
+  const [endCareerConfirm, setEndCareerConfirm] = useState(false);
   const state = save.offseason;
   if (!state) return null;
   const { briefing, graduationEligible, eligibilityReport } = state;
@@ -113,9 +119,23 @@ export function OffseasonBriefing({
           {canContinueYouth && onStartNextSeason && (
             <button onClick={() => onStartNextSeason()}>开始下赛季</button>
           )}
-          {!canContinueYouth && (
+          {(canEndYouthCareer ?? Boolean(onEndYouthCareer)) && onEndYouthCareer ? (
+            endCareerConfirm ? (
+              <div role="alertdialog" aria-label="结束青训生涯确认">
+                <p>结束后将不能继续这段青训生涯，并会生成生涯回顾。</p>
+                <button className="confirm" onClick={onEndYouthCareer}>
+                  确认结束并查看回顾
+                </button>
+                <button onClick={() => setEndCareerConfirm(false)}>暂不结束</button>
+              </div>
+            ) : (
+              <button className="secondary-action" onClick={() => setEndCareerConfirm(true)}>
+                结束青训生涯
+              </button>
+            )
+          ) : !canContinueYouth ? (
             <p className="warning">本赛季已是青训阶段的最后窗口，请先处理职业市场机会。</p>
-          )}
+          ) : null}
         </div>
       )}
     </section>

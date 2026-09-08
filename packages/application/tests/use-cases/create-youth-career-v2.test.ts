@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { YouthAcademyProfile, YouthContentBundle } from '@football/contracts';
+import { completeYouthSeason } from '../../src/use-cases/complete-youth-season';
 import { createCareerSave } from '../../src/use-cases/start-career';
 import { createYouthCareerV2 } from '../../src/use-cases/create-youth-career-v2';
+import { enterOffseason } from '../../src/use-cases/enter-offseason';
 
 describe('createYouthCareerV2', () => {
   it('creates the same fixed full-season schedule from the same seed and content', () => {
@@ -25,6 +27,40 @@ describe('createYouthCareerV2', () => {
       first.season.fixtures.length,
     );
     expect(first.season.fixtures.every(({ awayClubId }) => awayClubId !== 'unknown')).toBe(true);
+  });
+
+  it('preserves a final youth window that did not earn graduation when hydrating', () => {
+    const content = createContent();
+    const created = createYouthCareerV2(
+      createCareerSave({
+        playerName: '林岳',
+        hometown: '上海',
+        primaryPosition: 'CENTER_BACK',
+        preferredFoot: 'RIGHT',
+        regionId: 'shanghai',
+        seed: 42,
+      }),
+      content,
+    );
+    const finalSeason = {
+      ...created,
+      player: {
+        ...created.player,
+        age: 20,
+        identity: { ...created.player.identity, dateOfBirth: '2005-01-01' },
+      },
+      season: { ...created.season, completed: true },
+    };
+    const completed = completeYouthSeason(finalSeason);
+    const offseason = enterOffseason(completed.save, content.academies).save;
+    const persisted = {
+      ...offseason,
+      offseason: { ...offseason.offseason!, graduationEligible: false },
+    };
+
+    const hydrated = createYouthCareerV2(JSON.parse(JSON.stringify(persisted)), content);
+
+    expect(hydrated.offseason?.graduationEligible).toBe(false);
   });
 });
 
