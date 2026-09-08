@@ -115,9 +115,12 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   const [records, setRecords] = useState<CareerSlotRecord[]>([]);
   const [commitState, setCommitState] = useState<SaveCommitState>({ status: 'idle' });
+  const [openingSlotId, setOpeningSlotId] = useState<string | null>(null);
   const [freeAgentRetireConfirm, setFreeAgentRetireConfirm] = useState(false);
   const pendingCommit = useRef<PendingCommit | null>(null);
+  const archiveRequest = useRef(0);
   const isSaving = commitState.status === 'saving';
+  const archiveBusy = isSaving || openingSlotId !== null;
   const activeEventId = save?.story.pendingEvent?.eventId ?? save?.story.pendingFeedback?.eventId;
   const pendingEventDefinition = activeEventId
     ? youthContent.events.find(({ id }) => id === activeEventId)
@@ -183,26 +186,48 @@ export function App() {
   const retryCommit = async () => {
     if (pendingCommit.current) await writeCommit(pendingCommit.current);
   };
+  const clearPendingCommit = () => {
+    pendingCommit.current = null;
+    setCommitState({ status: 'idle' });
+  };
+  const cancelArchiveRequest = () => {
+    archiveRequest.current += 1;
+    setOpeningSlotId(null);
+  };
   const continueCareer = async (slotId: string) => {
-    const result = await savePort.load(slotId);
-    if (result.status !== 'loaded') return;
-    const restored = hydrateLoadedCareer(result.save);
-    setSave(restored);
-    setReport(restored.lastMonthlyReport ?? null);
-    if (
-      restored.careerPhase === 'youth-season' &&
-      restored.season.completed &&
-      !restored.story.pendingEvent &&
-      !restored.story.pendingFeedback
-    ) {
-      const completed = completeYouthSeason(restored);
-      setOutcome(completed.outcome);
-      setStep('dashboard');
-      return;
+    const requestId = ++archiveRequest.current;
+    clearPendingCommit();
+    setOpeningSlotId(slotId);
+    try {
+      const result = await savePort.load(slotId);
+      if (requestId !== archiveRequest.current || result.status !== 'loaded') return;
+      const restored = hydrateLoadedCareer(result.save);
+      if (
+        restored.careerPhase === 'youth-season' &&
+        restored.season.completed &&
+        !restored.story.pendingEvent &&
+        !restored.story.pendingFeedback
+      ) {
+        const completed = completeYouthSeason(restored);
+        await commitCareer(completed.save, () => {
+          if (requestId !== archiveRequest.current) return;
+          setReport(restored.lastMonthlyReport ?? null);
+          setOutcome(completed.outcome);
+          setStep('dashboard');
+        });
+        return;
+      }
+      setSave(restored);
+      setReport(restored.lastMonthlyReport ?? null);
+      setOutcome(null);
+      setStep(stepFor(restored));
+    } finally {
+      if (requestId === archiveRequest.current) setOpeningSlotId(null);
     }
-    setStep(stepFor(restored));
   };
   const createFromArchives = () => {
+    cancelArchiveRequest();
+    clearPendingCommit();
     setSave(null);
     setBootstrapSave(null);
     setReport(null);
@@ -236,7 +261,7 @@ export function App() {
       setError(message(caught));
     }
   };
-  const progress = async (current: CareerSaveV6) => {
+  const prepareYouthProgressCommit = (current: CareerSaveV6): PendingCommit => {
     const result = advanceCareerMonth(
       toApplicationSaveV5(current),
       youthContent.academies,
@@ -249,15 +274,22 @@ export function App() {
       candidate = completed.save;
       completedOutcome = completed.outcome;
     }
-    await commitCareer(candidate, () => {
-      if (result.status === 'awaiting-decision') {
-        setStep('event');
-        return;
-      }
-      setReport(result.report);
-      if (completedOutcome) setOutcome(completedOutcome);
-      setStep('dashboard');
-    });
+    return {
+      save: migrateCareerSaveV6(candidate),
+      transition: () => {
+        if (result.status === 'awaiting-decision') {
+          setStep('event');
+          return;
+        }
+        setReport(result.report);
+        if (completedOutcome) setOutcome(completedOutcome);
+        setStep('dashboard');
+      },
+    };
+  };
+  const progress = async (current: CareerSaveV6) => {
+    const pending = prepareYouthProgressCommit(current);
+    await commitCareer(pending.save, pending.transition);
   };
   const advance = async () => {
     if (!save) return;
@@ -275,7 +307,7 @@ export function App() {
       setAdvancing(false);
     }
   };
-  const advancePro = async (current: CareerSaveV6) => {
+  const prepareProProgressCommit = (current: CareerSaveV6): PendingCommit => {
     const result = advanceProMonth(
       toApplicationSaveV5(current),
       professionalClubs,
@@ -288,14 +320,21 @@ export function App() {
       candidate = settled.save;
       settledStep = settled.save.story.pendingEvent ? 'event' : 'pro-offseason';
     }
-    await commitCareer(candidate, () => {
-      if (result.status === 'awaiting-decision') {
-        setStep('event');
-        return;
-      }
-      setReport(result.report);
-      setStep(settledStep ?? 'pro');
-    });
+    return {
+      save: migrateCareerSaveV6(candidate),
+      transition: () => {
+        if (result.status === 'awaiting-decision') {
+          setStep('event');
+          return;
+        }
+        setReport(result.report);
+        setStep(settledStep ?? 'pro');
+      },
+    };
+  };
+  const advancePro = async (current: CareerSaveV6) => {
+    const pending = prepareProProgressCommit(current);
+    await commitCareer(pending.save, pending.transition);
   };
   const decide = async (choiceId: string) => {
     if (!save?.story.pendingEvent) return;
@@ -322,16 +361,18 @@ export function App() {
     if (!save?.story.pendingFeedback) return;
     setError(null);
     try {
-      const cleared = clearEventFeedback(toApplicationSaveV5(save));
-      await commitCareer(cleared, (saved) => {
-        if (saved.careerPhase === 'pro-season') {
-          void advancePro(saved);
-        } else if (saved.careerPhase === 'pro-offseason') {
-          setStep('pro-offseason');
-        } else {
-          void progress(saved);
-        }
-      });
+      const cleared = migrateCareerSaveV6(clearEventFeedback(toApplicationSaveV5(save)));
+      if (cleared.careerPhase === 'pro-season') {
+        const pending = prepareProProgressCommit(cleared);
+        await commitCareer(pending.save, pending.transition);
+        return;
+      }
+      if (cleared.careerPhase === 'pro-offseason') {
+        await commitCareer(cleared, () => setStep('pro-offseason'));
+        return;
+      }
+      const pending = prepareYouthProgressCommit(cleared);
+      await commitCareer(pending.save, pending.transition);
     } catch (caught) {
       setError(message(caught));
     }
@@ -504,6 +545,8 @@ export function App() {
     }
   };
   const openArchives = () => {
+    cancelArchiveRequest();
+    clearPendingCommit();
     setSave(null);
     setBootstrapSave(null);
     setReport(null);
@@ -536,7 +579,7 @@ export function App() {
         <CareerSaveSelector
           records={records}
           academyNames={academyNames}
-          busy={isSaving}
+          busy={archiveBusy}
           onContinue={continueCareer}
           onCreate={createFromArchives}
           onDelete={deleteCareer}

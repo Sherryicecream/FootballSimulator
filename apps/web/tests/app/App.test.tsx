@@ -1,23 +1,47 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from '../../src/app/App';
 import { createCareerSave } from '@football/application';
 import { migrateCareerSaveV5, migrateCareerSaveV6 } from '@football/contracts';
 import type { CareerSave, MonthlyReport } from '@football/contracts';
 
+const persistenceControl = vi.hoisted(() => ({
+  loadDelays: new Map<string, Promise<void>>(),
+}));
+
+vi.mock('../../src/persistence/local-storage-save', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/persistence/local-storage-save')>();
+  return {
+    ...actual,
+    createLocalStorageCareerPort: () => {
+      const port = actual.createLocalStorageCareerPort();
+      return {
+        ...port,
+        load: async (slotId: string) => {
+          await persistenceControl.loadDelays.get(slotId);
+          return port.load(slotId);
+        },
+      };
+    },
+  };
+});
+
 // Mock localStorage for persistence
 const localStorageMock = (() => {
   let store: Record<string, string> = {};
-  let nextSetItemError: Error | null = null;
+  let nextSetItemFailure: {
+    error: Error;
+    matches: (key: string, value: string) => boolean;
+  } | null = null;
   let setItemAttempts: Array<{ key: string; value: string }> = [];
   return {
     getItem: (key: string) => store[key] ?? null,
     setItem: (key: string, value: string) => {
       setItemAttempts.push({ key, value });
-      if (nextSetItemError) {
-        const error = nextSetItemError;
-        nextSetItemError = null;
+      if (nextSetItemFailure?.matches(key, value)) {
+        const { error } = nextSetItemFailure;
+        nextSetItemFailure = null;
         throw error;
       }
       store[key] = value;
@@ -27,11 +51,17 @@ const localStorageMock = (() => {
     },
     clear: () => {
       store = {};
-      nextSetItemError = null;
+      nextSetItemFailure = null;
       setItemAttempts = [];
     },
     failNextSetItem: (error = new DOMException('Quota exceeded', 'QuotaExceededError')) => {
-      nextSetItemError = error;
+      nextSetItemFailure = { error, matches: () => true };
+    },
+    failNextSetItemMatching: (
+      matches: (key: string, value: string) => boolean,
+      error = new DOMException('Quota exceeded', 'QuotaExceededError'),
+    ) => {
+      nextSetItemFailure = { error, matches };
     },
     getSetItemAttempts: () => [...setItemAttempts],
     get length() {
@@ -45,6 +75,7 @@ Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock });
 describe('App', () => {
   beforeEach(() => {
     localStorageMock.clear();
+    persistenceControl.loadDelays.clear();
   });
 
   it('renders creation form after loading', async () => {
@@ -93,6 +124,37 @@ describe('App', () => {
     expect(screen.queryByRole('region', { name: '生涯档案' })).toBeNull();
   });
 
+  it('commits a completed youth season before showing its dashboard outcome', async () => {
+    const user = userEvent.setup();
+    const completed = createCompletedYouthSave();
+    storeSave(completed);
+
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: '继续林岳的生涯' }));
+
+    expect(await screen.findByText('青训生涯')).toBeVisible();
+    const stored = readStoredSave(completed.careerId);
+    expect(stored.seasonHistory).toContainEqual(
+      expect.objectContaining({ seasonId: completed.season.id }),
+    );
+    expect(stored.ledger).toContainEqual(
+      expect.objectContaining({ id: `season-outcome-${completed.season.id}` }),
+    );
+  });
+
+  it('keeps the archive visible when committing a restored season outcome fails', async () => {
+    const user = userEvent.setup();
+    storeSave(createCompletedYouthSave());
+    localStorageMock.failNextSetItem();
+
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: '继续林岳的生涯' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('保存失败');
+    expect(screen.getByRole('region', { name: '生涯档案' })).toBeVisible();
+    expect(screen.queryByText('青训生涯')).toBeNull();
+  });
+
   it('starts an in-memory creation flow without deleting an archived career', async () => {
     const user = userEvent.setup();
     const existing = migrateCareerSaveV6(createCareerSave(startParams));
@@ -103,6 +165,104 @@ describe('App', () => {
 
     expect(await screen.findByLabelText('球员姓名')).toBeVisible();
     expect(localStorageMock.getItem(`football-save-${existing.careerId}`)).not.toBeNull();
+  });
+
+  it('discards a failed career commit before continuing a different archive', async () => {
+    const user = userEvent.setup();
+    const first = migrateCareerSaveV6(createCareerSave(startParams));
+    const second = migrateCareerSaveV6(
+      createCareerSave({ ...startParams, playerName: '周宁', seed: 7 }),
+    );
+    storeSave(first);
+    storeSave(second);
+
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: '继续林岳的生涯' }));
+    localStorageMock.failNextSetItem();
+    await user.selectOptions(screen.getByLabelText('训练重点'), 'physical');
+    expect(await screen.findByRole('button', { name: '重试保存' })).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: '生涯档案' }));
+    expect(await screen.findByRole('region', { name: '生涯档案' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: '重试保存' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: '继续周宁的生涯' }));
+
+    expect(await screen.findByRole('heading', { name: '周宁' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: '重试保存' })).toBeNull();
+  });
+
+  it('discards a failed career commit before starting an in-memory career', async () => {
+    const user = userEvent.setup();
+    storeSave(migrateCareerSaveV6(createCareerSave(startParams)));
+
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: '继续林岳的生涯' }));
+    localStorageMock.failNextSetItem();
+    await user.selectOptions(screen.getByLabelText('训练重点'), 'physical');
+    await user.click(await screen.findByRole('button', { name: '生涯档案' }));
+    await user.click(screen.getByRole('button', { name: '创建新生涯' }));
+
+    expect(await screen.findByLabelText('球员姓名')).toBeVisible();
+    expect(screen.queryByRole('button', { name: '重试保存' })).toBeNull();
+  });
+
+  it('disables archive actions while a career is opening', async () => {
+    const first = migrateCareerSaveV6(createCareerSave(startParams));
+    storeSave(first);
+
+    render(<App />);
+    const continueButton = await screen.findByRole('button', { name: '继续林岳的生涯' });
+    const release = holdLoad(first.careerId);
+    fireEvent.click(continueButton);
+
+    expect(continueButton).toBeDisabled();
+    expect(screen.getByRole('button', { name: '创建新生涯' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '删除林岳的生涯' })).toBeDisabled();
+
+    await act(async () => release());
+    expect(await screen.findByRole('heading', { name: '林岳' })).toBeVisible();
+  });
+
+  it('ignores an older load when two archive choices start together', async () => {
+    const first = migrateCareerSaveV6(createCareerSave(startParams));
+    const second = migrateCareerSaveV6(
+      createCareerSave({ ...startParams, playerName: '周宁', seed: 7 }),
+    );
+    storeSave(first);
+    storeSave(second);
+
+    render(<App />);
+    const firstButton = await screen.findByRole('button', { name: '继续林岳的生涯' });
+    const secondButton = screen.getByRole('button', { name: '继续周宁的生涯' });
+    const releaseFirst = holdLoad(first.careerId);
+    act(() => {
+      firstButton.click();
+      secondButton.click();
+    });
+
+    expect(await screen.findByText('青训生涯')).toBeVisible();
+    expect(screen.getByRole('heading', { name: '周宁', level: 2 })).toBeVisible();
+    await act(async () => releaseFirst());
+    expect(screen.getByRole('heading', { name: '周宁', level: 2 })).toBeVisible();
+  });
+
+  it('ignores an older load after starting a new in-memory career', async () => {
+    const first = migrateCareerSaveV6(createCareerSave(startParams));
+    storeSave(first);
+
+    render(<App />);
+    const continueButton = await screen.findByRole('button', { name: '继续林岳的生涯' });
+    const createButton = screen.getByRole('button', { name: '创建新生涯' });
+    const release = holdLoad(first.careerId);
+    act(() => {
+      continueButton.click();
+      createButton.click();
+    });
+
+    expect(await screen.findByLabelText('球员姓名')).toBeVisible();
+    await act(async () => release());
+    expect(screen.getByLabelText('球员姓名')).toBeVisible();
+    expect(screen.queryByRole('heading', { name: '林岳' })).toBeNull();
   });
 
   it('keeps damaged careers visible and refreshes the archive after deletion', async () => {
@@ -292,6 +452,33 @@ describe('App', () => {
     expect(screen.queryByText('青训生涯')).toBeNull();
   });
 
+  it('keeps feedback recoverable when its automatic youth advance cannot be saved', async () => {
+    const user = userEvent.setup();
+    const original = createSaveWithPendingFeedback();
+    storeSave(original);
+    localStorageMock.failNextSetItemMatching((_key, value) => {
+      const data = JSON.parse(value).data as typeof original;
+      return (
+        data.story.pendingFeedback === null &&
+        (data.season.currentWeek !== original.season.currentWeek ||
+          data.randomState.sequencePosition !== original.randomState.sequencePosition)
+      );
+    });
+
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: '继续林岳的生涯' }));
+    await user.click(screen.getByRole('button', { name: '继续推进' }));
+
+    expect(await screen.findByRole('button', { name: '重试保存' })).toBeVisible();
+    expect(screen.getByText('你把事情说清楚了。')).toBeVisible();
+    await user.click(screen.getByRole('button', { name: '重试保存' }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('你把事情说清楚了。')).toBeNull();
+    });
+    expect(screen.getByText('已自动保存')).toBeVisible();
+  });
+
   it('restores a retired v5 save into the review page', async () => {
     const user = userEvent.setup();
     const migrated = migrateCareerSaveV5(
@@ -376,6 +563,57 @@ const createSaveWithPendingEvent = (): CareerSave => {
         resolvedChoiceId: null,
       },
     },
+  };
+};
+
+const createCompletedYouthSave = () => {
+  const save = migrateCareerSaveV6(createCareerSave(startParams));
+  return {
+    ...save,
+    season: {
+      ...save.season,
+      completed: true,
+    },
+  };
+};
+
+const createSaveWithPendingFeedback = () => {
+  const save = migrateCareerSaveV6(createCareerSave(startParams));
+  return {
+    ...save,
+    story: {
+      ...save.story,
+      pendingFeedback: {
+        eventId: 'feedback-1',
+        title: '训练场上的误会',
+        choiceId: 'clarify',
+        choiceText: '当面澄清误会',
+        response: '你把事情说清楚了。',
+        participantResponses: [],
+        stateChanges: [],
+        relationshipChanges: [],
+        followUp: '接下来会看到影响。',
+      },
+    },
+  };
+};
+
+const readStoredSave = (careerId: string): ReturnType<typeof migrateCareerSaveV6> => {
+  const wrapper = JSON.parse(localStorageMock.getItem(`football-save-${careerId}`) ?? 'null') as {
+    data: unknown;
+  };
+  return migrateCareerSaveV6(wrapper.data);
+};
+
+const holdLoad = (slotId: string): (() => void) => {
+  let release = () => {};
+  const wait = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  persistenceControl.loadDelays.set(slotId, wait);
+  return () => {
+    persistenceControl.loadDelays.delete(slotId);
+    release();
   };
 };
 
