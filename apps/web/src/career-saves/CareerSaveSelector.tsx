@@ -33,31 +33,38 @@ export const CareerSaveSelector = ({
 }: CareerSaveSelectorProps) => {
   const [pendingDeletion, setPendingDeletion] = useState<PendingDeletion | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const deletionTriggerRef = useRef<HTMLButtonElement | null>(null);
   const createCareerRef = useRef<HTMLButtonElement | null>(null);
   const cancelDeleteRef = useRef<HTMLButtonElement | null>(null);
   const confirmDeleteRef = useRef<HTMLButtonElement | null>(null);
+  const confirmationRef = useRef<HTMLElement | null>(null);
   const focusAfterCloseRef = useRef<'trigger' | 'create' | null>(null);
   const actionsDisabled = busy || deleting;
+  const backgroundDisabled = actionsDisabled || pendingDeletion !== null;
 
   useEffect(() => {
     if (pendingDeletion) {
-      cancelDeleteRef.current?.focus();
+      if (deleting) confirmationRef.current?.focus();
+      else cancelDeleteRef.current?.focus();
       return;
     }
     if (focusAfterCloseRef.current === 'trigger') deletionTriggerRef.current?.focus();
     if (focusAfterCloseRef.current === 'create') createCareerRef.current?.focus();
     focusAfterCloseRef.current = null;
-  }, [pendingDeletion]);
+  }, [deleting, pendingDeletion]);
 
   const openDeletion = (deletion: PendingDeletion, trigger: HTMLButtonElement) => {
+    if (backgroundDisabled) return;
     deletionTriggerRef.current = trigger;
+    setDeleteError(null);
     setPendingDeletion(deletion);
   };
 
   const cancelDeletion = () => {
     if (actionsDisabled) return;
     focusAfterCloseRef.current = 'trigger';
+    setDeleteError(null);
     setPendingDeletion(null);
   };
 
@@ -74,7 +81,11 @@ export const CareerSaveSelector = ({
     );
     const first = buttons[0];
     const last = buttons.at(-1);
-    if (!first || !last) return;
+    if (!first || !last) {
+      event.preventDefault();
+      confirmationRef.current?.focus();
+      return;
+    }
 
     if (event.shiftKey && document.activeElement === first) {
       event.preventDefault();
@@ -88,10 +99,13 @@ export const CareerSaveSelector = ({
   const confirmDelete = async () => {
     if (!pendingDeletion || actionsDisabled) return;
     setDeleting(true);
+    setDeleteError(null);
     try {
       await onDelete(pendingDeletion.slotId);
       focusAfterCloseRef.current = 'create';
       setPendingDeletion(null);
+    } catch {
+      setDeleteError('删除失败，请稍后重试。');
     } finally {
       setDeleting(false);
     }
@@ -109,7 +123,7 @@ export const CareerSaveSelector = ({
           className="primary-action"
           type="button"
           onClick={onCreate}
-          disabled={actionsDisabled}
+          disabled={backgroundDisabled}
           ref={createCareerRef}
         >
           创建新生涯
@@ -125,7 +139,7 @@ export const CareerSaveSelector = ({
               <LoadedSaveCard
                 key={record.slotId}
                 summary={summaryFor(record, academyNames)}
-                disabled={actionsDisabled}
+                disabled={backgroundDisabled}
                 onContinue={onContinue}
                 onDelete={(event) =>
                   openDeletion(
@@ -141,7 +155,7 @@ export const CareerSaveSelector = ({
               <DamagedSaveCard
                 key={record.slotId}
                 record={record}
-                disabled={actionsDisabled}
+                disabled={backgroundDisabled}
                 onDelete={(event) =>
                   openDeletion(
                     {
@@ -164,9 +178,16 @@ export const CareerSaveSelector = ({
           aria-modal="true"
           aria-label="删除生涯确认"
           onKeyDown={trapDialogFocus}
+          ref={confirmationRef}
+          tabIndex={-1}
         >
           <h3>删除生涯确认</h3>
           <p>确定要删除{pendingDeletion.detail}吗？此操作无法撤销。</p>
+          {deleteError && (
+            <p className="career-save-delete-error" role="alert">
+              {deleteError}
+            </p>
+          )}
           <div className="career-save-confirmation-actions">
             <button
               className="secondary-action"
@@ -184,7 +205,7 @@ export const CareerSaveSelector = ({
               disabled={actionsDisabled}
               ref={confirmDeleteRef}
             >
-              确认删除
+              {deleteError ? '重试删除' : '确认删除'}
             </button>
           </div>
         </section>

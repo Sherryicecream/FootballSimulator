@@ -283,6 +283,141 @@ describe('CareerSaveSelector', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: '创建新生涯' })).toHaveFocus());
   });
 
+  it('keeps the confirmation open with a safe error after a failed deletion', async () => {
+    const user = userEvent.setup();
+    const onDelete = vi
+      .fn<() => Promise<void>>()
+      .mockRejectedValueOnce(new Error('storage permission denied'));
+    render(
+      <CareerSaveSelector
+        records={[loadedSlot()]}
+        academyNames={academyNames}
+        busy={false}
+        onContinue={vi.fn()}
+        onCreate={vi.fn()}
+        onDelete={onDelete}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: '删除林岳的生涯' }));
+    await user.click(screen.getByRole('button', { name: '确认删除' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('删除失败，请稍后重试。');
+    expect(screen.getByRole('alertdialog', { name: '删除生涯确认' })).toBeVisible();
+    expect(screen.queryByText('storage permission denied')).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: '取消删除' }));
+    expect(screen.queryByRole('alertdialog', { name: '删除生涯确认' })).toBeNull();
+  });
+
+  it('allows retrying a failed deletion without leaking a rejected event promise', async () => {
+    const user = userEvent.setup();
+    const onDelete = vi
+      .fn<() => Promise<void>>()
+      .mockRejectedValueOnce(new Error('storage permission denied'))
+      .mockResolvedValueOnce(undefined);
+    render(
+      <CareerSaveSelector
+        records={[loadedSlot()]}
+        academyNames={academyNames}
+        busy={false}
+        onContinue={vi.fn()}
+        onCreate={vi.fn()}
+        onDelete={onDelete}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: '删除林岳的生涯' }));
+    await user.click(screen.getByRole('button', { name: '确认删除' }));
+    await screen.findByRole('alert');
+    await user.click(screen.getByRole('button', { name: '重试删除' }));
+
+    await waitFor(() => expect(onDelete).toHaveBeenCalledTimes(2));
+    expect(screen.queryByRole('alertdialog', { name: '删除生涯确认' })).toBeNull();
+  });
+
+  it('blocks background actions while a delete confirmation is open', async () => {
+    const user = userEvent.setup();
+    const onContinue = vi.fn();
+    const onCreate = vi.fn();
+    const secondSlot = { ...loadedSlot(), slotId: 'second-lin-yue' };
+    render(
+      <CareerSaveSelector
+        records={[loadedSlot(), secondSlot]}
+        academyNames={academyNames}
+        busy={false}
+        onContinue={onContinue}
+        onCreate={onCreate}
+        onDelete={vi.fn().mockResolvedValue(undefined)}
+      />,
+    );
+
+    await user.click(screen.getAllByRole('button', { name: '删除林岳的生涯' })[0]!);
+
+    expect(screen.getByRole('button', { name: '创建新生涯' })).toBeDisabled();
+    screen
+      .getAllByRole('button', { name: '继续林岳的生涯' })
+      .forEach((button) => expect(button).toBeDisabled());
+    expect(screen.getAllByRole('button', { name: '删除林岳的生涯' })[1]).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: '创建新生涯' }));
+    expect(onCreate).not.toHaveBeenCalled();
+    expect(onContinue).not.toHaveBeenCalled();
+  });
+
+  it('keeps keyboard focus inside the confirmation and closes it with Escape', async () => {
+    const user = userEvent.setup();
+    render(
+      <CareerSaveSelector
+        records={[loadedSlot()]}
+        academyNames={academyNames}
+        busy={false}
+        onContinue={vi.fn()}
+        onCreate={vi.fn()}
+        onDelete={vi.fn().mockResolvedValue(undefined)}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: '删除林岳的生涯' }));
+    const cancel = screen.getByRole('button', { name: '取消删除' });
+    const confirm = screen.getByRole('button', { name: '确认删除' });
+    await user.tab();
+    expect(confirm).toHaveFocus();
+    await user.tab();
+    expect(cancel).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(confirm).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('alertdialog', { name: '删除生涯确认' })).toBeNull();
+  });
+
+  it('uses the dialog itself as a focus fallback while deletion is pending', async () => {
+    const user = userEvent.setup();
+    let resolveDelete: (() => void) | undefined;
+    render(
+      <CareerSaveSelector
+        records={[loadedSlot()]}
+        academyNames={academyNames}
+        busy={false}
+        onContinue={vi.fn()}
+        onCreate={vi.fn()}
+        onDelete={() =>
+          new Promise<void>((resolve) => {
+            resolveDelete = resolve;
+          })
+        }
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: '删除林岳的生涯' }));
+    await user.click(screen.getByRole('button', { name: '确认删除' }));
+    const dialog = screen.getByRole('alertdialog', { name: '删除生涯确认' });
+
+    await waitFor(() => expect(dialog).toHaveFocus());
+    await user.tab();
+    expect(dialog).toHaveFocus();
+    resolveDelete?.();
+  });
+
   it('disables actions while another save operation is busy', () => {
     render(
       <CareerSaveSelector
