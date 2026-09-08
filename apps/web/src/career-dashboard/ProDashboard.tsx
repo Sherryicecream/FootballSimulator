@@ -22,8 +22,9 @@ interface ProDashboardProps {
   save: CareerSaveV5Like;
   report: MonthlyReport | null;
   advancing: boolean;
+  busy?: boolean;
   onAdvance: () => void;
-  onNewCareer: () => void;
+  onOpenArchives: () => void;
 }
 
 const POSITION_LABELS: Record<string, string> = {
@@ -60,8 +61,9 @@ export function ProDashboard({
   save,
   report,
   advancing,
+  busy = false,
   onAdvance,
-  onNewCareer,
+  onOpenArchives,
 }: ProDashboardProps) {
   const pro = save.proSeason;
   if (!pro) return null;
@@ -335,12 +337,12 @@ export function ProDashboard({
         <button
           className="primary-action"
           onClick={onAdvance}
-          disabled={advancing || pro.completed}
+          disabled={busy || advancing || pro.completed}
         >
           {advancing ? '推进中…' : '推进到下个月'}
         </button>
-        <button className="secondary-action" onClick={onNewCareer}>
-          新生涯
+        <button className="secondary-action" onClick={onOpenArchives} disabled={busy}>
+          生涯档案
         </button>
       </footer>
     </section>

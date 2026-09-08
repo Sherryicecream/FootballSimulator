@@ -24,9 +24,10 @@ interface CareerDashboardProps {
   report: MonthlyReport | null;
   outcome: YouthSeasonOutcome | null;
   advancing: boolean;
+  busy?: boolean;
   onAdvance: () => void;
   onTrainingPlanChange: (plan: TrainingPlan) => void;
-  onNewCareer: () => void;
+  onOpenArchives: () => void;
 }
 
 const focusLabels: Record<TrainingPlan['focus'], string> = {
@@ -59,9 +60,10 @@ export function CareerDashboard({
   report,
   outcome,
   advancing,
+  busy = false,
   onAdvance,
   onTrainingPlanChange,
-  onNewCareer,
+  onOpenArchives,
 }: CareerDashboardProps) {
   const [codexOpen, setCodexOpen] = useState(false);
   const encounteredEventIds = new Set(
@@ -202,6 +204,7 @@ export function CareerDashboard({
             <select
               aria-label="训练重点"
               value={save.trainingPlan.focus}
+              disabled={busy}
               onChange={(event) =>
                 onTrainingPlanChange({
                   ...save.trainingPlan,
@@ -221,6 +224,7 @@ export function CareerDashboard({
             <select
               aria-label="训练强度"
               value={save.trainingPlan.intensity}
+              disabled={busy}
               onChange={(event) =>
                 onTrainingPlanChange({
                   ...save.trainingPlan,
@@ -275,12 +279,12 @@ export function CareerDashboard({
         <button
           className="primary-action"
           onClick={onAdvance}
-          disabled={advancing || save.season.completed}
+          disabled={busy || advancing || save.season.completed}
         >
           {advancing ? '推进中…' : '推进到下个月'}
         </button>
-        <button className="secondary-action" onClick={onNewCareer}>
-          新生涯
+        <button className="secondary-action" onClick={onOpenArchives} disabled={busy}>
+          生涯档案
         </button>
       </footer>
     </section>

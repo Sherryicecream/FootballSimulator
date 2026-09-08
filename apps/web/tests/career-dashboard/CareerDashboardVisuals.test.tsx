@@ -48,7 +48,7 @@ const dashboardProps = (save: CareerSaveV4Like, nextReport: MonthlyReport | null
   advancing: false,
   onAdvance: () => {},
   onTrainingPlanChange: () => {},
-  onNewCareer: () => {},
+  onOpenArchives: () => {},
 });
 
 describe('CareerDashboard football visuals', () => {

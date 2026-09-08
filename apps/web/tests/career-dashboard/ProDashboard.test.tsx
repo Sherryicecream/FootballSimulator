@@ -18,7 +18,7 @@ describe('ProDashboard', () => {
         report={null}
         advancing={false}
         onAdvance={() => {}}
-        onNewCareer={() => {}}
+        onOpenArchives={() => {}}
       />,
     );
 
@@ -55,7 +55,7 @@ describe('ProDashboard', () => {
         report={report}
         advancing={false}
         onAdvance={() => {}}
-        onNewCareer={() => {}}
+        onOpenArchives={() => {}}
       />,
     );
 

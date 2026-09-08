@@ -1,4 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { CareerSaveV4Schema } from '@football/contracts';
 import { ProDashboard } from '../../src/career-dashboard/ProDashboard';
@@ -350,6 +351,26 @@ const legacySettledSave = CareerSaveV4Schema.parse({
   },
 });
 describe('ProDashboard', () => {
+  it('opens the career archive from the professional dashboard', async () => {
+    const user = userEvent.setup();
+    let opened = false;
+    render(
+      <ProDashboard
+        save={save}
+        report={null}
+        advancing={false}
+        onAdvance={() => {}}
+        onOpenArchives={() => {
+          opened = true;
+        }}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: '生涯档案' }));
+
+    expect(opened).toBe(true);
+  });
+
   it('展示俱乐部、深度图排位、积分榜与合同剩余年限', () => {
     render(
       <ProDashboard
@@ -357,7 +378,7 @@ describe('ProDashboard', () => {
         report={null}
         advancing={false}
         onAdvance={() => {}}
-        onNewCareer={() => {}}
+        onOpenArchives={() => {}}
       />,
     );
     expect(screen.getByRole('heading', { name: '职业俱乐部1' })).toBeVisible();
@@ -398,7 +419,7 @@ describe('ProDashboard', () => {
         report={null}
         advancing={false}
         onAdvance={() => {}}
-        onNewCareer={() => {}}
+        onOpenArchives={() => {}}
       />,
     );
 
@@ -427,7 +448,7 @@ describe('ProDashboard', () => {
         report={null}
         advancing={false}
         onAdvance={() => {}}
-        onNewCareer={() => {}}
+        onOpenArchives={() => {}}
       />,
     );
     const rows = screen.getAllByRole('row');
@@ -440,7 +461,7 @@ describe('ProDashboard', () => {
         report={null}
         advancing={false}
         onAdvance={() => {}}
-        onNewCareer={() => {}}
+        onOpenArchives={() => {}}
       />,
     );
     const region = screen.getByRole('region', { name: '本赛季赛事' });
@@ -473,7 +494,7 @@ describe('ProDashboard', () => {
         report={null}
         advancing={false}
         onAdvance={() => {}}
-        onNewCareer={() => {}}
+        onOpenArchives={() => {}}
       />,
     );
     expect(screen.getByRole('heading', { name: '山谷联' })).toBeVisible();

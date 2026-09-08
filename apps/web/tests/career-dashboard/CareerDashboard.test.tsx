@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { migrateCareerSave, type CareerSaveV2, type MonthlyReport } from '@football/contracts';
 import { createCareerSave } from '@football/application';
 import { CareerDashboard } from '../../src/career-dashboard/CareerDashboard';
@@ -29,6 +30,30 @@ const save: CareerSaveV2 = {
 };
 
 describe('CareerDashboard v2', () => {
+  it('opens the career archive from the dashboard', async () => {
+    const user = userEvent.setup();
+    let opened = false;
+    render(
+      <CareerDashboard
+        save={save}
+        events={[]}
+        academyName="浦江青训中心"
+        report={null}
+        outcome={null}
+        advancing={false}
+        onAdvance={() => {}}
+        onTrainingPlanChange={() => {}}
+        onOpenArchives={() => {
+          opened = true;
+        }}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: '生涯档案' }));
+
+    expect(opened).toBe(true);
+  });
+
   it('shows the player, monthly action and no weekly advance action', () => {
     render(
       <CareerDashboard
@@ -39,7 +64,7 @@ describe('CareerDashboard v2', () => {
         advancing={false}
         onAdvance={() => {}}
         onTrainingPlanChange={() => {}}
-        onNewCareer={() => {}}
+        onOpenArchives={() => {}}
       />,
     );
     expect(screen.getByText('林河')).toBeDefined();
@@ -58,7 +83,7 @@ describe('CareerDashboard v2', () => {
         advancing={false}
         onAdvance={() => {}}
         onTrainingPlanChange={() => {}}
-        onNewCareer={() => {}}
+        onOpenArchives={() => {}}
       />,
     );
     expect(screen.getByLabelText('训练重点')).toBeDefined();
@@ -77,7 +102,7 @@ describe('CareerDashboard v2', () => {
         advancing={false}
         onAdvance={() => {}}
         onTrainingPlanChange={() => {}}
-        onNewCareer={() => {}}
+        onOpenArchives={() => {}}
       />,
     );
 
@@ -101,7 +126,7 @@ describe('CareerDashboard v2', () => {
         advancing={false}
         onAdvance={() => {}}
         onTrainingPlanChange={() => {}}
-        onNewCareer={() => {}}
+        onOpenArchives={() => {}}
       />,
     );
 
@@ -134,7 +159,7 @@ describe('CareerDashboard v2', () => {
         advancing={false}
         onAdvance={() => {}}
         onTrainingPlanChange={() => {}}
-        onNewCareer={() => {}}
+        onOpenArchives={() => {}}
       />,
     );
 
