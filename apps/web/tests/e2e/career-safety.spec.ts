@@ -27,6 +27,16 @@ const continueCareer = async (page: Page, playerName: string) => {
   await page.getByRole('button', { name: `继续${playerName}的生涯` }).click();
 };
 
+const ageOn = (dateOfBirth: string, date: string) => {
+  const [birthYear, birthMonth, birthDay] = dateOfBirth.split('-').map(Number);
+  const [year, month, day] = date.split('-').map(Number);
+  return (
+    year! -
+    birthYear! -
+    (month! < birthMonth! || (month === birthMonth && day! < birthDay!) ? 1 : 0)
+  );
+};
+
 test.describe('Iteration 1 career safety', () => {
   test('failed final youth career ends with a review and survives refresh', async ({ page }) => {
     const save = failedFinalYouthOffseasonV6();
@@ -55,6 +65,8 @@ test.describe('Iteration 1 career safety', () => {
 
   test('an under-30 professional can cancel retirement confirmation', async ({ page }) => {
     const save = age22ProfessionalOffseasonV6();
+    expect(save.player.age).toBe(22);
+    expect(ageOn(save.player.identity.dateOfBirth, save.proSeason!.endDate)).toBe(22);
     await injectSave(page, save);
     await page.goto('/');
     await continueCareer(page, save.player.identity.name);
@@ -66,6 +78,8 @@ test.describe('Iteration 1 career safety', () => {
 
   test('an under-30 professional can confirm retirement', async ({ page }) => {
     const save = age22ProfessionalOffseasonV6();
+    expect(save.player.age).toBe(22);
+    expect(ageOn(save.player.identity.dateOfBirth, save.proSeason!.endDate)).toBe(22);
     await injectSave(page, save);
     await page.goto('/');
     await continueCareer(page, save.player.identity.name);

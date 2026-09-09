@@ -88,23 +88,22 @@ export const age22ProfessionalOffseasonV6 = (): CareerSaveV6 => {
   if (save.pendingOffers.length === 0) throw new Error('职业夹具预期获得至少一份合同报价');
   save = signContract(save, save.pendingOffers[0]!.id);
   let professional = startProfessionalSeason(save, content.clubs);
-  for (let month = 0; !professional.proSeason?.completed && month < 40; month += 1) {
-    const outcome = advanceProMonth(professional, content.clubs, content.events);
-    professional =
-      outcome.status === 'awaiting-decision' ? clearDecision(outcome.save) : outcome.save;
+  for (let season = 0; season < 5; season += 1) {
+    for (let month = 0; !professional.proSeason?.completed && month < 40; month += 1) {
+      const outcome = advanceProMonth(professional, content.clubs, content.events);
+      professional =
+        outcome.status === 'awaiting-decision' ? clearDecision(outcome.save) : outcome.save;
+    }
+    if (!professional.proSeason?.completed) throw new Error('职业赛季未在保护步数内完成');
+    const settled = completeProfessionalSeason(professional).save;
+    professional = settled.story.pendingEvent ? clearDecision(settled) : settled;
+    if (professional.player.age === 22) {
+      professionalOffseason = asV6(professional);
+      return asV6(professionalOffseason);
+    }
+    professional = startProfessionalSeason(professional, content.clubs);
   }
-  if (!professional.proSeason?.completed) throw new Error('职业赛季未在保护步数内完成');
-  const settled = completeProfessionalSeason(professional).save;
-  if (settled.story.pendingEvent) {
-    professionalOffseason = asV6(clearDecision(settled));
-  } else {
-    professionalOffseason = asV6(settled);
-  }
-  professionalOffseason = asV6({
-    ...professionalOffseason,
-    player: { ...professionalOffseason.player, age: 22 },
-  });
-  return asV6(professionalOffseason);
+  throw new Error('职业夹具未通过公开流程到达 22 岁休赛期');
 };
 
 export const pendingEventV6 = (): CareerSaveV6 => {

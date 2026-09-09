@@ -118,6 +118,17 @@ describe('生涯终局用例', () => {
     expect(endYouthCareer(save).careerEnd?.kind).toBe('youth-no-contract');
   });
 
+  it('rejects youth-no-contract ending for a schema-valid final offseason with a contract', () => {
+    const signedProfessional = professionalOffseason({ age: 22 });
+    const save = migrateCareerSaveV6({
+      ...finalYouthOffseason({ graduationEligible: true }),
+      contract: signedProfessional.contract,
+    });
+
+    expect(canEndYouthCareer(save)).toBe(false);
+    expect(() => endYouthCareer(save)).toThrow('青训生涯尚未达到结束条件');
+  });
+
   it('rejects ending a youth career while another youth season remains available', () => {
     const save = migrateCareerSaveV6({
       ...finalYouthOffseason({ graduationEligible: false }),
