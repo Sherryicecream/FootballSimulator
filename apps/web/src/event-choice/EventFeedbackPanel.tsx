@@ -282,7 +282,7 @@ export function EventFeedbackPanel({
           <div className="event-feedback-next-list">
             {nextEvents.map((event) => (
               <article className="event-feedback-next-card" key={event.id}>
-                <span aria-hidden="true">NEXT</span>
+                <span aria-hidden="true">下一幕</span>
                 <strong>{event.title}</strong>
               </article>
             ))}

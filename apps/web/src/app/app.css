@@ -1241,10 +1241,11 @@ fieldset {
 
 .event-feedback-next {
   margin-bottom: 18px;
-  border: 1px solid #7dd3fc66;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: 18px 20px;
-  background: linear-gradient(135deg, #effaff 0%, #f5f3ff 100%);
+  background: var(--color-card);
+  color: var(--color-ink);
 }
 
 .event-feedback-next-intro {
@@ -1261,23 +1262,24 @@ fieldset {
 .event-feedback-next-card {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
-  border: 1px solid #7dd3fc66;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: 10px 12px;
-  background: #ffffffb8;
+  background: var(--color-bg-muted);
+}
+
+.event-feedback-next-card span,
+.event-feedback-next-card strong {
+  color: var(--color-ink);
 }
 
 .event-feedback-next-card span {
-  color: #0369a1;
   font-family: var(--font-sans);
   font-size: var(--text-xs);
   font-weight: 800;
   letter-spacing: 0.1em;
-}
-
-.event-feedback-next-card strong {
-  color: var(--color-ink);
 }
 
 .event-feedback-result p,

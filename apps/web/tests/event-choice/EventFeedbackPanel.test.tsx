@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { EventFeedback } from '@football/contracts';
 import { EventFeedbackPanel } from '../../src/event-choice/EventFeedbackPanel';
@@ -82,6 +82,21 @@ describe('EventFeedbackPanel', () => {
     expect(screen.getByText('后续影响')).toBeVisible();
     expect(screen.getByText('下一幕线索')).toBeVisible();
     expect(screen.getByText('位置竞争的进展')).toBeVisible();
+  });
+
+  it('renders localized, readable next-story clues', () => {
+    render(
+      <EventFeedbackPanel
+        feedback={feedback}
+        nextEvents={[{ id: 'follow-up', title: '第一次配合' }]}
+        onContinue={() => {}}
+      />,
+    );
+    const clue = screen.getByRole('region', { name: '下一幕线索' });
+    expect(within(clue).getByText('下一幕')).toBeVisible();
+    expect(within(clue).queryByText('NEXT')).toBeNull();
+    expect(clue.textContent).not.toContain('NEXT');
+    expect(clue).toHaveClass('event-feedback-next');
   });
 
   it('continues only after the player acknowledges the feedback', async () => {
