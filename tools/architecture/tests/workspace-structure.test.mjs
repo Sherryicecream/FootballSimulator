@@ -78,17 +78,9 @@ const requiredDirectories = [
   'packages/simulation/src/evaluation',
   'packages/application/src/use-cases',
   'packages/application/src/ports',
-  'packages/content/data/regions',
+  'packages/content/data',
   'packages/content/data/clubs',
-  'packages/content/data/competitions',
-  'packages/content/data/person-archetypes',
-  'packages/content/data/events/china-youth',
-  'packages/content/data/events/dressing-room',
-  'packages/content/data/events/off-pitch',
-  'packages/content/data/events/asia-career',
-  'packages/content/data/events/europe-career',
-  'packages/content/data/events/national-team',
-  'packages/content/data/templates',
+  'packages/content/data/events',
 ];
 
 test('required domain directories exist', async () => {

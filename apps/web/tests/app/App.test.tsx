@@ -553,6 +553,16 @@ describe('App', () => {
     expect(readStoredSave(finalYouth.careerId).careerEnd?.kind).toBe('youth-no-contract');
   });
 
+  it('offers ending an age-exhausted youth career after a graduation-eligible offseason', async () => {
+    const finalYouth = createFinalYouthOffseason(true);
+    storeSave(finalYouth);
+
+    render(<App />);
+    await userEvent.setup().click(await screen.findByRole('button', { name: '继续林岳的生涯' }));
+
+    expect(screen.getByRole('button', { name: '结束青训生涯' })).toBeVisible();
+  });
+
   it('records an empty free-agent market exit separately from voluntary retirement', async () => {
     const user = userEvent.setup();
     const freeAgent = createEmptyFreeAgentSave();
@@ -724,7 +734,7 @@ const createSaveWithPendingEvent = (): CareerSave => {
   };
 };
 
-const createFinalYouthOffseason = () => {
+const createFinalYouthOffseason = (graduationEligible = false) => {
   const save = migrateCareerSaveV6(createCareerSave(startParams));
   const youthContent = getYouthContent();
   const academyId = youthContent.academies[0]?.id;
@@ -742,7 +752,7 @@ const createFinalYouthOffseason = () => {
   const offseason = enterOffseason(completed.save, youthContent.academies).save;
   return migrateCareerSaveV6({
     ...offseason,
-    offseason: { ...offseason.offseason!, graduationEligible: false },
+    offseason: { ...offseason.offseason!, graduationEligible },
   });
 };
 

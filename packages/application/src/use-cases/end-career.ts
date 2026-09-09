@@ -39,7 +39,6 @@ const commitCareerEnd = (
 export const canEndYouthCareer = (save: CareerSaveV6Like): boolean =>
   save.careerPhase === 'offseason' &&
   !canContinueYouthSeason(save) &&
-  save.offseason?.graduationEligible === false &&
   !save.story.pendingEvent &&
   !save.story.pendingFeedback;
 

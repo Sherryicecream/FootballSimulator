@@ -412,7 +412,7 @@ AI 不得：
 - pnpm workspace 管理多包仓库。
 - TypeScript 作为应用、模拟、内容工具和本地服务语言。
 - React 与 Vite 构建网页/PWA。
-- IndexedDB 保存本地生涯，使用 Dexie 封装事务和版本迁移。
+- 当前浏览器通过 localStorage 保存相互独立的多段本地生涯；IndexedDB/Dexie 仍是容量或事务证据出现后的未来迁移选项，而非当前实现事实。
 - Zod 校验内容、存档、AI 输入输出和跨模块契约。
 - Vitest 执行单元、确定性、属性及集成测试。
 - Playwright 执行桌面与移动视口端到端测试。
@@ -431,6 +431,7 @@ AI 不得：
 - `StoryState`：进行中的故事线、冷却、承诺、伏笔和延迟效果。
 - `CareerLedger`：只追加的比赛、转会、伤病、荣誉、选择和传奇时刻。
 - `RandomState`：初始种子、序列位置和已提交结果摘要。
+- `CareerEnd`：可空的终局记录；`youth-no-contract`、`voluntary-retirement` 与 `market-exit` 分别表示未签约青训结束、主动退役与离开职业市场，统一进入 `retired` 机械终态并保留可回顾的证据。
 
 静态内容定义包含 `RegionProfile`、`ClubDefinition`、`CompetitionDefinition`、`PersonArchetype` 和 `EventDefinition`。
 
@@ -484,7 +485,7 @@ FootballSimulator/
 │  │  │  ├─ match-moment/            # 重要比赛关键时刻
 │  │  │  ├─ retirement-review/       # 生涯评价、幕后档案与回顾
 │  │  │  ├─ design-system/           # 已确认的视觉组件与令牌
-│  │  │  ├─ persistence/             # IndexedDB、迁移、导入导出
+│  │  │  ├─ persistence/             # localStorage 多生涯、迁移；IndexedDB/Dexie 为未来选项
 │  │  │  └─ narration/               # 模板与本地 AI 客户端适配器
 │  │  └─ tests/
 │  │     └─ e2e/

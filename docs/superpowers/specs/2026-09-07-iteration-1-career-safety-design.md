@@ -1,6 +1,6 @@
 # Iteration 1：生涯闭环与存档安全设计
 
-> 状态：用户已确认范围，等待设计文档复核。
+> 状态：已完成并验收（2026-09-09）。
 >
 > 日期：2026-09-07
 >
@@ -81,8 +81,9 @@ Iteration 1 将生涯存档升级为 v6。v6 在 v5 基础上新增可空的 `ca
 
 - 已进入 `offseason`；
 - `canContinueYouthSeason(save) === false`；
-- `offseason.graduationEligible === false`；
 - 没有待决事件或待确认反馈。
+
+最终年龄窗口已耗尽且尚未签约时，无论该休赛期是否仍标记 `graduationEligible`，玩家都可选择结束青训生涯。毕业判定、报价生成及后续签约流程保持原有语义；该终局只解决玩家不再继续签约流程时的安全退出。
 
 玩家只可选择“结束青训生涯并查看回顾”，经过一次确认后调用 application 终局用例。用例追加一条唯一账本事实，设置 `careerEnd`、`retiredOn` 和统一终态。重复提交保持幂等。
 

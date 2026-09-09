@@ -87,21 +87,25 @@ describe('createYouthCareerV2', () => {
     };
     const completed = completeYouthSeason(finalSeason);
     const offseason = enterOffseason(completed.save, content.academies).save;
-    const {
-      activeLoan: _activeLoan,
-      clubHistory: _clubHistory,
-      freeAgentSeasons: _freeAgentSeasons,
-      loanHistory: _loanHistory,
-      nationalTeam: _nationalTeam,
-      overseasSince: _overseasSince,
-      retiredOn: _retiredOn,
-      totals: _totals,
-      ...legacyV4
-    } = {
-      ...offseason,
-      schemaVersion: 4 as const,
-      offseason: { ...offseason.offseason!, graduationEligible: false },
-    };
+    const legacyV4 = Object.fromEntries(
+      Object.entries({
+        ...offseason,
+        schemaVersion: 4 as const,
+        offseason: { ...offseason.offseason!, graduationEligible: false },
+      }).filter(
+        ([key]) =>
+          ![
+            'activeLoan',
+            'clubHistory',
+            'freeAgentSeasons',
+            'loanHistory',
+            'nationalTeam',
+            'overseasSince',
+            'retiredOn',
+            'totals',
+          ].includes(key),
+      ),
+    );
 
     const hydrated = createYouthCareerV2(JSON.parse(JSON.stringify(legacyV4)), content);
 

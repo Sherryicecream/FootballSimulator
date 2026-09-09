@@ -129,6 +129,10 @@ const injectSave = async (page: Page, save: unknown) => {
   );
 };
 
+const openArchivedCareer = async (page: Page) => {
+  await page.getByRole('button', { name: /继续.*的生涯/ }).click();
+};
+
 test.describe('职业赛季流程', () => {
   // 处理推进过程中的事件直至回到职业仪表盘
   async function resolveUntilProDashboard(page: Page) {
@@ -152,6 +156,7 @@ test.describe('职业赛季流程', () => {
     const proSave = buildProSave({ completeSeason: false });
     await injectSave(page, proSave);
     await page.goto('/');
+    await openArchivedCareer(page);
 
     await expect(page.getByRole('region', { name: '职业仪表盘' })).toBeVisible();
     await expect(page.getByText('联赛积分榜')).toBeVisible();
@@ -176,6 +181,7 @@ test.describe('职业赛季流程', () => {
     );
 
     await page.reload();
+    await openArchivedCareer(page);
     await expect(page.getByText('联赛积分榜')).toBeVisible();
     await expect(page.getByRole('button', { name: '推进到下个月' })).toBeVisible();
     await expectNoHorizontalOverflow(page);
@@ -187,6 +193,7 @@ test.describe('职业赛季流程', () => {
     proSave = settled.save;
     await injectSave(page, proSave);
     await page.goto('/');
+    await openArchivedCareer(page);
 
     await expect(page.getByText('职业赛季总结')).toBeVisible();
     await expect(page.getByText(/合同承诺对照/)).toBeVisible();
@@ -196,6 +203,7 @@ test.describe('职业赛季流程', () => {
     await expect(page.getByRole('region', { name: '球队赛季' })).toBeVisible();
     await expect(page.getByRole('region', { name: '本赛季荣誉' })).toBeVisible();
     await page.reload();
+    await openArchivedCareer(page);
     await expect(page.getByText('职业赛季总结')).toBeVisible();
 
     if ((await page.getByRole('alertdialog').count()) > 0) {
@@ -203,6 +211,7 @@ test.describe('职业赛季流程', () => {
       await expect(page.getByRole('alertdialog')).toHaveCount(0);
       await expect(page.getByRole('button', { name: '开始下个职业赛季' })).toBeVisible();
       await page.reload();
+      await openArchivedCareer(page);
       await expect(page.getByText('职业赛季总结')).toBeVisible();
       await expectNoHorizontalOverflow(page);
     }
@@ -212,6 +221,7 @@ test.describe('职业赛季流程', () => {
     const offseason = buildLoanOffseasonSave();
     await injectSave(page, offseason);
     await page.goto('/');
+    await openArchivedCareer(page);
 
     await expect(page.getByText('职业赛季总结')).toBeVisible();
     await page.getByRole('button', { name: '寻找租借机会' }).click();
@@ -248,6 +258,7 @@ test.describe('职业赛季流程', () => {
     await expect(page.getByText('租借已结束，已回到母队')).toBeVisible();
     await expectNoHorizontalOverflow(page);
     await page.reload();
+    await openArchivedCareer(page);
     await expect(page.getByText('租借已结束，已回到母队')).toBeVisible();
   });
   function buildLoanOffseasonSave() {

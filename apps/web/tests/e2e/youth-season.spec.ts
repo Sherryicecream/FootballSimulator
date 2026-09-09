@@ -17,6 +17,7 @@ test.describe('Youth season monthly flow', () => {
     const after = await page.locator('.career-meta').textContent();
     expect(after).not.toBe(before);
     await page.reload();
+    await openArchivedCareer(page);
     await expect(page.getByText('推进到下个月')).toBeVisible();
     await expect(page.locator('.career-meta')).toContainText(after?.split('第')[0]?.trim() ?? '');
   });
@@ -39,6 +40,7 @@ test.describe('Youth season monthly flow', () => {
     await expect(page.getByText('赛季总结')).toBeVisible();
     await expect(page.getByRole('button', { name: '推进到下个月' })).toBeDisabled();
     await page.reload();
+    await openArchivedCareer(page);
     await expect(page.getByText('赛季总结')).toBeVisible();
   });
 
@@ -52,6 +54,7 @@ test.describe('Youth season monthly flow', () => {
 
     // 刷新后应恢复到休赛期阶段
     await page.reload();
+    await openArchivedCareer(page);
     await expect(page.getByText('休赛期简报')).toBeVisible();
 
     await page.getByRole('button', { name: '开始下赛季' }).click();
@@ -68,6 +71,7 @@ test.describe('Youth season monthly flow', () => {
 
     // 下个赛季刷新恢复
     await page.reload();
+    await openArchivedCareer(page);
     await expect(page.getByRole('button', { name: '推进到下个月' })).toBeVisible();
   });
 });
@@ -105,6 +109,10 @@ async function createCareer(page: Page) {
 
   await expect(page.getByText('停球')).toBeVisible();
   await expect(page.getByText('关键人物')).toHaveCount(0);
+}
+
+async function openArchivedCareer(page: Page) {
+  await page.getByRole('button', { name: /继续.*的生涯/ }).click();
 }
 
 async function resolveUntilDashboard(page: Page, allowSeasonEnd = false): Promise<number> {
