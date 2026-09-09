@@ -167,12 +167,34 @@ describe('terminal career actions', () => {
         }}
         academies={academies}
         canContinueYouth={false}
+        canEndYouthCareer={true}
         onEndYouthCareer={onEndYouthCareer}
       />,
     );
 
     expect(screen.getByRole('button', { name: '结束青训生涯' })).toBeVisible();
     expect(screen.queryByText('本赛季已是青训阶段的最后窗口，请先处理职业市场机会。')).toBeNull();
+  });
+
+  it('does not infer a youth ending action from its callback alone', () => {
+    render(
+      <OffseasonBriefing
+        save={finalYouthOffseason()}
+        outcome={{
+          status: 'retained',
+          nextPath: 'professional-market',
+          signals: [],
+          summary: '青训年龄窗口已关闭。',
+        }}
+        academies={academies}
+        canContinueYouth={false}
+        canEndYouthCareer={false}
+        onEndYouthCareer={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: '结束青训生涯' })).toBeNull();
+    expect(screen.getByText('本赛季已是青训阶段的最后窗口，请先处理职业市场机会。')).toBeVisible();
   });
 
   it('allows a professional under 30 to open but cancel retirement confirmation', () => {
@@ -191,5 +213,23 @@ describe('terminal career actions', () => {
     expect(screen.getByRole('alertdialog', { name: '退役确认' })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: '继续职业生涯' }));
     expect(onRetire).not.toHaveBeenCalled();
+  });
+
+  it('confirms professional retirement without forwarding the click event', () => {
+    const onRetire = vi.fn();
+    render(
+      <ProOffseasonPanel
+        save={age22ProfessionalOffseason()}
+        onRetire={onRetire}
+        onStartNextSeason={vi.fn()}
+        onAcceptRenewal={vi.fn()}
+        onDeclineRenewal={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '宣布退役' }));
+    fireEvent.click(screen.getByRole('button', { name: '确认退役' }));
+
+    expect(onRetire).toHaveBeenCalledWith();
   });
 });

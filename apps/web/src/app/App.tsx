@@ -106,6 +106,14 @@ type PendingCommit = {
   transition: (saved: CareerSaveV6) => void;
 };
 
+type FreeAgentRetireKind = 'market-exit' | 'voluntary-retirement';
+
+const careerEndDate = (save: CareerSaveV6): string =>
+  save.proSeason?.endDate ??
+  save.contract?.signedOn ??
+  save.offseason?.nextSeasonStart ??
+  save.season.endDate;
+
 export function App() {
   const [step, setStep] = useState<Step>('creation');
   const [bootstrapSave, setBootstrapSave] = useState<CareerSave | null>(null);
@@ -118,7 +126,9 @@ export function App() {
   const [records, setRecords] = useState<CareerSlotRecord[]>([]);
   const [commitState, setCommitState] = useState<SaveCommitState>({ status: 'idle' });
   const [openingSlotId, setOpeningSlotId] = useState<string | null>(null);
-  const [freeAgentRetireConfirm, setFreeAgentRetireConfirm] = useState(false);
+  const [freeAgentRetireConfirm, setFreeAgentRetireConfirm] = useState<FreeAgentRetireKind | null>(
+    null,
+  );
   const pendingCommit = useRef<PendingCommit | null>(null);
   const archiveRequest = useRef(0);
   const isSaving = commitState.status === 'saving';
@@ -169,6 +179,7 @@ export function App() {
     }
 
     setSave(candidate);
+    setFreeAgentRetireConfirm(null);
     pendingCommit.current = null;
     setCommitState({ status: 'saved' });
     transition(candidate);
@@ -200,6 +211,7 @@ export function App() {
   const continueCareer = async (slotId: string) => {
     const requestId = ++archiveRequest.current;
     clearPendingCommit();
+    setFreeAgentRetireConfirm(null);
     setOpeningSlotId(slotId);
     try {
       const result = await savePort.load(slotId);
@@ -235,7 +247,7 @@ export function App() {
     setBootstrapSave(null);
     setReport(null);
     setOutcome(null);
-    setFreeAgentRetireConfirm(false);
+    setFreeAgentRetireConfirm(null);
     setStep('creation');
   };
   const deleteCareer = async (slotId: string) => {
@@ -477,6 +489,7 @@ export function App() {
   const handleDeclineRenewal = async () => {
     if (!save) return;
     setError(null);
+    setFreeAgentRetireConfirm(null);
     try {
       const free = declineRenewal(toApplicationSaveV5(save));
       const withOffers = generateFreeAgentOffers(free, youthContent);
@@ -488,6 +501,7 @@ export function App() {
   const handleSignTransfer = async (offerId: string) => {
     if (!save) return;
     setError(null);
+    setFreeAgentRetireConfirm(null);
     try {
       await commitCareer(signTransfer(toApplicationSaveV5(save), offerId), () =>
         setStep('dashboard'),
@@ -511,6 +525,7 @@ export function App() {
   const handleSignMarketOffer = async (offerId: string) => {
     if (!save) return;
     setError(null);
+    setFreeAgentRetireConfirm(null);
     try {
       await commitCareer(signMarketOffer(toApplicationSaveV5(save), offerId), () => {
         setReport(null);
@@ -523,6 +538,7 @@ export function App() {
   const handleWaitWindow = async () => {
     if (!save) return;
     setError(null);
+    setFreeAgentRetireConfirm(null);
     try {
       const withOffers = generateFreeAgentOffers(toApplicationSaveV5(save), youthContent);
       await commitCareer(withOffers, () => undefined);
@@ -539,15 +555,13 @@ export function App() {
       setError(message(caught));
     }
   };
-  const handleRetire = async (
-    kind: 'voluntary-retirement' | 'market-exit' = 'voluntary-retirement',
-  ) => {
+  const handleRetire = async (kind: FreeAgentRetireKind = 'voluntary-retirement') => {
     if (!save) return;
     setError(null);
     try {
-      const date = save.proSeason?.endDate ?? new Date().toISOString().slice(0, 10);
+      const date = careerEndDate(save);
       await commitCareer(endProfessionalCareer(save, date, kind), () => {
-        setFreeAgentRetireConfirm(false);
+        setFreeAgentRetireConfirm(null);
         setStep('retired');
       });
     } catch (caught) {
@@ -561,7 +575,7 @@ export function App() {
     setBootstrapSave(null);
     setReport(null);
     setOutcome(null);
-    setFreeAgentRetireConfirm(false);
+    setFreeAgentRetireConfirm(null);
     setStep('archives');
   };
 
@@ -676,7 +690,7 @@ export function App() {
               onStartNextSeason={handleStartProSeason}
               onAcceptRenewal={handleAcceptRenewal}
               onDeclineRenewal={handleDeclineRenewal}
-              onRetire={handleRetire}
+              onRetire={() => void handleRetire()}
               onRequestMarket={handleRequestCareerMarket}
               onSignMarketOffer={handleSignMarketOffer}
             />
@@ -694,13 +708,42 @@ export function App() {
                   detail="球员通道外的电话还没有响起；耐心、年龄和市场评价会共同影响下一份机会。"
                 />
               )}
-              {save.pendingOffers.length > 0 ? (
-                <OfferComparisonPanel
-                  offers={save.pendingOffers}
-                  onSign={handleSignTransfer}
-                  onRejectAll={handleWaitWindow}
-                  rejectLabel="暂不签约，等待下一个窗口"
-                />
+              {freeAgentRetireConfirm ? (
+                <div
+                  role="alertdialog"
+                  aria-label={
+                    freeAgentRetireConfirm === 'market-exit' ? '结束职业生涯确认' : '退役确认'
+                  }
+                >
+                  <p>
+                    {freeAgentRetireConfirm === 'market-exit'
+                      ? '职业市场没有合适机会。确定要离开职业足坛吗？'
+                      : '退役是不可逆的决定。确定要结束球员生涯吗？'}
+                  </p>
+                  <button onClick={() => void handleRetire(freeAgentRetireConfirm)}>
+                    {freeAgentRetireConfirm === 'market-exit' ? '确认离开职业足坛' : '确认退役'}
+                  </button>
+                  <button onClick={() => setFreeAgentRetireConfirm(null)}>
+                    {freeAgentRetireConfirm === 'market-exit' ? '继续寻找机会' : '继续职业生涯'}
+                  </button>
+                </div>
+              ) : save.pendingOffers.length > 0 ? (
+                <>
+                  <OfferComparisonPanel
+                    offers={save.pendingOffers}
+                    onSign={handleSignTransfer}
+                    onRejectAll={handleWaitWindow}
+                    rejectLabel="暂不签约，等待下一个窗口"
+                  />
+                  <div className="offseason-actions">
+                    <button
+                      className="secondary-action"
+                      onClick={() => setFreeAgentRetireConfirm('voluntary-retirement')}
+                    >
+                      宣布退役
+                    </button>
+                  </div>
+                </>
               ) : (
                 <>
                   <p>
@@ -715,26 +758,12 @@ export function App() {
                     <button onClick={handleWaitWindow}>等待下一个转会窗口</button>
                     <button
                       className="secondary-action"
-                      onClick={() => setFreeAgentRetireConfirm(true)}
+                      onClick={() => setFreeAgentRetireConfirm('market-exit')}
                     >
                       结束职业生涯
                     </button>
                   </div>
                 </>
-              )}
-              {save.pendingOffers.length > 0 && (
-                <div className="offseason-actions">
-                  <button className="secondary-action" onClick={() => void handleRetire()}>
-                    宣布退役
-                  </button>
-                </div>
-              )}
-              {freeAgentRetireConfirm && (
-                <div role="alertdialog" aria-label="结束职业生涯确认">
-                  <p>职业市场没有合适机会。确定要离开职业足坛吗？</p>
-                  <button onClick={() => handleRetire('market-exit')}>确认离开职业足坛</button>
-                  <button onClick={() => setFreeAgentRetireConfirm(false)}>继续寻找机会</button>
-                </div>
               )}
             </section>
           )}

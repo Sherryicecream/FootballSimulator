@@ -62,6 +62,51 @@ describe('createYouthCareerV2', () => {
 
     expect(hydrated.offseason?.graduationEligible).toBe(false);
   });
+
+  it('preserves a failed final youth window when migrating a legacy v4-shaped save', () => {
+    const content = createContent();
+    const created = createYouthCareerV2(
+      createCareerSave({
+        playerName: '林岳',
+        hometown: '上海',
+        primaryPosition: 'CENTER_BACK',
+        preferredFoot: 'RIGHT',
+        regionId: 'shanghai',
+        seed: 42,
+      }),
+      content,
+    );
+    const finalSeason = {
+      ...created,
+      player: {
+        ...created.player,
+        age: 20,
+        identity: { ...created.player.identity, dateOfBirth: '2005-01-01' },
+      },
+      season: { ...created.season, completed: true },
+    };
+    const completed = completeYouthSeason(finalSeason);
+    const offseason = enterOffseason(completed.save, content.academies).save;
+    const {
+      activeLoan: _activeLoan,
+      clubHistory: _clubHistory,
+      freeAgentSeasons: _freeAgentSeasons,
+      loanHistory: _loanHistory,
+      nationalTeam: _nationalTeam,
+      overseasSince: _overseasSince,
+      retiredOn: _retiredOn,
+      totals: _totals,
+      ...legacyV4
+    } = {
+      ...offseason,
+      schemaVersion: 4 as const,
+      offseason: { ...offseason.offseason!, graduationEligible: false },
+    };
+
+    const hydrated = createYouthCareerV2(JSON.parse(JSON.stringify(legacyV4)), content);
+
+    expect(hydrated.offseason?.graduationEligible).toBe(false);
+  });
 });
 
 const academy = (id: string, regionId: string): YouthAcademyProfile => ({

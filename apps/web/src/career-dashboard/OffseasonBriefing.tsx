@@ -8,7 +8,7 @@ interface OffseasonBriefingProps {
   outcome: YouthSeasonOutcome | null;
   academies: readonly YouthAcademyProfile[];
   canContinueYouth: boolean;
-  canEndYouthCareer?: boolean;
+  canEndYouthCareer: boolean;
   onStartNextSeason?: (academyId?: string) => void;
   onSeekOffers?: () => void;
   onEndYouthCareer?: () => void;
@@ -119,7 +119,7 @@ export function OffseasonBriefing({
           {canContinueYouth && onStartNextSeason && (
             <button onClick={() => onStartNextSeason()}>开始下赛季</button>
           )}
-          {(canEndYouthCareer ?? Boolean(onEndYouthCareer)) && onEndYouthCareer ? (
+          {canEndYouthCareer && onEndYouthCareer ? (
             endCareerConfirm ? (
               <div role="alertdialog" aria-label="结束青训生涯确认">
                 <p>结束后将不能继续这段青训生涯，并会生成生涯回顾。</p>

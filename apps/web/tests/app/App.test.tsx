@@ -2,10 +2,23 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from '../../src/app/App';
-import { completeYouthSeason, createCareerSave, enterOffseason } from '@football/application';
+import {
+  completeYouthSeason,
+  createCareerSave,
+  enterOffseason,
+  generateContractOffers,
+  signContract,
+  startProfessionalSeason,
+  submitAgentPreferences,
+} from '@football/application';
 import { getYouthContent } from '@football/content';
 import { migrateCareerSaveV5, migrateCareerSaveV6 } from '@football/contracts';
 import type { CareerSave, MonthlyReport } from '@football/contracts';
+import {
+  content as fixtureContent,
+  createSave as createFixtureSave,
+  finishSeason,
+} from '../../../../packages/application/tests/fixtures/youth-save';
 
 const persistenceControl = vi.hoisted(() => ({
   loadDelays: new Map<string, Promise<void>>(),
@@ -546,12 +559,111 @@ describe('App', () => {
     storeSave(freeAgent);
 
     render(<App />);
-    await user.click(await screen.findByRole('button', { name: '继续林岳的生涯' }));
+    await user.click(
+      await screen.findByRole('button', { name: `继续${freeAgent.player.identity.name}的生涯` }),
+    );
     await user.click(await screen.findByRole('button', { name: '结束职业生涯' }));
     await user.click(screen.getByRole('button', { name: '确认离开职业足坛' }));
 
     expect(await screen.findByRole('region', { name: '生涯回顾' })).toBeVisible();
     expect(readStoredSave(freeAgent.careerId).careerEnd?.kind).toBe('market-exit');
+  });
+
+  it('uses the saved youth offseason date for a free-agent market exit', async () => {
+    const user = userEvent.setup();
+    const finalYouth = createFinalYouthOffseason();
+    const freeAgent = {
+      ...finalYouth,
+      careerPhase: 'free-agent' as const,
+      pendingOffers: [],
+    };
+    storeSave(freeAgent);
+
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: '继续林岳的生涯' }));
+    await user.click(await screen.findByRole('button', { name: '结束职业生涯' }));
+    await user.click(screen.getByRole('button', { name: '确认离开职业足坛' }));
+
+    expect(await screen.findByRole('region', { name: '生涯回顾' })).toBeVisible();
+    expect(readStoredSave(freeAgent.careerId).careerEnd?.endedOn).toBe(
+      finalYouth.offseason!.nextSeasonStart,
+    );
+  });
+
+  it('uses a completed professional season date for a professional free-agent exit', async () => {
+    const user = userEvent.setup();
+    const freeAgent = createProfessionalFreeAgentSave();
+    storeSave(freeAgent);
+
+    render(<App />);
+    await user.click(
+      await screen.findByRole('button', { name: `继续${freeAgent.player.identity.name}的生涯` }),
+    );
+    await user.click(await screen.findByRole('button', { name: '结束职业生涯' }));
+    await user.click(screen.getByRole('button', { name: '确认离开职业足坛' }));
+
+    expect(await screen.findByRole('region', { name: '生涯回顾' })).toBeVisible();
+    expect(readStoredSave(freeAgent.careerId).careerEnd?.endedOn).toBe(
+      freeAgent.proSeason!.endDate,
+    );
+  });
+
+  it('commits voluntary retirement from the professional offseason confirmation', async () => {
+    const user = userEvent.setup();
+    const freeAgent = createProfessionalFreeAgentSave();
+    const professionalOffseason = {
+      ...freeAgent,
+      careerPhase: 'pro-offseason' as const,
+    };
+    storeSave(professionalOffseason);
+
+    render(<App />);
+    await user.click(
+      await screen.findByRole('button', {
+        name: `继续${professionalOffseason.player.identity.name}的生涯`,
+      }),
+    );
+    await user.click(await screen.findByRole('button', { name: '宣布退役' }));
+    await user.click(screen.getByRole('button', { name: '确认退役' }));
+
+    expect(await screen.findByRole('region', { name: '生涯回顾' })).toBeVisible();
+    expect(readStoredSave(professionalOffseason.careerId).careerEnd?.kind).toBe(
+      'voluntary-retirement',
+    );
+  });
+
+  it('requires confirmation before a free agent with offers voluntarily retires', async () => {
+    const user = userEvent.setup();
+    const freeAgent = createFreeAgentWithOfferSave();
+    storeSave(freeAgent);
+
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: '继续林岳的生涯' }));
+    await user.click(await screen.findByRole('button', { name: '宣布退役' }));
+
+    expect(screen.getByRole('alertdialog', { name: '退役确认' })).toBeVisible();
+    expect(readStoredSave(freeAgent.careerId).careerEnd).toBeNull();
+    await user.click(screen.getByRole('button', { name: '确认退役' }));
+
+    expect(await screen.findByRole('region', { name: '生涯回顾' })).toBeVisible();
+    expect(readStoredSave(freeAgent.careerId).careerEnd?.kind).toBe('voluntary-retirement');
+  });
+
+  it('blocks free-agent offer actions while retirement confirmation is open and restores them on cancel', async () => {
+    const user = userEvent.setup();
+    const freeAgent = createFreeAgentWithOfferSave();
+    storeSave(freeAgent);
+
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: '继续林岳的生涯' }));
+    await user.click(await screen.findByRole('button', { name: '宣布退役' }));
+
+    expect(screen.queryByRole('button', { name: '选择这份要约' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '暂不签约，等待下一个窗口' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: '继续职业生涯' }));
+
+    expect(screen.getByRole('button', { name: '选择这份要约' })).toBeVisible();
+    expect(screen.getByRole('button', { name: '暂不签约，等待下一个窗口' })).toBeVisible();
   });
 
   it('restores a professional contract into the dashboard', async () => {
@@ -642,6 +754,82 @@ const createEmptyFreeAgentSave = () => {
     player: { ...save.player, age: 22 },
     pendingOffers: [],
   };
+};
+
+const createFreeAgentWithOfferSave = () => {
+  const save = createEmptyFreeAgentSave();
+  return {
+    ...save,
+    pendingOffers: [
+      {
+        id: 'offer-free-agent',
+        clubId: 'club-free-agent',
+        clubName: '海港城',
+        clubTier: 4,
+        salaryPerYear: 12000,
+        contractYears: 2,
+        squadRole: 'rotation' as const,
+        promise: { kind: 'none' as const },
+        releaseClauseNote: '',
+      },
+    ],
+  };
+};
+
+const createProfessionalFreeAgentSave = () => {
+  let youthSeason = finishSeason(createFixtureSave(42));
+  youthSeason = {
+    ...youthSeason,
+    clubContext: { ...youthSeason.clubContext, coachEvaluation: 75, firstTeamStage: 'watchlist' },
+    player: {
+      ...youthSeason.player,
+      age: 18,
+      attributes: {
+        technical: {
+          firstTouch: 70,
+          dribbling: 68,
+          passing: 66,
+          shooting: 72,
+          defending: 50,
+          aerialAbility: 60,
+        },
+        physical: { pace: 74, strength: 66, stamina: 70, agility: 68 },
+        mental: {
+          offTheBall: 72,
+          vision: 64,
+          decision: 66,
+          composure: 68,
+          determination: 74,
+          discipline: 70,
+        },
+      },
+    },
+    seasonStats: { appearances: 20, goals: 6, assists: 3, ratingSum: 145, ratingCount: 20 },
+  };
+  const completed = completeYouthSeason(youthSeason);
+  let offseason = enterOffseason(completed.save, fixtureContent.academies).save;
+  offseason = submitAgentPreferences(offseason, {
+    leagueTierBias: 'balanced',
+    priority: 'playing-time',
+  });
+  offseason = generateContractOffers(offseason, fixtureContent);
+  const contracted = signContract(offseason, offseason.pendingOffers[0]!.id);
+  const started = startProfessionalSeason(migrateCareerSaveV6(contracted), fixtureContent.clubs);
+
+  return migrateCareerSaveV6({
+    ...started,
+    careerPhase: 'free-agent',
+    proPhase: 'settled',
+    contract: null,
+    pendingOffers: [],
+    proSeason: {
+      ...started.proSeason!,
+      currentDate: started.proSeason!.endDate,
+      currentMonth: started.proSeason!.endDate.slice(0, 7),
+      currentWeek: 52,
+      completed: true,
+    },
+  });
 };
 
 const createCompletedYouthSave = () => {

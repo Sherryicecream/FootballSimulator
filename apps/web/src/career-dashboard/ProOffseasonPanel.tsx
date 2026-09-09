@@ -255,7 +255,7 @@ export function ProOffseasonPanel({
         {retireConfirm ? (
           <div role="alertdialog" aria-label="退役确认">
             <p>退役是不可逆的决定。确定要结束球员生涯吗？</p>
-            <button className="confirm" onClick={onRetire}>
+            <button className="confirm" onClick={() => onRetire()}>
               确认退役
             </button>
             <button onClick={() => setRetireConfirm(false)}>继续职业生涯</button>
