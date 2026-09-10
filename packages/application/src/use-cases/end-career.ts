@@ -83,6 +83,9 @@ export const endProfessionalCareer = (
   ) {
     throw new Error(`非法阶段转移：当前阶段 ${normalized.careerPhase} 不能退役`);
   }
+  if (normalized.story.pendingEvent || normalized.story.pendingFeedback) {
+    throw new Error('请先处理待决事件或确认反馈，再结束职业生涯');
+  }
   const fact = retirementFact(
     `career-end-${kind}-${endedOn}`,
     endedOn,

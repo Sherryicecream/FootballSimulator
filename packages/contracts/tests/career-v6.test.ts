@@ -3,11 +3,34 @@ import {
   CareerSaveSchema,
   CareerSaveV5Schema,
   CareerSaveV6Schema,
+  migrateCareerSaveV5,
   migrateCareerSaveV6,
 } from '../src/index';
 import { buildYouthSaveV2Fixture } from './fixtures/youth-save-v2';
 
 describe('CareerSaveV6 terminal boundary', () => {
+  it.each([
+    { seasonId: 'pro-season-2030', loanClubId: 'loan-club' },
+    { seasonId: 'pro-season-2031', loanClubId: 'other-club' },
+  ])('rejects inconsistent v6 loan state: $seasonId / $loanClubId', (loan) => {
+    const valid = loanSaveV5();
+    const inconsistent = { ...valid, activeLoan: { ...valid.activeLoan!, ...loan } };
+    expect(CareerSaveV5Schema.safeParse(inconsistent).success).toBe(true);
+    expect(() => migrateCareerSaveV5(inconsistent)).toThrow(/租借/);
+    const v6 = { ...inconsistent, schemaVersion: 6, careerEnd: null };
+    expect(CareerSaveV6Schema.safeParse(v6).success).toBe(false);
+    expect(() => migrateCareerSaveV6(v6)).toThrow();
+    expect(() => migrateCareerSaveV6(inconsistent)).toThrow(/租借/);
+  });
+
+  it('preserves valid loan data and randomness across deterministic v5 and v6 migrations', () => {
+    const v5 = loanSaveV5();
+    const first = migrateCareerSaveV6(v5);
+    expect(first).toEqual({ ...v5, schemaVersion: 6, careerEnd: null });
+    expect(migrateCareerSaveV6(v5)).toEqual(first);
+    expect(migrateCareerSaveV6(first)).toEqual(first);
+  });
+
   it('deterministically migrates a v1 save through v6', () => {
     const v2 = buildYouthSaveV2Fixture();
     const v1 = CareerSaveSchema.parse({
@@ -132,3 +155,52 @@ describe('CareerSaveV6 terminal boundary', () => {
     expect(parsed.success).toBe(false);
   });
 });
+
+const loanSaveV5 = () =>
+  CareerSaveV5Schema.parse({
+    ...buildYouthSaveV2Fixture(),
+    schemaVersion: 5,
+    careerPhase: 'pro-season',
+    proSeason: {
+      id: 'pro-season-2031',
+      startDate: '2031-08-01',
+      endDate: '2032-05-31',
+      currentDate: '2031-08-01',
+      currentWeek: 1,
+      currentMonth: '2031-08',
+      clubId: 'loan-club',
+      competitionId: 'tier-5',
+      fixtures: [],
+      standings: [],
+      squad: Array.from({ length: 10 }, (_, index) => ({
+        personId: `person-${index}`,
+        name: `球员${index}`,
+        primaryPosition: 'FORWARD',
+        currentAbility: 50,
+        age: 20,
+        form: 50,
+        fitness: 80,
+        minutesPlayed: 0,
+      })),
+      depthChart: {
+        CENTER_BACK: [],
+        FULL_BACK: [],
+        DEFENSIVE_MIDFIELDER: [],
+        MIDFIELDER: [],
+        WINGER: [],
+        FORWARD: ['player'],
+      },
+      completed: false,
+    },
+    activeLoan: {
+      parentClubId: 'parent-club',
+      parentClubName: '母队',
+      parentClubTier: 5,
+      loanClubId: 'loan-club',
+      loanClubName: '租借队',
+      loanClubTier: 5,
+      startedOn: '2031-08-01',
+      returnsOn: '2032-06-30',
+      seasonId: 'pro-season-2031',
+    },
+  });

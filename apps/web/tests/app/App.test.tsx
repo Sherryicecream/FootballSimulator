@@ -700,6 +700,55 @@ describe('App', () => {
 
     expect(await screen.findByRole('button', { name: '开启职业赛季' })).toBeDefined();
   });
+
+  describe.each([5, 6])('v%s terminal restoration', (version) => {
+    it.each(['pendingEvent', 'pendingFeedback'] as const)(
+      'opens review ahead of residual %s and preserves the stored save',
+      async (pendingNode) => {
+        const user = userEvent.setup();
+        const base =
+          pendingNode === 'pendingEvent'
+            ? migrateCareerSaveV6(createSaveWithPendingEvent())
+            : createSaveWithPendingFeedback();
+        const terminal = migrateCareerSaveV6({
+          ...base,
+          careerPhase: 'retired',
+          retiredOn: '2030-06-30',
+          careerEnd: {
+            kind: 'voluntary-retirement',
+            endedOn: '2030-06-30',
+            summary: '正式结束球员生涯。',
+            evidenceIds: [],
+          },
+        });
+        const data =
+          version === 6
+            ? terminal
+            : {
+                ...Object.fromEntries(
+                  Object.entries(terminal).filter(([key]) => key !== 'careerEnd'),
+                ),
+                schemaVersion: 5,
+              };
+        const key = `football-save-${terminal.careerId}`;
+        const raw = JSON.stringify({ version, savedAt: '2030-06-30T12:00:00.000Z', data });
+        localStorageMock.setItem(key, raw);
+
+        const first = render(<App />);
+        await user.click(await screen.findByRole('button', { name: '查看林岳的回顾' }));
+        expect(await screen.findByRole('region', { name: '生涯回顾' })).toBeVisible();
+        expect(screen.queryByRole('region', { name: '事件反馈' })).toBeNull();
+        expect(screen.queryByText('必须处理的事件')).toBeNull();
+        expect(localStorageMock.getItem(key)).toBe(raw);
+
+        first.unmount();
+        render(<App />);
+        await user.click(await screen.findByRole('button', { name: '查看林岳的回顾' }));
+        expect(await screen.findByRole('region', { name: '生涯回顾' })).toBeVisible();
+        expect(localStorageMock.getItem(key)).toBe(raw);
+      },
+    );
+  });
 });
 
 const createSaveWithPendingEvent = (): CareerSave => {

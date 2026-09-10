@@ -95,6 +95,57 @@ const professionalOffseason = ({ age }: { age: number }) => {
 };
 
 describe('生涯终局用例', () => {
+  describe.each([
+    { phase: 'pro-offseason', kind: 'voluntary-retirement' },
+    { phase: 'free-agent', kind: 'voluntary-retirement' },
+    { phase: 'free-agent', kind: 'market-exit' },
+  ] as const)('$phase / $kind', ({ phase, kind }) => {
+    it.each(['pendingEvent', 'pendingFeedback'] as const)(
+      'rejects ending with %s without changing the save',
+      (pendingNode) => {
+        const base = professionalOffseason({ age: 22 });
+        const save = migrateCareerSaveV6({
+          ...base,
+          careerPhase: phase,
+          story: {
+            ...base.story,
+            [pendingNode]:
+              pendingNode === 'pendingEvent'
+                ? {
+                    eventId: 'pending-retirement-event',
+                    title: '尚未处理的事件',
+                    description: '需要先作出决定。',
+                    choices: [{ id: 'continue', text: '继续', riskLabel: 'low', effects: {} }],
+                    resolvedChoiceId: null,
+                    participantIds: [],
+                    factRefs: [],
+                  }
+                : {
+                    eventId: 'pending-retirement-event',
+                    title: '尚未确认的反馈',
+                    choiceId: 'continue',
+                    choiceText: '继续',
+                    response: '已作出决定。',
+                    participantResponses: [],
+                    stateChanges: [],
+                    relationshipChanges: [],
+                    followUp: '需要确认后继续。',
+                  },
+          },
+        });
+        const before = structuredClone(save);
+
+        expect(() => endProfessionalCareer(save, '2030-06-30', kind)).toThrow(/事件|反馈/);
+        expect(save).toEqual(before);
+        const cleared = { ...save, story: { ...save.story, [pendingNode]: null } };
+        const ended = endProfessionalCareer(cleared, '2030-06-30', kind);
+        expect(ended.careerEnd?.kind).toBe(kind);
+        expect(ended.randomState).toEqual(save.randomState);
+        expect(endProfessionalCareer(ended, '2030-06-30', kind)).toEqual(ended);
+      },
+    );
+  });
+
   it('ends a final youth window without a professional contract', () => {
     const save = finalYouthOffseason({ graduationEligible: false });
     const ended = endYouthCareer(save);

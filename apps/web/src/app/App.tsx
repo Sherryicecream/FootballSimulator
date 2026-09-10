@@ -809,6 +809,7 @@ const hydrateLoadedCareer = (save: CareerSaveV6): CareerSaveV6 => {
 };
 
 const stepFor = (save: CareerSaveV6): Step => {
+  if (save.careerPhase === 'retired') return 'retired';
   if (save.story.pendingFeedback) return 'event-feedback';
   if (save.story.pendingEvent) return 'event';
   if (save.careerPhase === 'offseason') return 'offseason';
@@ -817,6 +818,5 @@ const stepFor = (save: CareerSaveV6): Step => {
   if (save.careerPhase === 'pro-season') return 'pro';
   if (save.careerPhase === 'pro-offseason') return 'pro-offseason';
   if (save.careerPhase === 'free-agent') return 'free-agent';
-  if (save.careerPhase === 'retired') return 'retired';
   return 'dashboard';
 };

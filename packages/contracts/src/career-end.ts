@@ -1,5 +1,9 @@
 import { z } from 'zod';
-import { CareerSaveV5Schema, migrateCareerSaveV5 } from './career-expansion';
+import {
+  CareerSaveV5Schema,
+  migrateCareerSaveV5,
+  validateCareerSaveV5LoanState,
+} from './career-expansion';
 
 const IdSchema = z.string().min(1).max(60);
 const IsoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -25,6 +29,15 @@ export const CareerSaveV6Schema = CareerSaveV5Schema.omit({ schemaVersion: true 
     careerEnd: CareerEndSchema.nullable().default(null),
   })
   .superRefine((save, ctx) => {
+    try {
+      validateCareerSaveV5LoanState({ ...save, schemaVersion: 5 });
+    } catch (error) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: error instanceof Error ? error.message : '租借状态不一致',
+        path: ['activeLoan'],
+      });
+    }
     const terminal = save.careerPhase === 'retired';
     if (terminal !== (save.careerEnd !== null)) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: '终局阶段与终局原因不一致' });
