@@ -17,6 +17,9 @@ export interface CreatePlayerParams {
   secondaryPosition?: Position;
   preferredFoot: 'LEFT' | 'RIGHT' | 'BOTH';
   regionId: string;
+  growthBackground?: PlayerIdentity['growthBackground'];
+  personalityTendency?: PlayerIdentity['personalityTendency'];
+  weakFootLevel?: PlayerIdentity['weakFootLevel'];
 }
 
 const GROWTH_BACKGROUNDS = ['academy', 'school', 'community', 'late-bloomer'] as const;
@@ -168,9 +171,12 @@ export function createPlayer(
 ): PlayerCareer {
   const weights = positionWeights[params.primaryPosition];
   const facilityBonus = getRegionFacilityBonus(params.regionId);
-  const growthBackground = profileRng.pick(GROWTH_BACKGROUNDS);
-  const personalityTendency = profileRng.pick(PERSONALITY_TENDENCIES);
-  const weakFootLevel = profileRng.nextInt(1, 5);
+  const generatedGrowthBackground = profileRng.pick(GROWTH_BACKGROUNDS);
+  const generatedPersonalityTendency = profileRng.pick(PERSONALITY_TENDENCIES);
+  const generatedWeakFootLevel = profileRng.nextInt(1, 5);
+  const growthBackground = params.growthBackground ?? generatedGrowthBackground;
+  const personalityTendency = params.personalityTendency ?? generatedPersonalityTendency;
+  const weakFootLevel = params.weakFootLevel ?? generatedWeakFootLevel;
 
   const baseMin = 30;
   const baseMax = 60;

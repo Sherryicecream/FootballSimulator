@@ -3,16 +3,16 @@ import { createPlayer } from '../../src/player-development/player-factory';
 import { createSeededRandomSource } from '../../src/randomness/seeded-random-source';
 import { PlayerCareerSchema } from '@football/contracts';
 
-describe('createPlayer', () => {
-  const defaultParams = {
-    name: '张伟',
-    hometown: '上海',
-    primaryPosition: 'CENTER_BACK' as const,
-    secondaryPosition: 'FULL_BACK' as const,
-    preferredFoot: 'RIGHT' as const,
-    regionId: 'shanghai',
-  };
+const defaultParams = {
+  name: '张伟',
+  hometown: '上海',
+  primaryPosition: 'CENTER_BACK' as const,
+  secondaryPosition: 'FULL_BACK' as const,
+  preferredFoot: 'RIGHT' as const,
+  regionId: 'shanghai',
+};
 
+describe('createPlayer', () => {
   it('创建 16 岁青训球员', () => {
     const rng = createSeededRandomSource(12345);
     const player = createPlayer(defaultParams, rng);
@@ -105,5 +105,38 @@ describe('createPlayer', () => {
       expect(Math.abs(value - xinjiangValues[index]!)).toBeLessThanOrEqual(3);
     });
     expect(shanghaiPlayer.hiddenTraits.potential).toBe(xinjiangPlayer.hiddenTraits.potential);
+  });
+});
+
+describe('createPlayer 显式创建设置（spec §6）', () => {
+  it('尊重显式指定的成长背景、性格倾向与逆足水平', () => {
+    const rng = createSeededRandomSource(12345);
+    const profileRng = createSeededRandomSource(777);
+    const player = createPlayer(
+      {
+        ...defaultParams,
+        growthBackground: 'late-bloomer',
+        personalityTendency: 'expressive',
+        weakFootLevel: 4,
+      },
+      rng,
+      profileRng,
+    );
+    expect(player.identity.growthBackground).toBe('late-bloomer');
+    expect(player.identity.personalityTendency).toBe('expressive');
+    expect(player.identity.weakFootLevel).toBe(4);
+  });
+
+  it('未指定时保持种子随机分配且确定性不变', () => {
+    const build = () => {
+      const rng = createSeededRandomSource(42);
+      const profileRng = createSeededRandomSource(42);
+      return createPlayer(defaultParams, rng, profileRng);
+    };
+    const a = build();
+    const b = build();
+    expect(a.identity.growthBackground).toBe(b.identity.growthBackground);
+    expect(a.identity.personalityTendency).toBe(b.identity.personalityTendency);
+    expect(a.identity.weakFootLevel).toBe(b.identity.weakFootLevel);
   });
 });
