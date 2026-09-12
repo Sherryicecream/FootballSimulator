@@ -26,6 +26,7 @@ import {
   clearEventFeedback,
   completeYouthSeason,
   enterOffseason,
+  resolveCareerEvent,
   submitCareerDecision,
 } from '../../src/index';
 import { createSave, content, finishSeason } from '../fixtures/youth-save';
@@ -924,6 +925,80 @@ describe('职业期事件内容接入', () => {
     condition: condition as EventDefinition['condition'],
     choices: [{ id: 'continue', text: '继续', riskLabel: '低', effects: {} }],
     cooldownWeeks: 4,
+  });
+
+  it('职业事件解析统一使用当前职业赛季的年份与周次', () => {
+    const started = startProfessionalSeason(signedProSave(), content.clubs);
+    const participant = {
+      id: 'coach-clock',
+      name: '职业教练',
+      role: 'coach',
+      age: 45,
+      personality: 'steady',
+      traits: {},
+      relationship: { trust: 50, respect: 50, closeness: 30 },
+      memories: [],
+    };
+    const pendingEvent: NonNullable<CareerSaveV4['story']['pendingEvent']> = {
+      eventId: 'professional-clock',
+      title: '职业时间测试',
+      description: '同一事件可以在不同职业赛季再次发生。',
+      choices: [
+        {
+          id: 'continue',
+          text: '继续',
+          riskLabel: 'low',
+          effects: { trust: 1 },
+          delayEffects: { morale: 1 },
+        },
+      ],
+      resolvedChoiceId: null,
+      participantIds: [participant.id],
+      factRefs: [],
+      storyId: null,
+      nextEventIds: [],
+      interaction: 'decision',
+    };
+    const inSeason = (year: number, week = 11) => ({
+      ...started,
+      season: { ...started.season, currentWeek: 30 },
+      proSeason: {
+        ...started.proSeason!,
+        id: `pro-${year}`,
+        startDate: `${year}-08-01`,
+        endDate: `${year + 1}-05-31`,
+        currentDate: `${year}-10-10`,
+        currentMonth: `${year}-10`,
+        currentWeek: week,
+      },
+      relationships: {
+        ...started.relationships,
+        persons: [...started.relationships.persons, participant],
+      },
+      story: { ...started.story, pendingEvent },
+      monthlyAdvance: { ...started.monthlyAdvance, status: 'awaiting-decision' as const },
+    });
+
+    const first = resolveCareerEvent(inSeason(2025), 'continue');
+    const second = resolveCareerEvent(inSeason(2026), 'continue');
+    const lateSeason = resolveCareerEvent(inSeason(2025, 53), 'continue');
+
+    expect(first.ledger.at(-1)).toMatchObject({
+      id: 'decision-professional-clock-202511',
+      weekKey: '2025-W11',
+    });
+    expect(second.ledger.at(-1)?.id).toBe('decision-professional-clock-202611');
+    expect(
+      first.relationships.persons.find(({ id }) => id === participant.id)!.memories.at(-1),
+    ).toMatchObject({
+      season: 2025,
+      week: 11,
+    });
+    expect(first.story.pendingDelayedEffects.at(-1)?.triggerWeekKey).toBe('2025-W13');
+    expect(
+      lateSeason.relationships.persons.find(({ id }) => id === participant.id)!.memories.at(-1)
+        ?.week,
+    ).toBe(53);
   });
 
   it('职业月度推进把当前俱乐部传入事件评估：留洋亚洲可命中 asia-career 事件', () => {

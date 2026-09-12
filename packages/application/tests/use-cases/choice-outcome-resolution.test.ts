@@ -32,6 +32,41 @@ const resolution = {
 };
 
 describe('resolveCareerEvent with authored outcomes', () => {
+  it('keeps repeated youth events unique across season years', () => {
+    const inSeason = (year: number) => {
+      const save = createSave();
+      return withPendingEvent({
+        ...save,
+        season: {
+          ...save.season,
+          startDate: `${year}-09-01`,
+          endDate: `${year + 1}-06-30`,
+          currentWeek: 30,
+        },
+      });
+    };
+
+    const first = resolveCareerEvent(inSeason(2024), 'clarify');
+    const second = resolveCareerEvent(inSeason(2025), 'clarify');
+
+    expect(first.ledger.at(-1)?.id).toBe('decision-misunderstanding-clarification-202430');
+    expect(second.ledger.at(-1)?.id).toBe('decision-misunderstanding-clarification-202530');
+  });
+
+  it('accepts a maximum-length event id in the derived ledger address', () => {
+    const save = withPendingEvent(createSave());
+    const eventId = 'e'.repeat(60);
+    const result = resolveCareerEvent(
+      {
+        ...save,
+        story: { ...save.story, pendingEvent: { ...save.story.pendingEvent!, eventId } },
+      },
+      'clarify',
+    );
+
+    expect(result.ledger.at(-1)?.id).toBe(`decision-${eventId}-202401`);
+  });
+
   it('applies the selected outcome and persists its explanation', () => {
     const save = withPendingEvent(withDecision(createSave(), 80), resolution);
     const result = resolveCareerEvent(save, 'clarify');
