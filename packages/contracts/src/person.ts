@@ -2,10 +2,10 @@ import { z } from 'zod';
 import { PositionSchema } from './primitives';
 
 export const PersonMemorySchema = z.object({
-  eventId: z.string().min(1).max(40),
+  eventId: z.string().min(1).max(60),
   summary: z.string().min(1).max(200),
   season: z.number().int(),
-  week: z.number().int().min(1).max(52),
+  week: z.number().int().min(1).max(60),
   emotionalImpact: z.enum(['positive', 'negative', 'neutral']),
 });
 

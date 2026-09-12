@@ -3,6 +3,7 @@ import {
   CareerSaveV5Schema,
   type CareerLedgerEntryV2,
   type CareerSaveV2Like,
+  type CareerSaveV4Like,
 } from '@football/contracts';
 import {
   applyRelationshipEffects,
@@ -38,6 +39,7 @@ export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId
     ...save.clubContext,
     coachEvaluation: applyScore(save.clubContext.coachEvaluation, effects.coachTrust),
   };
+  const eventTime = eventTimeContextOf(save);
   const effectTotal = Object.values(effects).reduce((sum, value) => sum + value, 0);
   const impact = effectTotal > 0 ? 'positive' : effectTotal < 0 ? 'negative' : 'neutral';
   const relationships = applyRelationshipEffects(
@@ -51,15 +53,15 @@ export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId
     {
       eventId: event.eventId,
       summary: `[${event.title}] ${choice.text}`,
-      season: Number(save.season.startDate.slice(0, 4)),
-      week: save.season.currentWeek,
+      season: eventTime.season,
+      week: eventTime.week,
       impact,
     },
   );
   const automatic = event.interaction === 'automatic';
   const fact: CareerLedgerEntryV2 = {
-    id: `${automatic ? 'event' : 'decision'}-${event.eventId}-${save.season.currentWeek}`,
-    weekKey: `${save.season.startDate.slice(0, 4)}-W${String(save.season.currentWeek).padStart(2, '0')}`,
+    id: `${automatic ? 'event' : 'decision'}-${event.eventId}-${eventTime.idSuffix}`,
+    weekKey: eventTime.weekKey,
     type: automatic ? 'event' : 'decision',
     summary: resolvedChoice.summary
       ? `[${event.title}] ${choice.text}（${resolvedChoice.summary.label}：${resolvedChoice.summary.reason}）`
@@ -93,7 +95,7 @@ export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId
             {
               id: `delayed-${event.eventId}-${choiceId}`,
               sourceEventId: event.eventId,
-              triggerWeekKey: `${save.season.startDate.slice(0, 4)}-W${String(save.season.currentWeek + 2).padStart(2, '0')}`,
+              triggerWeekKey: `${eventTime.season}-W${String(eventTime.week + 2).padStart(2, '0')}`,
               effects: choice.delayEffects,
               participantIds: event.participantIds,
             },
@@ -120,3 +122,16 @@ export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId
 
 const applyScore = (current: number, delta: number | undefined) =>
   Math.min(100, Math.max(0, current + (delta ?? 0)));
+
+const eventTimeContextOf = (save: CareerSaveV2Like) => {
+  const proSeason = (save as Partial<CareerSaveV4Like>).proSeason;
+  const season = Number((proSeason?.startDate ?? save.season.startDate).slice(0, 4));
+  const week = proSeason?.currentWeek ?? save.season.currentWeek;
+  const paddedWeek = String(week).padStart(2, '0');
+  return {
+    season,
+    week,
+    weekKey: `${season}-W${paddedWeek}`,
+    idSuffix: `${season}${paddedWeek}`,
+  };
+};
