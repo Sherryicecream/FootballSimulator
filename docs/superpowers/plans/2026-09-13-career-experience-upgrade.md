@@ -8,7 +8,7 @@
 
 **Tech Stack:** 现有 pnpm 11.9.0、Node.js >=24.16.0、TypeScript、React/Vite、Zod、Vitest、Playwright；优先使用现有依赖。不得给 simulation 添加外部运行时依赖。
 
-**状态：** 计划已形成，所有实现任务尚未开始。历史 Iteration 1 计划已完成并归档；其未勾选步骤不是待办。本计划不宣称原型、测试、内容扩充或真人验收已完成。
+**状态：** G1 Task01–09、G2 Task10–11 已完成，Task12 及后续任务尚未开始；20 分钟目标仍待本地真人试玩验证。历史 Iteration 1 计划已完成并归档；其未勾选步骤不是待办。本计划不宣称后续原型、内容扩充或真人验收已完成。
 
 ## A. 接手须知与边界
 
@@ -124,11 +124,11 @@ pnpm exec prettier --check spec.md docs/ROADMAP.md docs/superpowers/specs/2026-0
 
 **Interfaces:** `CareerMoment`在contracts；`careerMoment(save: CareerSaveV6Like): CareerMoment`、`makeFactId(seasonId: string, weekIndex: number, ordinal: number): string`在simulation。v7所有用例返回值保留 `mechanicsVersion: 'experience-v1'` 和新事实的 `occurredOn` / `seasonId` / `ordinal`。事实ID采用短赛季编码＋周序＋账本递增ordinal，必须≤60字符；事件ID存独立字段，不拼无限长文本。
 
-- [ ] 写下方纯函数测试，另写应用回归：同一职业年内两次同类事件不同ID；职业期不用青训周数；首次合同开始日≤首次职业比赛日；退役档案使用careerEnd.endedOn。
-- [ ] 运行 `pnpm exec vitest run --project domain packages/simulation/tests/career/career-moment.test.ts packages/contracts/tests/career-v7.test.ts`，确认新能力缺失导致失败。
-- [ ] 实现统一时间读取：职业phase从proSeason实际日期/周序读，青训从season读；合同下一合法开季按所属赛季日期计算，不能回到签约之前。resolve事件、延迟效果和人物记忆统一用该时间。新赛季采用B节日历，旧赛季日期不回写。
-- [ ] 实现v6→v7无损迁移；逐个审查application旧v4/v5 parse，避免删掉新字段。重复旧ID保留原始证据，通过展示侧稳定位置区分，不重新抽取历史效果；无法确定实际日期的旧记录显示未知。
-- [ ] 重跑新测试及 `packages/application/tests/use-cases/submit-career-decision.test.ts`、`contract-flow.test.ts`、`pro-flow.test.ts`、`apps/web/tests/career-saves/CareerSaveSelector.test.tsx`，检查存档恢复。提交 `fix: align career time and event identity`。
+- [x] 写下方纯函数测试，另写应用回归：同一职业年内两次同类事件不同ID；职业期不用青训周数；首次合同开始日≤首次职业比赛日；退役档案使用careerEnd.endedOn。
+- [x] 运行 `pnpm exec vitest run --project domain packages/simulation/tests/career/career-moment.test.ts packages/contracts/tests/career-v7.test.ts`，确认新能力缺失导致失败。
+- [x] 实现统一时间读取：职业phase从proSeason实际日期/周序读，青训从season读；合同下一合法开季按所属赛季日期计算，不能回到签约之前。resolve事件、延迟效果和人物记忆统一用该时间。新赛季采用B节日历，旧赛季日期不回写。
+- [x] 实现v6→v7无损迁移；逐个审查application旧v4/v5 parse，避免删掉新字段。重复旧ID保留原始证据，通过展示侧稳定位置区分，不重新抽取历史效果；无法确定实际日期的旧记录显示未知。
+- [x] 重跑新测试及 `packages/application/tests/use-cases/submit-career-decision.test.ts`、`contract-flow.test.ts`、`pro-flow.test.ts`、`apps/web/tests/career-saves/CareerSaveSelector.test.tsx`，检查存档恢复。提交 `fix: align career time and event identity`。
 
 ```ts
 import { expect, it } from 'vitest';
@@ -150,10 +150,10 @@ it('uses professional time and distinct fact identities', () => {
 
 **Interfaces:** `allocatePlayerContribution({ ownGoals, minutes, position, shooting, passing, rng }): { goals: number; assists: number }`；position使用contracts.Position，rng使用SeededRandomSource，其余为数字。每个己方进球最多分配一个玩家身份：得分者、助攻者或未参与。
 
-- [ ] 先写0进球、0分钟、1个进球以及多球用例；在职业周回归中对每个实际出场记录断言贡献守恒，不通过改fixture比分让测试通过。
-- [ ] 运行 `pnpm exec vitest run --project domain packages/simulation/tests/match/player-contribution.test.ts` 确认红灯。
-- [ ] 按每个真实己方进球抽取互斥贡献，概率受位置、相应能力与出场比例影响；参数写进设计，禁止球员助攻自己。未上场为0，预备队数据与联赛分离，杯赛复用同一规则。比赛评分再考虑真实贡献，但不要重复放大球队比分影响。
-- [ ] 对100个种子和所有外场位置验证守恒与重复运行一致，跑职业/青训比赛测试；提交 `fix: bind player contributions to match goals`。此任务改变规则和随机消费，记录新基线变化，不要求旧报告逐位相同。
+- [x] 先写0进球、0分钟、1个进球以及多球用例；在职业周回归中对每个实际出场记录断言贡献守恒，不通过改fixture比分让测试通过。
+- [x] 运行 `pnpm exec vitest run --project domain packages/simulation/tests/match/player-contribution.test.ts` 确认红灯。
+- [x] 按每个真实己方进球抽取互斥贡献，概率受位置、相应能力与出场比例影响；参数写进设计，禁止球员助攻自己。未上场为0，预备队数据与联赛分离，杯赛复用同一规则。比赛评分再考虑真实贡献，但不要重复放大球队比分影响。
+- [x] 对100个种子和所有外场位置验证守恒与重复运行一致，跑职业/青训比赛测试；提交 `fix: bind player contributions to match goals`。此任务改变规则和随机消费，记录新基线变化，不要求旧报告逐位相同。
 
 ```ts
 import { expect, it } from 'vitest';
@@ -174,10 +174,10 @@ it('cannot score and assist the only goal', () => {
 
 **Interfaces:** 保留 `buildMatchMomentEvent`，明确本轮属于“比赛表现节点”，不回改已结算比分；所有intent风险使用合法low/medium/high。新增后腰独立3意图：保护中卫、拦截线路、第一脚出球。
 
-- [ ] 加回归：0:0已赛事实不能生成“进球/助攻入网”成功文案；六位置都有独立意图；界面不显示未知风险；疲劳增加标示负面而不是绿色奖励。
-- [ ] 运行 `pnpm exec vitest run --project domain packages/simulation/tests/career/match-moment.test.ts` 和 `pnpm exec vitest run --project web apps/web/tests/event-choice/MatchMomentScene.test.tsx apps/web/tests/event-choice/EventFeedbackPanel.test.tsx` 确认失败。
-- [ ] 保留既有结果，只描述跑位、处理、压力和教练评价；必须提及进球时只引用输入事实已经存在的进球。反馈变化统一按字段方向决定好坏，疲劳越低越好；加入文字“疲劳增加”。当前人物未参加则不写“关系更亲近”等已达成关系事实。
-- [ ] 重跑上述测试，浏览器检查同一输入选择后刷新保持结果；提交 `fix: make match feedback factual and readable`。
+- [x] 加回归：0:0已赛事实不能生成“进球/助攻入网”成功文案；六位置都有独立意图；界面不显示未知风险；疲劳增加标示负面而不是绿色奖励。
+- [x] 运行 `pnpm exec vitest run --project domain packages/simulation/tests/career/match-moment.test.ts` 和 `pnpm exec vitest run --project web apps/web/tests/event-choice/MatchMomentScene.test.tsx apps/web/tests/event-choice/EventFeedbackPanel.test.tsx` 确认失败。
+- [x] 保留既有结果，只描述跑位、处理、压力和教练评价；必须提及进球时只引用输入事实已经存在的进球。反馈变化统一按字段方向决定好坏，疲劳越低越好；加入文字“疲劳增加”。当前人物未参加则不写“关系更亲近”等已达成关系事实。
+- [x] 重跑上述测试，浏览器检查同一输入选择后刷新保持结果；提交 `fix: make match feedback factual and readable`。
 
 核心方向函数可直接在已有展示模块补充，不引入规则引擎：
 
@@ -196,10 +196,10 @@ export const changeDirection = (key: string, before: number, after: number) => {
 
 **Interfaces:** `TrainingPlanEditor({ plan, disabled, onChange })`只传TrainingPlan；`countClubFixtures(fixtures: readonly ProFixture[], clubId: string): number`返回该队已赛数。UI仅呈现application/simulation投影。
 
-- [ ] 加回归：职业页改为恢复/轻量后刷新仍保留，下一月负荷按新计划计算；待决时不能改训练；无关联赛比赛不计本队；零场显示“尚未开赛”，不显示虚假第2。
-- [ ] 先运行 `pnpm exec vitest run --project web apps/web/tests/career-dashboard/ProDashboard.test.tsx` 与新summary测试确认红灯。
-- [ ] 提取青训已有编辑器供职业页复用；通过现有updateTrainingPlan→commitCareer完成事务，返回v7不丢字段。球队、赛事、个人分别命名；杯赛7/7说明是整项赛事。本队出场/合同承诺分母都按明确本队赛事计算。
-- [ ] 运行dashboard与职业流程测试；提交 `fix: preserve training controls and season stat scope`。
+- [x] 加回归：职业页改为恢复/轻量后刷新仍保留，下一月负荷按新计划计算；待决时不能改训练；无关联赛比赛不计本队；零场显示“尚未开赛”，不显示虚假第2。
+- [x] 先运行 `pnpm exec vitest run --project web apps/web/tests/career-dashboard/ProDashboard.test.tsx` 与新summary测试确认红灯。
+- [x] 提取青训已有编辑器供职业页复用；通过现有updateTrainingPlan→commitCareer完成事务，返回v7不丢字段。球队、赛事、个人分别命名；杯赛7/7说明是整项赛事。本队出场/合同承诺分母都按明确本队赛事计算。
+- [x] 运行 dashboard 与职业流程测试并完成 Task04 验收。
 
 ```ts
 export const countClubFixtures = (fixtures: readonly ProFixture[], clubId: string) =>
@@ -215,10 +215,13 @@ export const countClubFixtures = (fixtures: readonly ProFixture[], clubId: strin
 
 **Interfaces:** 存储port新增 `exportRaw(slotId: string): Promise<string>`；只读取原始包装文本，包括不能解析的内容。下载函数在浏览器adapter生成Blob；迁移备份按slot与源schema保存一次，写不进备份则保留原槽并提示，不先覆盖原存档。
 
-- [ ] 回归原始损坏JSON能原样导出；导出不删除/重写槽；保存失败保留旧界面、随机位置和当前待决；两个生涯互不覆盖。
-- [ ] 运行 `pnpm exec vitest run --project web apps/web/tests/persistence/local-storage-save.test.ts` 确认新增导出能力缺失。
-- [ ] 损坏卡加入“导出原始档案”，正常档案加入备份导出；不添加导入回档入口。日期使用本地可读格式，结束生涯优先careerEnd.endedOn。异常文案区分读取、额度、权限与迁移，不一律说空间不足。
-- [ ] 执行单项与 `pnpm exec playwright test apps/web/tests/e2e/career-safety.spec.ts`，随后跑G1门禁；提交 `feat: preserve and export career recovery evidence`。
+- [x] 回归原始损坏JSON能原样导出；导出不删除/重写槽；保存失败保留旧界面、随机位置和当前待决；两个生涯互不覆盖。
+- [x] 运行 `pnpm exec vitest run --project web apps/web/tests/persistence/local-storage-save.test.ts` 确认新增导出能力缺失。
+- [x] 损坏卡加入“导出原始档案”，正常档案加入备份导出；不添加导入回档入口。日期使用本地可读格式，结束生涯优先careerEnd.endedOn。异常文案区分读取、额度、权限与迁移，不一律说空间不足。
+
+- [x] 结束生涯后将完整活动存档压缩为同槽位只读历史档案；旧终局 v5/v6 存档在读取时转换，转换失败保留原始完整存档并提示。
+- [x] 历史档案列表与活动/损坏档案分组展示；回顾页可阅读荣誉、俱乐部履历、国家队履历、租借经历、累计分钟、数据统计和全生涯回放。
+- [x] 执行单项与 `pnpm exec playwright test apps/web/tests/e2e/career-safety.spec.ts`，随后跑G1门禁；提交 `feat: preserve and export career recovery evidence`。
 
 ```ts
 // 在已有localStorage测试套件中：
@@ -234,10 +237,10 @@ expect(localStorage.getItem('football-save-broken')).toBe(before);
 
 **Interfaces:** `parseSeedInput(text: string): number | null`空值null，不合法throw；seedFactory仅在null时调用一次。实际使用seed、mechanicsVersion、contentVersion作为只读档案信息，不生成第二份随机状态。
 
-- [ ] 加测试0/上界/空白/负数/小数/科学计数/超界；原“seed控件必须隐藏”断言改为符合新需求，不能删除整个创建回归。
-- [ ] 运行 `pnpm exec vitest run --project web apps/web/tests/career-creation/seed-input.test.ts` 确认红灯。
-- [ ] 新入口默认折叠“世界种子（可选）”；复制失败时保留可选中文本。开局用短文说明16岁中国球员、按月、自动保存、不可回退。惯用脚采用可聚焦radio，开始按钮对比度使用现有tokens深色字。
-- [ ] 同种子同设置创建两次比较机械初始状态，排除careerId/保存时间等包装差异；提交 `feat: add reproducible optional career seeds`。
+- [x] 加测试0/上界/空白/负数/小数/科学计数/超界；原“seed控件必须隐藏”断言改为符合新需求，不能删除整个创建回归。
+- [x] 运行 `pnpm exec vitest run --project web apps/web/tests/career-creation/seed-input.test.ts` 确认红灯。
+- [x] 新入口默认折叠“世界种子（可选）”；复制失败时保留可选中文本。开局用短文说明16岁中国球员、按月、自动保存、不可回退。惯用脚采用可聚焦radio，开始按钮对比度使用现有tokens深色字。
+- [x] 同种子同设置创建两次比较机械初始状态，排除careerId/保存时间等包装差异；应用层既有确定性回归与创建表单种子透传回归均通过。
 
 ```ts
 export const parseSeedInput = (text: string): number | null => {
@@ -259,10 +262,10 @@ export const parseSeedInput = (text: string): number | null => {
 
 **Interfaces:** ActionBar接收 `{ busy, label, onAdvanceToNode, onAdvanceOneMonth, onOpenArchives }`，其中 `onAdvanceToNode` 是主按钮（推进到下一有事件/选择的月份），`onAdvanceOneMonth` 是次要链接（逐月推进，用于调试或想细看）。青训和职业都展示姓名、年龄、位置、当前俱乐部、实际日期及一个主要关注点。
 
-- [ ] E2E在320×720、412×915、1440×900验证首次进入即可触达”推进到下一节点”主按钮、内容不被固定操作栏遮挡、键盘能到所有操作；长俱乐部名和200%文字仍可读。
-- [ ] 运行 `pnpm exec playwright test apps/web/tests/e2e/experience-comfort.spec.ts` 确认旧布局失败。
-- [ ] 主按钮”推进到下一节点”放在首屏可达位置（sticky底部栏），次要”逐月推进”放在同一栏作为小字链接，不能覆盖事件/确认对话框。默认展示必要身份、状态和短节点摘要，完整属性/积分榜按需展开。统一剧情图鉴等默认按钮；将pace/stamina等属性、角色、内部阶段ID映射为中文。报价写明”游戏币/年”，把tier解释为实力档位而非国家联赛等级。
-- [ ] 重跑E2E与dashboard组件测试；提交 `feat: advance-to-node with accessible action bar`。
+- [x] E2E在320×720、412×915、1440×900验证首次进入即可触达”推进到下一节点”主按钮、内容不被固定操作栏遮挡、键盘能到所有操作；长俱乐部名和200%文字仍可读。
+- [x] 运行 `pnpm exec playwright test apps/web/tests/e2e/experience-comfort.spec.ts` 确认旧布局失败。
+- [x] 主按钮”推进到下一节点”放在首屏可达位置（sticky底部栏），次要”逐月推进”放在同一栏作为小字链接，不能覆盖事件/确认对话框。默认展示必要身份、状态和短节点摘要，完整属性/积分榜按需展开。统一剧情图鉴等默认按钮；将pace/stamina等属性、角色、内部阶段ID映射为中文。报价写明”游戏币/年”，把tier解释为实力档位而非国家联赛等级。
+- [x] 重跑E2E与dashboard组件测试；已完成验证，按当前工作流未创建提交。
 
 ```ts
 // 验证主按钮首屏可见：
@@ -283,11 +286,11 @@ expect(page.getByRole('link', { name: '逐月推进' })).toBeVisible();
 - `advanceToNextNode(save, clubs): { skippedMonths: MonthSummary[]; stopReason: 'event'|'season-end'|'injury'|'contract'|'offer'|'national-team'; stopAt: CareerSave; brief: NodeBrief }`。`MonthSummary = { monthKey: string; matchCount: number; goalsFor: number; goalsAgainst: number; fatigueTrend: 'up'|'down'|'flat'; notableChange: string | null }`。模拟器连续推进月份，当遇到以下情况时停止并返回聚合摘要：(1) 有 interactiveEvent（事件/关键时刻待选择）；(2) 赛季结束；(3) 伤病/合同到期/转会窗口/国家队征召等状态变化；(4) 赛季末结算。若无以上情况，直接推进到赛季结束。
 - `buildNodeBrief(summaries: MonthSummary[], stopReason, stopEvent?): { headline: string; skippedSummary: string; changes: string[]; nextFocus: string }`——仅投影已存在字段，不重新判定。`headline` 是”2026年8月-10月：3场比赛，无重大事件”或”2026年11月：关键选择等待你决定”。
 
-- [ ] 写下方测试：`advanceToNextNode` 在连续3个无事件月份后停在第四个月的有事件位置；跳过月份不消耗玩家侧交互次数；跳过月份的成长/疲劳变化正确聚合到摘要中；`stopReason` 准确反映停止原因。`buildNodeBrief` 对无事件跳过返回一句话概括，对事件停返回事件反馈前缀。
-- [ ] 运行 `pnpm exec vitest run --project domain packages/simulation/tests/career/advance-to-node.test.ts` 和 `pnpm exec vitest run --project web apps/web/tests/career-dashboard/NodeBrief.test.tsx` 确认红灯。
-- [ ] 在 `pro-flow.ts` 中实现 `advanceToNextNode`：循环调用现有月度推进（不改变模拟逻辑），每次推进后检查是否需要停。无事件月份只聚合比赛结果、成长趋势和疲劳方向到 `MonthSummary`，不生成完整月报。有事件时立即停止，返回事件反馈和已跳过月份的摘要列表。`application`层确保 `advanceToNextNode` 在一个事务中完成（不存中间状态）。
-- [ ] 前端 `NodeBrief.tsx` 默认展示 `headline` + 事件反馈（若有），跳过月份的详情列表默认折叠。`onAdvance` 只推进一次（到下一节点），不额外弹层确认。保留 “逐月推进” 次要入口（利用旧 `monthlyAdvance`），只在调试/想看细节时使用。
-- [ ] 加”中间保存”测试：推进到一半（跳过2个月后停在第3个月的事件），刷新页面能正确恢复并看到已跳过的2个月摘要。提交 `feat: node-advance with aggregated skip brief`。
+- [x] 写下方测试：`advanceToNextNode` 在连续3个无事件月份后停在第四个月的有事件位置；跳过月份不消耗玩家侧交互次数；跳过月份的成长/疲劳变化正确聚合到摘要中；`stopReason` 准确反映停止原因。`buildNodeBrief` 对无事件跳过返回一句话概括，对事件停返回事件反馈前缀。
+- [x] 运行 `pnpm exec vitest run --project domain packages/simulation/tests/career/advance-to-node.test.ts` 和 `pnpm exec vitest run --project web apps/web/tests/career-dashboard/NodeBrief.test.tsx` 确认红灯。
+- [x] 在 `pro-flow.ts` 中实现 `advanceToNextNode`：循环调用现有月度推进（不改变模拟逻辑），每次推进后检查是否需要停。无事件月份只聚合比赛结果、成长趋势和疲劳方向到 `MonthSummary`，不生成完整月报。有事件时立即停止，返回事件反馈和已跳过月份的摘要列表。`application`层确保 `advanceToNextNode` 在一个事务中完成（不存中间状态）。
+- [x] 前端 `NodeBrief.tsx` 默认展示 `headline` + 事件反馈（若有），跳过月份的详情列表默认折叠。`onAdvance` 只推进一次（到下一节点），不额外弹层确认。保留 “逐月推进” 次要入口（利用旧 `monthlyAdvance`），只在调试/想看细节时使用。
+- [x] 加”中间保存”测试：推进到一半（跳过2个月后停在第3个月的事件），刷新页面能正确恢复并看到已跳过的2个月摘要。提交 `feat: node-advance with aggregated skip brief`。
 
 ```ts
 import { expect, it } from 'vitest';
@@ -311,10 +314,16 @@ it('reaches season end when no events occur', () => {
 
 **Interfaces:** `summarizeExperience(trace: readonly { kind: 'node-advance' | 'decision' | 'feedback' | 'contract' | 'retirement'; requiredText: string }[]): { actionCount: number; decisionCount: number; nodeAdvanceCount: number; requiredCharacters: number }`；只在测试/分析工具采集，不给生产存档加埋点状态。`actionCount` 包含节点推进和决策/反馈/合同/退役等交互。`nodeAdvanceCount` 单独统计推进次数，目标是全生涯 25–40 次。
 
-- [ ] 给短/长生涯样本计数，严格区分全生涯和首青训季；工具结果不包含“真人分钟数”的伪精确字段。
-- [ ] 运行 `pnpm exec vitest run --project balance tools/balance/tests/experience-metrics.test.ts` 确认红灯。
-- [ ] batch输出按职业长度分组的必经操作数、字数和决策数；协议写明19+1分钟预算、开始/结束点、可选详情边界和手机观察方式。不收集用户真实存档上传远端。
-- [ ] 跑12个完整路径并标出阅读负担最大的页面，结合07/08继续减重复；阶段末运行G2门禁，提交 `test: measure complete career interaction workload`。此时没有真人数据只能写“工具验收通过，20分钟待真人验证”。
+- [x] 给短/长生涯样本计数，严格区分全生涯和首青训季；工具结果不包含“真人分钟数”的伪精确字段。
+- [x] 运行 `pnpm exec vitest run --project balance tools/balance/tests/experience-metrics.test.ts` 确认红灯。
+- [x] batch输出按职业长度分组的必经操作数、字数和决策数；协议写明19+1分钟预算、开始/结束点、可选详情边界和手机观察方式。不收集用户真实存档上传远端。
+- [x] 跑12个完整路径并标出阅读负担最大的页面，结合07/08继续减重复；阶段末运行G2门禁，提交 `test: measure complete career interaction workload`。此时没有真人数据只能写“工具验收通过，20分钟待真人验证”。
+
+> Task09 工具验收记录：12 条完整路径中短生涯 4 条、长生涯 8 条；短生涯节点推进中位数 32、必读字符中位数 6,705，长生涯节点推进中位数 173、必读字符中位数 37,332。两组阅读负担最高页面均为事件反馈；长生涯节点数明显超过 25–40 次设计目标，需在后续真人试玩与重复内容整理中继续校准，不能用统计口径掩盖。
+>
+> Task09 复核更正：上条记录基于未真正终局的青训短路径，现已改为 12 条真正到达终局的完整路径：短生涯 3 条、长生涯 9 条；短生涯节点推进中位数 35、必读字符中位数 18,675，长生涯节点推进中位数 173、必读字符中位数 91,521。两组阅读负担最高页面仍为事件反馈。
+>
+> Task09 最终重跑：修正职业节点使用实际职业月份后，长生涯必读字符中位数为 91,840、P90 为 102,280；短生涯统计保持节点推进中位数 35、必读字符中位数 18,675。12 条路径均已进入青训终局或职业退役。
 
 ```ts
 import { expect, it } from 'vitest';
@@ -331,7 +340,7 @@ it('counts the whole required path without inventing play time', () => {
 
 ## Task 10：国别世界注册表与国家队联赛取消区域分组
 
-**Files:** Create `packages/contracts/src/country.ts`、`packages/contracts/tests/country.test.ts`、`packages/application/src/world/world-registry.ts`、`packages/application/tests/world/world-registry.test.ts`；Modify `packages/contracts/src/clubs.ts`、`packages/contracts/src/index.ts`、`packages/simulation/src/career/professional-week.ts`、`packages/application/src/use-cases/pro-flow.ts`、`packages/content/data/clubs/overseas-europe.ts`、`packages/content/data/clubs/overseas-asia.ts`；Create `packages/content/data/clubs/england.ts`、`spain.ts`、`germany.ts`、`italy.ts`、`france.ts`、`japan.ts`、`korea.ts`（首批每国6队占位）。
+**Files:** Create `packages/contracts/src/country.ts`、`packages/contracts/tests/country.test.ts`、`packages/application/src/world/world-registry.ts`、`packages/application/tests/world/world-registry.test.ts`；Modify `packages/contracts/src/clubs.ts`、`packages/contracts/src/index.ts`、`packages/simulation/src/career/professional-week.ts`、`packages/application/src/use-cases/pro-flow.ts`、`packages/content/data/clubs/overseas-europe.ts`、`packages/content/data/clubs/overseas-asia.ts`；Create `packages/content/data/clubs/england.ts`、`spain.ts`、`germany.ts`、`italy.ts`、`france.ts`、`japan.ts`、`korea.ts`（已扩充为完整俱乐部内容，旧文件保留兼容入口）。
 
 **Interfaces:** `Country`（china / england / spain / germany / italy / france / japan / korea 八值枚举，zod schema + TS union）。`ClubProfileSchema` 新增 `country: Country` 替代旧 `overseasRegion`；迁移期内 `overseasRegion` 保留为只读兼容别名但不用于联赛分组。`WorldRegistry` 为每国存当前赛季引用，`source: 'player'`（玩家有合同在该国）或 `source: 'world'`（非玩家联赛）；非玩家联赛仅持赛季聚合摘要，不存逐场明细。
 
@@ -353,11 +362,11 @@ export const WorldRegistryEntrySchema = z.object({
 export type WorldRegistryEntry = z.infer<typeof WorldRegistryEntrySchema>;
 ```
 
-- [ ] 写下方纯函数测试：`clubProfileSchema` 新增八国合法枚举、`england` 不在旧 `overseasRegion` 内仍通过校验；世界注册表可写入和读取非玩家联赛摘要，不存储明细；两场非玩家同国联赛各自独立结算不互相写入。
-- [ ] 运行 `pnpm exec vitest run --project domain packages/contracts/tests/country.test.ts packages/application/tests/world/world-registry.test.ts` 确认红灯。
-- [ ] 实现 `CountrySchema` 与 `ClubProfileSchema.country`；国内俱乐部 `country: 'china'`、海外俱乐部 `country` 对应所在国；现行欧洲12队暂分配至英格兰与西班牙（各6队），亚洲12队按已有 regionId japan/korea 分配。league 分组从 `overseasRegion` 等判断改为 `country` 等判断；非 player league 按国别独立结算，结算精度降为每季仅冠军、升降级与平均强度，不逐月模拟球员级明细。
-- [ ] 迁移旧存档：加载时若 `club.overseasRegion` 存在但 `country` 缺失，按 `overseasRegion === 'europe' ? 'england' : 'japan'` 补缺，同步到 v8 新增字段 `worldRegistry`。不做逆向兼容移除。
-- [ ] 重跑 `pro-flow.test.ts`、`professional-week.test.ts`；新增世界注册表保存/重载测试。提交 `feat: add country-level world registry`。
+- [x] 写下方纯函数测试：`clubProfileSchema` 新增八国合法枚举、`england` 不在旧 `overseasRegion` 内仍通过校验；世界注册表可写入和读取非玩家联赛摘要，不存储明细；两场非玩家同国联赛各自独立结算不互相写入。
+- [x] 运行 `pnpm exec vitest run --project domain packages/contracts/tests/country.test.ts packages/application/tests/world/world-registry.test.ts` 确认红灯。
+- [x] 实现 `CountrySchema` 与 `ClubProfileSchema.country`；国内俱乐部 `country: 'china'`、海外俱乐部 `country` 对应所在国；现行欧洲12队暂分配至英格兰与西班牙（各6队），亚洲12队按已有 regionId japan/korea 分配。league 分组从 `overseasRegion` 等判断改为 `country` 等判断；非 player league 按国别独立结算，结算精度降为每季仅冠军、升降级与平均强度，不逐月模拟球员级明细。
+- [x] 迁移旧存档：加载时若 `club.overseasRegion` 存在但 `country` 缺失，按 `overseasRegion === 'europe' ? 'england' : 'japan'` 补缺，同步到 v8 新增字段 `worldRegistry`。不做逆向兼容移除。
+- [x] 重跑 `pro-flow.test.ts`、`professional-week.test.ts`；新增世界注册表保存/重载测试。提交 `feat: add country-level world registry`。
 
 ```ts
 import { expect, it } from 'vitest';
@@ -380,10 +389,12 @@ it('rejects invalid country', () => {
 
 **内容校验：** 每个国家至少2个不同 tier 值（主 tier +-1 范围内），每国各 tier 刚好12队；不存在重复ID或跨文件clubId冲突；不存在未分配 `country` 的俱乐部。
 
-- [ ] 写校验：每国12队x2 tier = 24队；所有俱乐部 `country` 为合法八国之一；国内72队 `country` 均为 `china`；不存在ID重复或name为空。
-- [ ] 运行 `pnpm exec vitest run --project content packages/content/tests/club-data.test.ts` 确认新断言数据量不符时红灯。
-- [ ] 编写240个虚构俱乐部 JSON 数据。名字风格示例（英格兰）：伦敦先锋、利物浦浅滩、伯明翰铁锤、曼彻斯特织工、泰晤士河联、诺丁汉森林人、谢菲尔德钢城、利兹竞技、纽卡斯尔港务、南安普敦水手、莱斯特义勇、阿斯顿猎人——tier 5同理类推12队。每国风格与本国地理/文化特征呼应。所有名字原创，回避现实商标。
-- [ ] 装配器读取新文件顺序，替换旧 europe/asia 数据源；旧文件标记 `@deprecated` 但存档兼容期内保留。运行 `pnpm exec vitest run --project content` 全部通过。提交 `feat: expand to 240 clubs across 8 countries`。
+- [x] 写校验：每国12队x2 tier = 24队；所有俱乐部 `country` 为合法八国之一；国内72队 `country` 均为 `china`；不存在ID重复或name为空。
+- [x] 运行内容回归：仓库未单列 `content` Vitest project，实际执行 `pnpm exec vitest run --project domain packages/content/tests`，新断言先红后绿。
+- [x] 编写240个虚构俱乐部数据。名字风格示例（英格兰）：伦敦先锋、利物浦浅滩、伯明翰铁锤、曼彻斯特织工、泰晤士河联、诺丁汉森林人、谢菲尔德钢城、利兹竞技、纽卡斯尔港务、南安普敦水手、莱斯特义勇、阿斯顿猎人——tier 5同理类推12队。每国风格与本国地理/文化特征呼应。所有名字原创，回避现实商标。
+- [x] 装配器读取新文件顺序，替换旧 europe/asia 数据源；旧文件标记 `@deprecated` 但存档兼容期内保留。内容测试全部通过；并完成扩充后市场代表与职业可见度的平衡校准。提交记录待统一整理。
+
+**Task11 平衡配套与验收：** 海外要约池固定为每国 3 家分层代表，避免俱乐部数量线性放大报价概率；职业赛季总声望增量乘以 0.90，保留完整联赛曝光同时避免 WorldClassRate 越界；负向小数声望在 simulation 层统一取整，保持存档整数不变量。`artifacts/experience-G2-task11-balance-1000.json`：完成率 100%、WorldClassRate 2.5%、海外占比 14.2%、国家队占比 27.9%、职业分钟中位数 74.97、承诺兑现率 97.53%、场均总进球 2.17。`pnpm test` 通过（常规139个测试文件、796项测试；balance 2个文件、7项测试；架构10/10）；`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm build` 通过；`pnpm test:e2e` 38/38 通过（桌面19、移动19）。国家队完整赛事安排仍按此前决定留待后续任务。
 
 ```ts
 import { expect, it } from 'vitest';
@@ -432,6 +443,232 @@ it('east asian season runs March to November', () => {
   expect(cal.seasonEnd).toContain('11-30');
 });
 ```
+
+## Task 12A：世界俱乐部赛季脉冲与 240 队覆盖索引
+
+**依赖：** Task12 的八国独立赛历、国内双循环赛程和升降级摘要完成后执行。
+
+**Files:** Create `packages/contracts/src/world-football.ts`、`packages/simulation/src/world/club-season-pulse.ts`、`packages/simulation/tests/world/club-season-pulse.test.ts`；Modify `packages/contracts/src/country.ts`、`packages/contracts/src/index.ts`、`packages/application/src/world/world-registry.ts`。
+
+**Interfaces:**
+
+- `WorldClubPulseSchema` / `WorldClubPulse`：保存 `clubId`、`country`、`tier`、`seasonId`、`finalRank`、`points`、国内荣誉、洲际状态、近三季洲际出场数、近两次转会窗口活跃度和最近动态时间。
+- `WorldClubSeasonResult`：`{ clubId: string; country: Country; tier: number; seasonId: string; finalRank: number | null; points: number; domesticHonours: readonly string[]; continentalStatus: 'none' | 'qualifying' | 'main-stage' | 'champion' }`。
+- `buildWorldClubPulses(input: { clubs: readonly ClubProfile[]; seasonResults: readonly WorldClubSeasonResult[]; previous: readonly WorldClubPulse[] }): WorldClubPulse[]`：按 `clubId` 排序输出全部 240 队的紧凑赛季状态。
+- `mergeWorldClubPulses(registry: WorldRegistry, pulses: readonly WorldClubPulse[]): WorldRegistry`：以 `clubId + seasonId` 幂等写回，不产生重复状态。
+
+- [ ] **Step 1: 写覆盖率和存档兼容的失败测试**
+
+```ts
+it('builds one compact pulse for every playable club', () => {
+  const pulses = buildWorldClubPulses({
+    clubs: allClubProfiles(),
+    seasonResults: makeSeasonResults(allClubProfiles()),
+    previous: [],
+  });
+  expect(pulses).toHaveLength(240);
+  expect(new Set(pulses.map(({ clubId }) => clubId)).size).toBe(240);
+});
+
+it('reloads legacy world registries with an empty club pulse list', () => {
+  expect(WorldRegistrySchema.parse({ entries: [] }).clubPulses).toEqual([]);
+});
+```
+
+- [ ] **Step 2: 运行测试确认红灯**
+
+运行：`pnpm exec vitest run --project domain packages/simulation/tests/world/club-season-pulse.test.ts`。预期：因 `WorldClubPulse`、`clubPulses` 和 `buildWorldClubPulses` 尚不存在而失败。
+
+- [ ] **Step 3: 添加紧凑世界状态 schema**
+
+在 `world-football.ts` 中定义严格 schema。`WorldRegistrySchema` 增加 `clubPulses: z.array(WorldClubPulseSchema).max(240).default([])`，旧 v8 存档缺失该字段时解析为空数组，不增加逐场比赛字段，也不复制 `ClubProfile` 静态资料。
+
+- [ ] **Step 4: 实现确定性构建和幂等合并**
+
+在 simulation 中只消费显式传入的俱乐部和赛季摘要；按 `clubId` 排序，缺少赛季结果的球队生成 `finalRank: null` 的合法摘要，重复输入得到完全相同的数组。application 的 `mergeWorldClubPulses` 替换同键记录并保留其他国家和赛季记录。
+
+- [ ] **Step 5: 运行定向测试确认通过**
+
+运行：`pnpm exec vitest run --project domain packages/simulation/tests/world/club-season-pulse.test.ts packages/application/tests/world/world-registry.test.ts`。预期：覆盖 240 队、重复写回、旧存档解析和随机种子复现全部通过。
+
+- [ ] **Step 6: 提交独立变更**
+
+提交范围仅包含 Task12A 的 contracts、application world registry、simulation pulse 实现和对应测试，提交信息为 `feat: add compact world club season pulses`。
+
+## Task 12B：洲际资格轮换与背景赛果摘要
+
+**依赖：** Task12A 的 `WorldClubPulse` 和 Task12 的本国赛季摘要。
+
+**Files:** Create `packages/content/data/continental-competitions.ts`、`packages/simulation/src/competition/continental-qualification.ts`、`packages/simulation/src/competition/continental-season.ts`、`packages/simulation/tests/competition/continental-qualification.test.ts`、`packages/simulation/tests/competition/continental-season.test.ts`；Modify `packages/contracts/src/world-football.ts`、`packages/contracts/src/index.ts`、`packages/content/src/index.ts`、`packages/application/src/use-cases/pro-flow.ts`、`packages/simulation/src/index.ts`。
+
+**Interfaces:**
+
+- `ContinentalFederation = 'uefa' | 'afc'`。
+- `ContinentalClubInput`：`{ clubId: string; country: Country; tier: number; finalRank: number; points: number; cupWinner: boolean }`。
+- `ContinentalQuota`：`{ directPerCountry: number; qualifyingPerCountry: number }`。
+- `ContinentalParticipant`：`{ clubId: string; country: Country; federation: ContinentalFederation; stage: 'direct' | 'qualifying'; reason: 'league-champion' | 'league-rank' | 'cup-winner' | 'coefficient' }`。
+- `ContinentalSeasonSummary`：`{ competitionId: string; seasonId: string; participants: readonly ContinentalParticipant[]; results: readonly { clubId: string; stage: string; wins: number; draws: number; losses: number; points: number; honour: string | null; relatedFactId: string }[]; playerFixtures: readonly ProFixture[] | null }`。
+- `selectContinentalParticipants(input: { federation: ContinentalFederation; clubs: readonly ContinentalClubInput[]; seasonPulses: readonly WorldClubPulse[]; recentHistory: readonly WorldClubPulse[]; quota: ContinentalQuota }): ContinentalParticipant[]`：输出直接晋级和资格赛球队，使用国内成绩、杯赛、俱乐部级别、近三季成绩和连续参赛扣分。
+- `simulateContinentalSeason(input: { competitionId: string; seasonId: string; participants: readonly ContinentalParticipant[]; playerClubId: string | null; seed: number }): ContinentalSeasonSummary`：非玩家球队只返回赛果、阶段、荣誉和积分摘要；玩家球队额外返回可展开的洲际比赛记录。
+
+初始配置固定为：欧洲五国各 2 个直接名额、各国第 3 名或杯赛冠军进入资格池；亚洲中日韩各 2 个直接名额、各国第 3 名或杯赛冠军进入资格池。若联赛冠军同时赢得杯赛，名额顺延给下一个合法排名球队，不能重复计数。
+
+- [ ] **Step 1: 写资格、轮换和无重复的失败测试**
+
+测试必须验证冠军和杯赛冠军获得资格、同一俱乐部不重复占用名额、相近实力候选者会受到近期连续参赛扣分，以及相同输入的平分结果稳定。
+
+- [ ] **Step 2: 运行测试确认红灯**
+
+运行：`pnpm exec vitest run --project domain packages/simulation/tests/competition/continental-qualification.test.ts packages/simulation/tests/competition/continental-season.test.ts`。预期：因资格筛选器和背景赛季模拟器尚不存在而失败。
+
+- [ ] **Step 3: 添加洲际赛事配置和资格评分**
+
+在 content 层保存联赛配额与洲际名称；simulation 层实现稳定评分：国内排名优先，杯赛冠军和顶级联赛冠军获得保障，连续 3 季参赛只在候选分接近时扣分，最终平分按 `clubId` 排序。函数不得读取浏览器或存储状态。
+
+- [ ] **Step 4: 实现背景赛果与玩家详细记录边界**
+
+为非玩家球队生成阶段、胜负、积分、荣誉和 `relatedFactId`，不生成逐场 fixture；当 `playerClubId` 命中参赛球队时，调用现有比赛模拟能力生成玩家可见的洲际记录，并把结果写入职业赛季和世界脉冲。洲际球队不能同时参加两个国家的国内杯赛。
+
+- [ ] **Step 5: 接入职业赛季结算并测试跨季复现**
+
+在 `completeProfessionalSeason` 的国内赛季结算之后更新洲际摘要，使用独立的派生种子，不改变国内联赛随机序列。重复结算必须幂等，刷新后资格、赛果和荣誉不改变。
+
+- [ ] **Step 6: 运行定向测试并提交**
+
+运行：`pnpm exec vitest run --project domain packages/simulation/tests/competition/continental-qualification.test.ts packages/simulation/tests/competition/continental-season.test.ts packages/application/tests/use-cases/pro-flow.test.ts`。提交范围仅包含洲际配置、contracts、simulation、application 接入和对应测试，提交信息为 `feat: add rotating continental qualification`。
+
+## Task 12C：全量世界转会窗口与玩家报价分层
+
+**依赖：** Task12A 的俱乐部状态；Task13 的跨国吸引力函数应复用本任务输出，不再创建第二套候选池。
+
+**Files:** Create `packages/contracts/src/world-transfer.ts`、`packages/simulation/src/transfer/world-transfer-market.ts`、`packages/simulation/tests/transfer/world-transfer-market.test.ts`；Modify `packages/contracts/src/index.ts`、`packages/simulation/src/index.ts`、`packages/application/src/use-cases/transfer-flow.ts`、`packages/application/src/use-cases/pro-flow.ts`、`packages/simulation/src/career/transfer-offers.ts`。
+
+**Interfaces:**
+
+- `WorldTransferActivitySchema` / `WorldTransferActivity`：保存 `id`、`seasonId`、`window`、`fromClubId`、`toClubId`、可选 `playerId`、位置、状态、原因、可信度和 `relatedFactId`。
+- `simulateWorldTransferWindow(input: { clubs: readonly ClubProfile[]; pulses: readonly WorldClubPulse[]; previous: readonly WorldTransferActivity[]; seasonId: string; window: 'summer' | 'winter'; seed: number }): WorldTransferActivity[]`：候选来源覆盖全部 240 队，结果数量有上限，按俱乐部需求、预算、升级/降级和洲际资格生成。
+- `selectPlayerMarketClubs(input: { clubs: readonly ClubProfile[]; pulses: readonly WorldClubPulse[]; playerAbility: number; playerAdaptability: number; seed: number }): ClubProfile[]` 继续输出玩家实际看到的少量报价；它消费世界层候选的俱乐部状态，但不把全部后台转会直接展示给玩家。
+
+后台没有外部球员数据库时，使用“俱乐部 A 为某位置寻找球员”的事实级记录；只有玩家、队友或已存在人物才写入具体 `playerId`，禁止捏造不可追溯的球员履历。
+
+- [ ] **Step 1: 写全量候选、确定性和去重复失败测试**
+
+测试必须验证全部 240 队都能成为转入方或转出方、俱乐部 ID 始终来自内容目录、同一俱乐部组合在没有新原因时不会重复，以及相同种子得到完全相同的活动列表。
+
+- [ ] **Step 2: 运行测试确认红灯**
+
+运行：`pnpm exec vitest run --project domain packages/simulation/tests/transfer/world-transfer-market.test.ts`。预期：因世界转会 schema、候选生成器和窗口去重复规则尚不存在而失败。
+
+- [ ] **Step 3: 实现全量俱乐部候选和软冷却**
+
+对全部俱乐部计算位置需求、预算、级别、赛季脉冲和随机扰动；用最近两个窗口的活动次数作为软扣分，不能把同一队永久排除。使用 `seed + seasonId + window` 生成独立确定性随机源，按 `clubId` 作为最终平分键。
+
+- [ ] **Step 4: 接入玩家市场但保持阅读预算**
+
+让现有玩家报价筛选器从世界状态读取俱乐部的需求和活跃度，继续限制每国代表数量和能力 tier ceiling；玩家可见报价、后台世界转会和转会传闻使用不同的输出模型，不重复写入同一条事实。
+
+- [ ] **Step 5: 接入赛季结算和刷新恢复**
+
+在转会窗口节点生成并持久化活动游标；同一窗口重复提交返回原活动，刷新后使用保存的 seed、window 和活动列表得到相同结果。活动双方的俱乐部 ID 必须来自 240 队内容目录。
+
+- [ ] **Step 6: 运行定向测试并提交**
+
+运行：`pnpm exec vitest run --project domain packages/simulation/tests/transfer/world-transfer-market.test.ts packages/simulation/tests/career/transfer-offers.test.ts packages/application/tests/use-cases/transfer-flow.test.ts`。提交范围仅包含 world transfer contracts、simulation、application 接入和对应测试，提交信息为 `feat: simulate world transfer windows`。
+
+## Task 12D：事实驱动的世界新闻、传闻与俱乐部浏览
+
+**依赖：** Task12B 的洲际摘要、Task12C 的转会活动和 Task12A 的俱乐部脉冲。
+
+**Files:** Create `packages/contracts/src/world-news.ts`、`packages/simulation/src/world/world-news.ts`、`packages/simulation/tests/world/world-news.test.ts`、`packages/application/src/use-cases/build-world-news.ts`、`packages/application/tests/world/build-world-news.test.ts`、`apps/web/src/career-dashboard/WorldFootballPanel.tsx`；Modify `packages/contracts/src/index.ts`、`packages/application/src/index.ts`、`apps/web/src/career-dashboard/ProDashboard.tsx`、`apps/web/tests/career-dashboard/ProDashboard.test.tsx`。
+
+**Interfaces:**
+
+- `WorldNewsItemSchema` / `WorldNewsItem`：保存 `id`、`occurredOn`、`category`、`relatedClubIds`、标题、摘要、`relatedFactId`、相关性和来源窗口。
+- `WorldNewsCategory = 'domestic' | 'continental' | 'transfer' | 'rumour' | 'injury' | 'milestone'`。
+- `WorldFact`：`{ id: string; occurredOn: string; category: WorldNewsItem['category']; relatedClubIds: readonly string[]; summary: string }`，只允许由已经结算的国内、洲际、转会或人物事实构成。
+- `buildWorldNews(input: { facts: readonly WorldFact[]; clubs: readonly ClubProfile[]; viewerClubId: string | null; filter: WorldNewsFilter; limit: number; cursor: string | null }): { items: WorldNewsItem[]; nextCursor: string | null }`。
+- `WorldNewsFilter`：`{ country?: Country; tier?: number; category?: WorldNewsItem['category']; window?: 'summer' | 'winter' }`，支持国家、级别、类别和窗口筛选；默认只取 3–5 条，完整页面可按国家、级别和洲际赛事筛选。
+
+- [ ] **Step 1: 写事实来源、冷却和名称解析失败测试**
+
+测试必须验证动态只引用已存在的事实和俱乐部 ID、玩家相关俱乐部优先、同一俱乐部同类动态进入冷却期后不重复，以及分页结果稳定。
+
+- [ ] **Step 2: 运行测试确认红灯**
+
+运行：`pnpm exec vitest run --project domain packages/simulation/tests/world/world-news.test.ts packages/application/tests/world/build-world-news.test.ts`。预期：因动态 schema、事实筛选器和应用层查询用例尚不存在而失败。
+
+- [ ] **Step 3: 实现动态候选与确定性排序**
+
+把升级、降级、荣誉、洲际资格、转会和球队状态事实转换为动态候选；按玩家当前俱乐部关系、联赛关系、国家队/队友关系、洲际关系、新鲜度和重复次数排序。无来源事实不得进入结果，排序平分按动态 ID 稳定处理。
+
+- [ ] **Step 4: 实现冷却、分页和俱乐部筛选**
+
+同一俱乐部同类动态在冷却窗口内只保留最新一条；重大新事实可以突破冷却。应用层返回游标和分页结果，保留 240 队的可筛选索引，不增加默认首页阅读量。
+
+- [ ] **Step 5: 增加职业页面入口和完整浏览区**
+
+在职业看板增加“世界足坛”次级入口和 `WorldFootballPanel`，默认显示与玩家相关的 3–5 条动态；面板可按国家、联赛级别、洲际赛事和转会窗口查看俱乐部名称、所属国家、级别、近期摘要。名称统一从 `allClubProfiles()` 解析，不在组件内复制俱乐部数据。
+
+- [ ] **Step 6: 运行组件和应用测试并提交**
+
+运行：`pnpm exec vitest run --project domain packages/simulation/tests/world/world-news.test.ts packages/application/tests/world/build-world-news.test.ts --project web apps/web/tests/career-dashboard/ProDashboard.test.tsx`。提交范围仅包含 world news contracts、simulation、application、职业看板和对应测试，提交信息为 `feat: add fact-driven world football news`。
+
+## Task 12E：世界生态覆盖率、重复率与全量验收
+
+**依赖：** Task12A–12D 全部完成。
+
+**Files:** Create `tools/balance/src/world-ecosystem-metrics.ts`、`tools/balance/tests/world-ecosystem-metrics.test.ts`；Modify `tools/balance/src/run-youth-seasons.ts`、`tools/balance/src/youth-season-metrics.ts`、`tools/balance/tests/youth-season-balance.test.ts`、`docs/ROADMAP.md`、`docs/superpowers/specs/2026-09-16-world-football-ecosystem-design.md`。
+
+**Interfaces:**
+
+- `WorldEcosystemMetric`：`{ clubId: string; tier: number; seasonId: string; domesticActive: boolean; continentalOpportunity: boolean; worldMentioned: boolean; transferActive: boolean; headlineKey: string; factLinked: boolean; reloadStable: boolean }`。
+
+- `WorldEcosystemSummary`：`{ domesticClubCoverageRate: number; continentalOpportunityRate3Y: number; topTierWorldMentionRate5Y: number; transferActivityClubRate5Y: number; repeatHeadlineRate: number; factLinkedNewsRate: number; worldStateReloadStable: boolean }`。
+
+- `summarizeWorldEcosystem(metrics: readonly WorldEcosystemMetric[]): WorldEcosystemSummary`：仅聚合测试和分析输入，不给生产存档增加统计字段。
+
+- [ ] **Step 1: 写覆盖率和重复率失败测试**
+
+```ts
+it('requires full domestic coverage and bounded repetition', () => {
+  const summary = summarizeWorldEcosystem(makeWorldMetrics());
+  expect(summary.domesticClubCoverageRate).toBe(1);
+  expect(summary.continentalOpportunityRate3Y).toBeGreaterThanOrEqual(0.6);
+  expect(summary.topTierWorldMentionRate5Y).toBeGreaterThanOrEqual(0.8);
+  expect(summary.repeatHeadlineRate).toBeLessThanOrEqual(0.35);
+  expect(summary.factLinkedNewsRate).toBe(1);
+});
+```
+
+- [ ] **Step 2: 运行测试确认红灯**
+
+运行：`pnpm exec vitest run --project balance tools/balance/tests/world-ecosystem-metrics.test.ts`。预期：因世界生态聚合器尚不存在而失败。
+
+- [ ] **Step 3: 接入 100/1,000 赛季分析**
+
+扩展平衡 runner，只采集分析字段，不把统计器写入生产存档；按 `clubId` 记录国内活跃、洲际资格、世界动态和转会活动，并计算滚动 3 年、5 年覆盖率以及同类标题重复率。分析输入必须来自已经产生的事实、资格和活动结果，不能通过虚构新闻补指标。
+
+- [ ] **Step 4: 验证确定性和刷新一致性**
+
+对同一种子重复运行、保存后重新加载、同一窗口重复结算分别比较世界脉冲、洲际摘要、转会活动和新闻游标；默认首页 3–5 条动态不随 240 队数量线性增加。失败时输出第一个不一致的 `clubId`、赛季、窗口或事实 ID。
+
+- [ ] **Step 5: 运行定向与完整门禁**
+
+```text
+pnpm exec vitest run --project domain packages/simulation/tests/world packages/application/tests/world
+pnpm exec vitest run --project web apps/web/tests/career-dashboard/ProDashboard.test.tsx
+pnpm test
+pnpm typecheck
+pnpm lint
+pnpm format:check
+pnpm build
+pnpm test:e2e
+pnpm balance:youth -- --runs 1000 --seed-start 1 --output artifacts/world-football-ecosystem-balance-1000.json
+```
+
+- [ ] **Step 6: 写入验收记录并提交**
+
+验收必须达到：240/240 队每季有国内摘要；滚动 3 年洲际机会率 60%–70%；滚动 5 年顶级球队世界动态覆盖率至少 80%；事实关联率 100%；重复运行和刷新结果一致；既有 WorldClass、海外要约、国家队和职业出场分钟门禁不回退。更新 `docs/ROADMAP.md` 与设计文档，明确国家队完整赛程仍为后续任务，不在本任务中宣称完成。提交信息为 `test: validate world football ecosystem coverage`。
 
 ## Task 13：跨国转会、适应期与跨日历合同桥接
 
