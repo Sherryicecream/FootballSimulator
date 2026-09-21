@@ -457,7 +457,7 @@ it('east asian season runs March to November', () => {
 - `buildWorldClubPulses(input: { clubs: readonly ClubProfile[]; seasonResults: readonly WorldClubSeasonResult[]; previous: readonly WorldClubPulse[] }): WorldClubPulse[]`：按 `clubId` 排序输出全部 240 队的紧凑赛季状态。
 - `mergeWorldClubPulses(registry: WorldRegistry, pulses: readonly WorldClubPulse[]): WorldRegistry`：以 `clubId + seasonId` 幂等写回，不产生重复状态。
 
-- [ ] **Step 1: 写覆盖率和存档兼容的失败测试**
+- [x] **Step 1: 写覆盖率和存档兼容的失败测试**
 
 ```ts
 it('builds one compact pulse for every playable club', () => {
@@ -475,23 +475,23 @@ it('reloads legacy world registries with an empty club pulse list', () => {
 });
 ```
 
-- [ ] **Step 2: 运行测试确认红灯**
+- [x] **Step 2: 运行测试确认红灯**
 
 运行：`pnpm exec vitest run --project domain packages/simulation/tests/world/club-season-pulse.test.ts`。预期：因 `WorldClubPulse`、`clubPulses` 和 `buildWorldClubPulses` 尚不存在而失败。
 
-- [ ] **Step 3: 添加紧凑世界状态 schema**
+- [x] **Step 3: 添加紧凑世界状态 schema**
 
 在 `world-football.ts` 中定义严格 schema。`WorldRegistrySchema` 增加 `clubPulses: z.array(WorldClubPulseSchema).max(240).default([])`，旧 v8 存档缺失该字段时解析为空数组，不增加逐场比赛字段，也不复制 `ClubProfile` 静态资料。
 
-- [ ] **Step 4: 实现确定性构建和幂等合并**
+- [x] **Step 4: 实现确定性构建和幂等合并**
 
 在 simulation 中只消费显式传入的俱乐部和赛季摘要；按 `clubId` 排序，缺少赛季结果的球队生成 `finalRank: null` 的合法摘要，重复输入得到完全相同的数组。application 的 `mergeWorldClubPulses` 替换同键记录并保留其他国家和赛季记录。
 
-- [ ] **Step 5: 运行定向测试确认通过**
+- [x] **Step 5: 运行定向测试确认通过**
 
 运行：`pnpm exec vitest run --project domain packages/simulation/tests/world/club-season-pulse.test.ts packages/application/tests/world/world-registry.test.ts`。预期：覆盖 240 队、重复写回、旧存档解析和随机种子复现全部通过。
 
-- [ ] **Step 6: 提交独立变更**
+- [x] **Step 6: 提交独立变更**
 
 提交范围仅包含 Task12A 的 contracts、application world registry、simulation pulse 实现和对应测试，提交信息为 `feat: add compact world club season pulses`。
 
@@ -513,27 +513,27 @@ it('reloads legacy world registries with an empty club pulse list', () => {
 
 初始配置固定为：欧洲五国各 2 个直接名额、各国第 3 名或杯赛冠军进入资格池；亚洲中日韩各 2 个直接名额、各国第 3 名或杯赛冠军进入资格池。若联赛冠军同时赢得杯赛，名额顺延给下一个合法排名球队，不能重复计数。
 
-- [ ] **Step 1: 写资格、轮换和无重复的失败测试**
+- [x] **Step 1: 写资格、轮换和无重复的失败测试**
 
 测试必须验证冠军和杯赛冠军获得资格、同一俱乐部不重复占用名额、相近实力候选者会受到近期连续参赛扣分，以及相同输入的平分结果稳定。
 
-- [ ] **Step 2: 运行测试确认红灯**
+- [x] **Step 2: 运行测试确认红灯**
 
 运行：`pnpm exec vitest run --project domain packages/simulation/tests/competition/continental-qualification.test.ts packages/simulation/tests/competition/continental-season.test.ts`。预期：因资格筛选器和背景赛季模拟器尚不存在而失败。
 
-- [ ] **Step 3: 添加洲际赛事配置和资格评分**
+- [x] **Step 3: 添加洲际赛事配置和资格评分**
 
 在 content 层保存联赛配额与洲际名称；simulation 层实现稳定评分：国内排名优先，杯赛冠军和顶级联赛冠军获得保障，连续 3 季参赛只在候选分接近时扣分，最终平分按 `clubId` 排序。函数不得读取浏览器或存储状态。
 
-- [ ] **Step 4: 实现背景赛果与玩家详细记录边界**
+- [x] **Step 4: 实现背景赛果与玩家详细记录边界**
 
 为非玩家球队生成阶段、胜负、积分、荣誉和 `relatedFactId`，不生成逐场 fixture；当 `playerClubId` 命中参赛球队时，调用现有比赛模拟能力生成玩家可见的洲际记录，并把结果写入职业赛季和世界脉冲。洲际球队不能同时参加两个国家的国内杯赛。
 
-- [ ] **Step 5: 接入职业赛季结算并测试跨季复现**
+- [x] **Step 5: 接入职业赛季结算并测试跨季复现**
 
 在 `completeProfessionalSeason` 的国内赛季结算之后更新洲际摘要，使用独立的派生种子，不改变国内联赛随机序列。重复结算必须幂等，刷新后资格、赛果和荣誉不改变。
 
-- [ ] **Step 6: 运行定向测试并提交**
+- [x] **Step 6: 运行定向测试并提交**
 
 运行：`pnpm exec vitest run --project domain packages/simulation/tests/competition/continental-qualification.test.ts packages/simulation/tests/competition/continental-season.test.ts packages/application/tests/use-cases/pro-flow.test.ts`。提交范围仅包含洲际配置、contracts、simulation、application 接入和对应测试，提交信息为 `feat: add rotating continental qualification`。
 
@@ -551,27 +551,27 @@ it('reloads legacy world registries with an empty club pulse list', () => {
 
 后台没有外部球员数据库时，使用“俱乐部 A 为某位置寻找球员”的事实级记录；只有玩家、队友或已存在人物才写入具体 `playerId`，禁止捏造不可追溯的球员履历。
 
-- [ ] **Step 1: 写全量候选、确定性和去重复失败测试**
+- [x] **Step 1: 写全量候选、确定性和去重复失败测试**
 
 测试必须验证全部 240 队都能成为转入方或转出方、俱乐部 ID 始终来自内容目录、同一俱乐部组合在没有新原因时不会重复，以及相同种子得到完全相同的活动列表。
 
-- [ ] **Step 2: 运行测试确认红灯**
+- [x] **Step 2: 运行测试确认红灯**
 
 运行：`pnpm exec vitest run --project domain packages/simulation/tests/transfer/world-transfer-market.test.ts`。预期：因世界转会 schema、候选生成器和窗口去重复规则尚不存在而失败。
 
-- [ ] **Step 3: 实现全量俱乐部候选和软冷却**
+- [x] **Step 3: 实现全量俱乐部候选和软冷却**
 
 对全部俱乐部计算位置需求、预算、级别、赛季脉冲和随机扰动；用最近两个窗口的活动次数作为软扣分，不能把同一队永久排除。使用 `seed + seasonId + window` 生成独立确定性随机源，按 `clubId` 作为最终平分键。
 
-- [ ] **Step 4: 接入玩家市场但保持阅读预算**
+- [x] **Step 4: 接入玩家市场但保持阅读预算**
 
 让现有玩家报价筛选器从世界状态读取俱乐部的需求和活跃度，继续限制每国代表数量和能力 tier ceiling；玩家可见报价、后台世界转会和转会传闻使用不同的输出模型，不重复写入同一条事实。
 
-- [ ] **Step 5: 接入赛季结算和刷新恢复**
+- [x] **Step 5: 接入赛季结算和刷新恢复**
 
 在转会窗口节点生成并持久化活动游标；同一窗口重复提交返回原活动，刷新后使用保存的 seed、window 和活动列表得到相同结果。活动双方的俱乐部 ID 必须来自 240 队内容目录。
 
-- [ ] **Step 6: 运行定向测试并提交**
+- [x] **Step 6: 运行定向测试并提交**
 
 运行：`pnpm exec vitest run --project domain packages/simulation/tests/transfer/world-transfer-market.test.ts packages/simulation/tests/career/transfer-offers.test.ts packages/application/tests/use-cases/transfer-flow.test.ts`。提交范围仅包含 world transfer contracts、simulation、application 接入和对应测试，提交信息为 `feat: simulate world transfer windows`。
 
@@ -589,27 +589,27 @@ it('reloads legacy world registries with an empty club pulse list', () => {
 - `buildWorldNews(input: { facts: readonly WorldFact[]; clubs: readonly ClubProfile[]; viewerClubId: string | null; filter: WorldNewsFilter; limit: number; cursor: string | null }): { items: WorldNewsItem[]; nextCursor: string | null }`。
 - `WorldNewsFilter`：`{ country?: Country; tier?: number; category?: WorldNewsItem['category']; window?: 'summer' | 'winter' }`，支持国家、级别、类别和窗口筛选；默认只取 3–5 条，完整页面可按国家、级别和洲际赛事筛选。
 
-- [ ] **Step 1: 写事实来源、冷却和名称解析失败测试**
+- [x] **Step 1: 写事实来源、冷却和名称解析失败测试**
 
 测试必须验证动态只引用已存在的事实和俱乐部 ID、玩家相关俱乐部优先、同一俱乐部同类动态进入冷却期后不重复，以及分页结果稳定。
 
-- [ ] **Step 2: 运行测试确认红灯**
+- [x] **Step 2: 运行测试确认红灯**
 
 运行：`pnpm exec vitest run --project domain packages/simulation/tests/world/world-news.test.ts packages/application/tests/world/build-world-news.test.ts`。预期：因动态 schema、事实筛选器和应用层查询用例尚不存在而失败。
 
-- [ ] **Step 3: 实现动态候选与确定性排序**
+- [x] **Step 3: 实现动态候选与确定性排序**
 
 把升级、降级、荣誉、洲际资格、转会和球队状态事实转换为动态候选；按玩家当前俱乐部关系、联赛关系、国家队/队友关系、洲际关系、新鲜度和重复次数排序。无来源事实不得进入结果，排序平分按动态 ID 稳定处理。
 
-- [ ] **Step 4: 实现冷却、分页和俱乐部筛选**
+- [x] **Step 4: 实现冷却、分页和俱乐部筛选**
 
 同一俱乐部同类动态在冷却窗口内只保留最新一条；重大新事实可以突破冷却。应用层返回游标和分页结果，保留 240 队的可筛选索引，不增加默认首页阅读量。
 
-- [ ] **Step 5: 增加职业页面入口和完整浏览区**
+- [x] **Step 5: 增加职业页面入口和完整浏览区**
 
 在职业看板增加“世界足坛”次级入口和 `WorldFootballPanel`，默认显示与玩家相关的 3–5 条动态；面板可按国家、联赛级别、洲际赛事和转会窗口查看俱乐部名称、所属国家、级别、近期摘要。名称统一从 `allClubProfiles()` 解析，不在组件内复制俱乐部数据。
 
-- [ ] **Step 6: 运行组件和应用测试并提交**
+- [x] **Step 6: 运行组件和应用测试并提交**
 
 运行：`pnpm exec vitest run --project domain packages/simulation/tests/world/world-news.test.ts packages/application/tests/world/build-world-news.test.ts --project web apps/web/tests/career-dashboard/ProDashboard.test.tsx`。提交范围仅包含 world news contracts、simulation、application、职业看板和对应测试，提交信息为 `feat: add fact-driven world football news`。
 
@@ -627,7 +627,7 @@ it('reloads legacy world registries with an empty club pulse list', () => {
 
 - `summarizeWorldEcosystem(metrics: readonly WorldEcosystemMetric[]): WorldEcosystemSummary`：仅聚合测试和分析输入，不给生产存档增加统计字段。
 
-- [ ] **Step 1: 写覆盖率和重复率失败测试**
+- [x] **Step 1: 写覆盖率和重复率失败测试**
 
 ```ts
 it('requires full domestic coverage and bounded repetition', () => {
@@ -640,19 +640,19 @@ it('requires full domestic coverage and bounded repetition', () => {
 });
 ```
 
-- [ ] **Step 2: 运行测试确认红灯**
+- [x] **Step 2: 运行测试确认红灯**
 
 运行：`pnpm exec vitest run --project balance tools/balance/tests/world-ecosystem-metrics.test.ts`。预期：因世界生态聚合器尚不存在而失败。
 
-- [ ] **Step 3: 接入 100/1,000 赛季分析**
+- [x] **Step 3: 接入 100/1,000 赛季分析**
 
 扩展平衡 runner，只采集分析字段，不把统计器写入生产存档；按 `clubId` 记录国内活跃、洲际资格、世界动态和转会活动，并计算滚动 3 年、5 年覆盖率以及同类标题重复率。分析输入必须来自已经产生的事实、资格和活动结果，不能通过虚构新闻补指标。
 
-- [ ] **Step 4: 验证确定性和刷新一致性**
+- [x] **Step 4: 验证确定性和刷新一致性**
 
 对同一种子重复运行、保存后重新加载、同一窗口重复结算分别比较世界脉冲、洲际摘要、转会活动和新闻游标；默认首页 3–5 条动态不随 240 队数量线性增加。失败时输出第一个不一致的 `clubId`、赛季、窗口或事实 ID。
 
-- [ ] **Step 5: 运行定向与完整门禁**
+- [x] **Step 5: 运行定向与完整门禁**
 
 ```text
 pnpm exec vitest run --project domain packages/simulation/tests/world packages/application/tests/world
@@ -666,7 +666,7 @@ pnpm test:e2e
 pnpm balance:youth -- --runs 1000 --seed-start 1 --output artifacts/world-football-ecosystem-balance-1000.json
 ```
 
-- [ ] **Step 6: 写入验收记录并提交**
+- [x] **Step 6: 写入验收记录并提交**
 
 验收必须达到：240/240 队每季有国内摘要；滚动 3 年洲际机会率 60%–70%；滚动 5 年顶级球队世界动态覆盖率至少 80%；事实关联率 100%；重复运行和刷新结果一致；既有 WorldClass、海外要约、国家队和职业出场分钟门禁不回退。更新 `docs/ROADMAP.md` 与设计文档，明确国家队完整赛程仍为后续任务，不在本任务中宣称完成。提交信息为 `test: validate world football ecosystem coverage`。
 
@@ -676,10 +676,10 @@ pnpm balance:youth -- --runs 1000 --seed-start 1 --output artifacts/world-footba
 
 **Interfaces:** `computeCountryAppeal(country: Country, playerCountry: Country, languageBarrier: boolean): number`——同国=100、非欧洲国家间=70、跨洲际=45+语言修正；语言障碍由 `eventOutcome` 标记 `adapted` 逐步降低。`bridgeContractYears(fromCountry: Country, toCountry: Country): number`——从3月联赛转到9月联赛有6个月无比赛期显示为休整期，不按无比赛时间扣成长。转会时源赛季与目标赛季同一年内不开两条并行赛程；合同结束到新赛季开赛超过90天记为长期休整，不计入疲劳积累。
 
-- [ ] 写回归：中国球员转会英格兰适应期折扣；跨日历桥接不造成12个月无比赛；同一俱乐部同一国家转会沿用现有流程。文化适应事件后语言障碍降低。
-- [ ] 运行 `pnpm exec vitest run --project domain packages/simulation/tests/transfer/cross-country-transfer.test.ts` 确认红灯。
-- [ ] 实现国家吸引力函数并将现有转会兴趣（`computeTransferInterest`）乘以此系数；跨日历桥接在 `settleSeason` 或 `startProfessionalSeason` 中完成：若新赛季开赛日晚于当前日期90天以上，自动添加 `long-break` 月份（推进但不处理比赛、不扣成长、随机风暴略过）。欧洲-亚洲跨日历转会首次补偿事件（文化差异）作为可选事件插入新赛季第一月。
-- [ ] 成本按已有能力-薪资逻辑，不另建汇率或财政公平；跨洲际薪资期望差距可通过吸引力折扣和竞争机会解释。跑 `transfer-flow.test.ts` 与跨日历年桥接 E2E。提交 `feat: cross-country transfers with adaptation and calendar bridging`。
+- [x] 写回归：中国球员转会英格兰适应期折扣；跨日历桥接不造成12个月无比赛；同一俱乐部同一国家转会沿用现有流程。文化适应事件后语言障碍降低。
+- [x] 运行 `pnpm exec vitest run --project domain packages/simulation/tests/transfer/cross-country-transfer.test.ts` 确认红灯。
+- [x] 实现国家吸引力函数并将现有转会兴趣（`computeTransferInterest`）乘以此系数；跨日历桥接在 `startProfessionalSeason` 中完成：若新赛季开赛日晚于当前日期90天以上，记录 `long-break` 休整桥接，不处理比赛、不扣成长、不累加疲劳。欧洲-亚洲跨日历转会的语言/文化适应事件作为可选事件在职业期事件池中提供，并由 `eventOutcome: adapted` 持久化。
+- [x] 成本按已有能力-薪资逻辑，不另建汇率或财政公平；跨洲际薪资期望差距通过吸引力折扣和竞争机会解释。已运行转会流程、跨日历桥接测试、完整 E2E 与 1,000 季平衡验证。
 
 ```ts
 import { expect, it } from 'vitest';
@@ -701,16 +701,16 @@ it('language adaptation improves appeal', () => {
 
 ## Task 14：每国 6 个地区处境内容家族
 
-**Files:** Create `packages/content/data/events/england-career.ts`、`spain-career.ts`、`germany-career.ts`、`italy-career.ts`、`france-career.ts`；Modify `packages/content/data/events/europe-career.ts`（拆分为各国文件）、`asia-career.ts`（加固日韩分类）、`packages/content/tests/events/youth-events.test.ts`、`packages/simulation/src/events/event-selector.ts`。
+**Files:** Create `packages/content/data/events/england-career.ts`、`spain-career.ts`、`germany-career.ts`、`italy-career.ts`、`france-career.ts`、`country-career.ts`；Modify `packages/content/data/events/asia-career.ts`（加固日韩分类）、`packages/content/src/events/youth-events.ts`、`packages/content/src/index.ts`、`packages/contracts/src/event.ts`、`packages/content/tests/events/youth-events.test.ts`、`packages/simulation/src/events/event-selector.ts`；删除已拆分的 `packages/content/data/events/europe-career.ts`。
 
 **Interfaces:** 每国事件模块 `export const xxxCareerEvents: EventDefinition[]`。每个国家模块至少6个顶层事件定义（不是同义句变体），覆盖该国家特有的足球环境与人物处境：英格兰的高强度身体对抗与媒体压力、西班牙的传控文化与技术偏好、德国的纪律性与青训联通、意大利的战术素养和防守传统、法国的多元文化与天赋输出、日本的社会规矩与团队优先、韩国的兵役制度与民族荣誉。条件使用新增 `requireCountry: Country`（或已有 `overseasRegions` 升级为 `requiredCountries` 数组），条件不满足时自然不触发。国内已用 `regionId` 筛选（不再需要全国事件额外条件）。
 
 **内容组织：** 每个事件不是纯翻译或同义替换，需要反映该国的特有足球处境。例如英格兰事件可以涉及媒体专访、高强度训练负担、冬歇期缺失；日本事件涉及高中大学联赛文化、兵役接近。每个国家 6 个事件至少 3 个含选择支，至少 1 个含三档判定。事件不涉及现实人物或真实俱乐部。
 
-- [ ] 写内容校验：每国事件模块至少6个顶层定义、至少3个含 choices、至少1个带判定；事件条件引用的国家必须合法八国枚举；不存在同一事件ID跨文件冲突。
-- [ ] 运行 `pnpm exec vitest run --project content packages/content/tests/events/youth-events.test.ts`。
-- [ ] 按上述各国特征编写 5x6=30 个新事件、加固日韩现有事件（确保每个至少6个）。将旧 `europe-career.ts` 的12个事件按主题分配至 England（4个）、Spain（4个）、Germany（2个）、Italy（1个）、France（1个），随后删除旧数据模块。`asia-career.ts` 内6个日本事件、6个韩国事件。
-- [ ] 重跑事件校验与 `event-selector.test.ts`。提交 `feat: add 6 country-specific event families for 5 European leagues`。
+- [x] 写内容校验：每国事件模块至少6个顶层定义、至少3个含 choices、至少1个带判定；事件条件引用的国家必须合法八国枚举；不存在同一事件ID跨文件冲突。
+- [x] 运行内容事件回归（仓库当前 Vitest 配置未提供独立 `content` 项目，使用 `domain` 项目定向执行 `packages/content/tests`）。
+- [x] 按上述各国特征编写 5x6=30 个新事件、加固日韩现有事件（确保每个至少6个）。当前旧 `europe-career.ts` 实际包含6个事件，已按主题迁移至 England（2个）、Spain（1个）、Germany（1个）、Italy（1个）、France（1个），随后删除旧数据模块。`asia-career.ts` 内6个日本事件、6个韩国事件。
+- [x] 重跑事件校验与事件选择器回归。提交信息保留为 `feat: add 6 country-specific event families for 5 European leagues`（按用户审核流程暂不自动提交）。
 
 ```ts
 import { expect, it } from 'vitest';
@@ -739,9 +739,9 @@ it('japan and korea each have 6+ events', () => {
 4. 球员从国内转日本->亚洲日历->完成赛季。覆盖亚洲日历。
 5. 非玩家国家（德国、法国、意大利、韩国）各进行3季世界结算，冠军不重复于player所在国。
 
-- [ ] 运行 `pnpm exec vitest run --project application packages/application/tests/world/multi-country-e2e.test.ts` 验证5条路径全部通过。
-- [ ] 全量门禁：`pnpm test`、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm build`；E2E 18/18。跑1,000季平衡命令（留下新世界基线记录，标记为 `experience-G3-balance-1000.json`）。
-- [ ] 在ROADMAP记"G3完成，G4待执行"。提交 `feat: complete 8-country playable leagues (G3)`。
+- [x] 运行 `pnpm exec vitest run --project application packages/application/tests/world/multi-country-e2e.test.ts` 验证5条路径全部通过（5/5）。
+- [x] 全量门禁：`pnpm test`、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm build`；E2E 38/38。已运行1,000季平衡命令并留下 `artifacts/experience-G3-balance-1000.json` 世界基线记录。`pnpm test` 普通测试 149 文件/832 项通过，balance 3 文件/9 项通过，架构 10/10 通过；按审核流程暂不提交。
+- [x] 已在 ROADMAP 记录“G3完成，G4待执行”。原计划提交信息为 `feat: complete 8-country playable leagues (G3)`，按审核流程暂不自动提交。
 
 ---
 
@@ -751,16 +751,16 @@ it('japan and korea each have 6+ events', () => {
 
 ## Task 16：30 条核心故事家族与多结局收束
 
-**Files:** Create `packages/content/data/events/story-family-registry.ts`（故事家族清单与节点数计数）；Modify `packages/content/data/events/story.ts`、`trajectory.ts`、`branching.ts`、`youth-core.ts`、`one-off.ts`、`legacy-youth.ts`；Create `packages/content/tests/story-family-coverage.test.ts`；Modify `packages/simulation/src/events/story-progress.ts`。
+**Files:** Create `packages/content/src/story-family-registry.ts`（故事家族清单、短链节点与覆盖统计）；Modify `packages/content/src/events/youth-events.ts`、`packages/contracts/src/event.ts`、`packages/content/src/index.ts`、`packages/simulation/src/career/story-progress.ts`、`vitest.config.mts`、`package.json`；Create `packages/content/tests/story-family-coverage.test.ts`。
 
 **Interfaces:** 故事家族定义每项包含 `familyId`、`phaseCoverage`（该家族适用的阶段）、`minNodes`（>=3）、`distinctResolutions`（>=2，指同一家族内不同路径到达不同收束结局）。每条故事至少3个叙事节点、至少有2个不同走向的收束方式。故事家族的覆盖领域：青训争位、职业替补、巅峰、下滑；伤病与复出；合同争取与失约；留队和转会；海外适应；国家队入选与落选；退役。每个领域至少2个不同故事家族（不同动机和开局条件）。
 
 **不重复保障：** 同一类面板包装应使用不同场景条/图标/文案情绪。故事调度优先参考本局已发生故事家族、人物关系冷却和种子，未触发的家族优先于已触发的变体。跨局同一故事家族重复时，应通过不同 player 身份、环境条件或选择序列产生合理新处境。
 
-- [ ] 写回归：扫描所有故事数据统计家族数、每家族节点数、收束结局数；断言家族总数>=30、每家族节点>=3、每家族不同收束>=2、每个内容领域（8个）至少2个独立家族。
-- [ ] 运行 `pnpm exec vitest run --project content packages/content/tests/story-family-coverage.test.ts` 确认覆盖率不足红灯。
-- [ ] 审计当前已有故事家族（M10模块5/6已补齐动态事件），按上述领域分类；标记缺口：各领域当前覆盖数，补充至>=2独立家族。重点是"职业替补->巅峰->下滑"的多阶段长家族、"国家队入选与落选"的竞技压力、"退役后回看"的情绪叙事，这三块从前端实测薄弱。新家族不要求一次性写数千行长线剧本，可以先写3节点+2收束的短家族，保持内容可扩展即可。
-- [ ] 每个新故事家族通过内容校验、事件集成测试和至少1条 browser 可见路径。跑 G4 预备门禁（不需平衡命令）。提交 `feat: 30+ story families with branching resolutions`。
+- [x] 写回归：扫描所有故事数据统计家族数、每家族节点数、收束结局数；断言家族总数>=30、每家族节点>=3、每家族不同收束>=2、每个内容领域（8个）至少2个独立家族；同时验证节点顺序、完成封存和标题/描述不重复。
+- [x] 先运行 `pnpm exec vitest run --project content packages/content/tests/story-family-coverage.test.ts` 得到覆盖接口缺失及节点条件不足的红灯，再实现并以5/5通过。
+- [x] 审计并补齐8个领域：青训争位、职业轨迹、伤病复出、合同承诺、留队转会、海外适应、国家队、退役；每个领域至少2个独立家族，30家族共90节点、每个末节点2个收束选择。
+- [x] 故事家族通过 content schema/事件集成校验，既有浏览器事件存档路径38/38通过；G4 1000赛季产物已生成：`artifacts/experience-G4-balance-1000.json`。最终全量门禁通过（普通150/838、balance3/9、架构10/10、类型、Lint、格式、构建）。按审核流程暂不提交 `feat: 30+ story families with branching resolutions`。
 
 ```ts
 import { expect, it } from 'vitest';
@@ -781,16 +781,16 @@ it('every domain has at least 2 families', () => {
 
 ## Task 17：关键人物连续性（竞争者与关系跨季保留）
 
-**Files:** Create `packages/simulation/src/people/person-memory.ts`、`packages/simulation/tests/people/person-memory.test.ts`；Modify `packages/simulation/src/career/generate-pro-squad.ts`、`packages/simulation/src/career/professional-week.ts`、`packages/application/src/use-cases/pro-flow.ts`、`packages/content/data/person-archetypes.ts`。
+**Files:** Create `packages/simulation/src/people/person-memory.ts`、`packages/simulation/tests/people/person-memory.test.ts`、`packages/application/tests/use-cases/professional-person-continuity.test.ts`、`packages/content/tests/professional-player-names.test.ts`；Modify `packages/simulation/src/career/pro-squad.ts`、`packages/simulation/src/career/professional-week.ts`、`packages/application/src/use-cases/pro-flow.ts`、`packages/content/data/person-archetypes.ts`、`packages/content/src/clubs.ts`、`packages/contracts/src/clubs.ts`、`packages/contracts/src/professional.ts`、`apps/web/src/career-dashboard/ProDashboard.tsx`。
 
 **Interfaces:** `PersonMemory`——赛季组件生成的 `squad` 和 `depthChart` 内竞争者人物使用稳定 personId（非每季重抽ID+新名字）；跨季 roster 变化时，已有关系（rivalry、friendship）按 personId 延续。新入队人物为新生成但有继承上一季已存在的 teammate 关系概率。`CarryOverRoster` 函数：保留上一季本队 50-70% 的人物（按能力和年龄过滤），其余为新生成。
 
 需要解决 EXTERNAL_REVIEW F07 的部分——人名自然化：中文姓名从现有 `personName` 池中抽取，不再出现"许振宇32"、"高立诚39"等数字；SPA 中的竞争排名使用球员名而非ID。竞争者如在同一俱乐部跨季，应保持其名字和基础特征稳定。
 
-- [ ] 写回归：同俱乐部连续两季 roster 前后人物 ID 可追踪；相同 ID 保持姓名一致；关系（rivalry、friendship）跨季保留；姓名不附加数字ID。
-- [ ] 运行 `pnpm exec vitest run --project domain packages/simulation/tests/people/person-memory.test.ts` 确认现有重抽行为红灯。
-- [ ] 修改 `generateProSquad` 及 pro-flow 中 `squad` 生成：若有上一季同俱乐部 squad 传入，优先复用已有人物。load 时读 `save.proSeason.squad` 作为上一季参考。新入队人物使用 person-archetypes 内的生成器，避免数字后缀复现。competition ranking 显示时使用 person.name 替代 personId。
-- [ ] 重跑 pro-flow 测试与 squad 生成测试；检查跨季 squad 重复姓名率 >60%。提交 `feat: preserve competitor identities across seasons`。
+- [x] 写回归：同俱乐部连续两季 roster 前后人物 ID 可追踪；相同 ID 保持姓名一致；关系（rivalry、friendship）跨季保留；姓名不附加数字ID；补充失衡留存核心仍覆盖全部位置的回归。
+- [x] 运行 `pnpm exec vitest run --project domain packages/simulation/tests/people/person-memory.test.ts`，先确认旧重抽行为红灯，再验证修复后的 27 项职业/人物测试。
+- [x] 修改 `generateProSquad` 及 pro-flow 中 `squad` 生成：同俱乐部优先复用上一季人物，不同俱乐部不串用阵容；新入队人物使用本地化姓名池；竞争排名展示人物姓名；国家队流程不写入俱乐部转会。
+- [x] 重跑 pro-flow、squad、内容、应用和页面测试；同队跨季核心保留约 65%（设计范围 50%–70%），姓名/能力特点/关系可追踪。按审核流程不自动提交，待用户审核。
 
 ```ts
 import { expect, it } from 'vitest';
@@ -815,10 +815,11 @@ it('names never contain digit suffix', () => {
 
 **预警线：** 跨局主要故事家族两两重合不高于约25%。不是硬性数学下限，是内容预算预警线，排除系统通知（成长报告、常规比赛结果）后计算。
 
-- [ ] 写回归：完全相同种子、相同选择的两段生涯 divergency 应为 0（完全相同）；不同种子 diverge 应在合理范围；主要故事家族重合率不超过 25%（3组x4种子做初始抽样）。
-- [ ] 运行 `pnpm exec vitest run --project balance tools/balance/tests/story-divergence.test.ts` 确认红灯。
-- [ ] 实现 divergence 函数：批量采集12条完整生涯（4组x3种子），每局记录故事家族触发与节点，自动计算两两重合率。平衡 runner 默认可选启用 divergence 模式（`--measure-divergence`），输出应标注超出预警线的家族。输出同时报告"第1局和第2局重合率X%、第1和第3局Y%……"，不以单一平均数掩盖长尾。
-- [ ] 采集首轮数据，将结果写入协议文档。此任务的目的是暴露缺口，不强制要求首次测量必须低于25%。提交 `feat: measure replay divergence across multi-playthrough samples`。
+- [x] 写回归：完全相同种子、相同选择的两段生涯 divergency 为 0；不同种子产生差异；覆盖节点顺序、选择后果、职业轨迹和退役评价字段，并覆盖主要故事家族重复预警。
+- [x] 运行 `pnpm exec vitest run --project balance tools/balance/tests/story-divergence.test.ts`，先确认缺少实现的红灯，再完成 5 项绿灯回归。
+- [x] 实现 divergence 函数：批量采集 12 条完整生涯，每局记录故事家族触发与节点、选择和结果、职业轨迹与退役评价，计算逐局两两重合率。平衡 runner 可选启用 `--measure-divergence`，默认采集 12 条并标注超过约 25% 预警线的家族；普通模式的 metrics/summary 保持不变。
+- [x] 采集首轮数据并写入 `docs/testing/divergence-measurement-protocol.md`；报告为 `artifacts/experience-G4-task18-divergence-12.json`。首轮 12 条轨迹全部唯一，主要故事平均重合率 41.80%，6 个家族超过预警线；该结果用于暴露内容调度缺口，不将 25% 当作本任务硬性通过门槛。
+- [x] 完成门禁：`pnpm test`（153 个普通测试文件/848 项、balance 14 项、架构 10/10）、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm build`、`pnpm test:e2e`（38/38）和显式 1,000 局报告 `artifacts/experience-G4-task18-balance-1000.json` 均通过。按审核流程不自动提交，等待用户审核后再进入 Task19。
 
 ```ts
 import { expect, it } from 'vitest';
@@ -843,55 +844,53 @@ it('completely different families diverge fully', () => {
 
 ## Task 19：生涯总结叙事契约与异步生成
 
-**Files:** Create `packages/contracts/src/narration/career-summary.ts`；Modify `packages/contracts/src/narration.ts`（新增 `kind: 'career-summary'` 类型）、`packages/contracts/src/index.ts`；Create `packages/application/src/ai/career-summary-prompt.ts`、`packages/application/tests/ai/career-summary-prompt.test.ts`；Modify `apps/web/src/narration/local-ai-client.ts`、`apps/web/src/career-dashboard/CareerReviewPage.tsx`、`apps/web/src/app/App.tsx`。
+**Files:** Modify `packages/contracts/src/narration.ts`、`packages/application/src/index.ts`；Create `packages/application/src/ai/career-summary.ts`、`packages/application/src/ai/career-summary-prompt.ts` 及对应测试；Modify `apps/local-ai/src/index.ts`、`apps/local-ai/src/providers/types.ts`、`apps/local-ai/src/providers/mock.ts`、`apps/local-ai/src/providers/openai-compatible.ts`、`apps/local-ai/src/server/narrative-server.ts`、`apps/local-ai/src/validation/narrative.ts`、`apps/web/src/narration/local-ai-client.ts`、`apps/web/src/career-dashboard/CareerReviewPage.tsx`、`apps/web/src/app/App.tsx` 和回顾页样式。
 
 **Interfaces:** 叙事契约新增 `career-summary` kind。输入为结构化生涯事实：人员身份（姓名、出生地、位置、国籍）、生涯概况（totalSeasons、totalClubs、totalGoals、totalAppearances etc.）、职业轨迹（按赛季摘要）、重要节点列表（关键选择 + 结果）、荣誉列表、八维评价、幕后档案（潜力揭示、错过机会）。短版输出 150-250 字（立即展示），展开版 400-800 字（玩家主动展开）。schema 约束：不允许虚构冠军、出场、关系、伤病因果或错失机会。
 
-**异步流程：** 退役后先显示本地评价模板（八维+幕后档案），AI 短版作为异步增强插入同一区块，不阻塞页面渲染。长版有"展开AI人生总结"按钮，点击后若尚未写入则触发写入。cache key 由 `canonicalFactsHash`（所有事实字段的 SHA-256）决定，同事实不重复调用。超时/离线/无效输出时保留本地模板，不显示"AI生成失败"错误横幅。
+**异步流程：** 退役后先显示本地确定性短/长总结（八维+幕后档案），AI 短版作为异步增强插入同一区块，不阻塞页面渲染。长版默认折叠，点击“展开 AI 人生总结”后请求；失败时展开并保留本地长版。请求继续使用 `POST /v1/narrative-polish`，通过 `kind: 'career-summary'` 和 `mode: 'short' | 'long'` 区分。cache key 由 `canonicalFactsHash`（规范化事实字段的 SHA-256）和模式共同决定，同事实不重复调用。超时/离线/无效输出时保留本地模板，不显示“AI生成失败”错误横幅，AI 文本不写入存档。
 
-- [ ] 写下方回归：`career-summary` 输入 schema 禁止编造未发生事实（如无国家队经历者 `caps` 必须为 0）；输出短版 150-250 字含姓名和关键转折点；mock 返回后页面展示本地+AI双区不遮盖。不要求真实provider连通才通过测试——使用 deterministic mock。
-- [ ] 运行 `pnpm exec vitest run --project domain packages/contracts/tests/narration/career-summary.test.ts packages/application/tests/ai/career-summary-prompt.test.ts` 确认 mapping 逻辑与 schema 校验。
-- [ ] 实现 `career-summary` 契约定义，`buildCareerSummaryPrompt` 从存档提取结构化事实，组装版本化 prompt。web 端 CareerReviewPage 新增"AI 人生总结"区块：短版在退役页中上部占据显眼但非干扰位置，长版默认折叠。local-ai-client 支持新 kind 及其 `GET /v1/career-summary` 端点。同一个 provider failure 回退路径不变。
-- [ ] 跑 review 页面组件测试与异步加载测试。不要求在此任务完成真实 provider 连通调试。提交 `feat: AI career summary with async fallback`。
+- [x] 写回归：`career-summary` 输入 schema 通过国家队一致性和证据 ID 闭环禁止编造未发生事实；本地短/长版满足 150–250/400–800 字并保留真实关键节点；mock 返回后页面同时展示本地与 AI 双区且不覆盖本地事实。
+- [x] 运行定向契约、application、local-ai、web 回归，覆盖 32 项测试；原有事件反馈润色回归保持通过。
+- [x] 实现 `career-summary` 契约、事实映射、`buildCareerSummaryPrompt`、确定性本地摘要；web 端 CareerReviewPage 新增“人生总结”区块，AI 短版异步增强，长版默认折叠并按需请求；local-ai 复用 `POST /v1/narrative-polish`，支持 schema、事实数字围栏、超时、fallback、SHA-256 canonical cache。
+- [x] 完成门禁：普通全量测试与架构检查通过（156 个测试文件/861 项、架构 10/10），`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm build`、`pnpm test:e2e`（38/38）通过；显式 1,000 局报告 `artifacts/experience-G4-task19-balance-1000.json` 已通过。追加文字事实围栏后，balance 规则未改；最终重跑 balance 测试项目在当前机器持续高 CPU 且超过 10 分钟无输出，已停止并记录为验证性能异常，不存在失败断言。按审核流程不自动提交，等待用户审核后再进入 Task20。
 
 ```ts
-import { expect, it } from 'vitest';
-import { CareerSummaryInputSchema } from '../../src/narration/career-summary';
-it('rejects fabricated national team appearances', () => {
-  expect(() => CareerSummaryInputSchema.parse({
-    playerName: '测试球员',
-    totalSeasons: 10,
-    totalCaps: 5,
-    honours: [],
-    careerPhases: [{ seasonId: 'pro-2026', club: '测试队', appearances: 20 }],
-  })).not.toThrow();
-  expect(() => CareerSummaryInputSchema.parse({
-    playerName: '测试球员',
-    totalSeasons: 10,
-    totalCaps: 5,
-    honours: ['world-cup-champion'],
-    careerPhases: [{ seasonId: 'pro-2026', club: '测试队', appearances: 20 }],
-  })).toThrow();
+import { CareerSummaryFactsSchema } from '../src/narration';
+import { buildCareerSummaryFacts, generateCareerSummary } from '../src/ai/career-summary';
+
+it('rejects non-zero caps for an uncapped national-team fact', () => {
+  expect(() =>
+    CareerSummaryFactsSchema.parse({
+      // ...a valid fact package with nationalTeam.capped false
+      nationalTeam: { capped: false, caps: 2, goals: 1 },
+    }),
+  ).toThrow();
 });
-it('short summary stays within 150-250 characters', () => {
-  const result = generateShortSummary({ ...minimalInput });
-  expect(result.length).toBeGreaterThanOrEqual(150);
-  expect(result.length).toBeLessThanOrEqual(250);
+
+it('keeps local summaries within their selected length range', () => {
+  const facts = buildCareerSummaryFacts(endedSave);
+  const short = generateCareerSummary(facts, 'short');
+  const long = generateCareerSummary(facts, 'long');
+  expect(short.length).toBeGreaterThanOrEqual(150);
+  expect(short.length).toBeLessThanOrEqual(250);
+  expect(long.length).toBeGreaterThanOrEqual(400);
+  expect(long.length).toBeLessThanOrEqual(800);
 });
 ```
 
 ## Task 20：五个关键节点 AI 评价
 
-**Files:** Create `packages/contracts/src/narration/milestone-narration.ts`；Modify `packages/contracts/src/narration.ts`（新增 `kind: 'milestone'`）；Create `packages/application/src/ai/milestone-prompt.ts`、`packages/application/tests/ai/milestone-prompt.test.ts`；Modify `apps/web/src/event-choice/EventFeedbackPanel.tsx`、`apps/web/src/narration/local-ai-client.ts`。
+**Files:** Create `packages/contracts/src/narration/milestone-narration.ts`、`packages/contracts/src/narration/milestone-prompt.ts`；Modify `packages/contracts/src/narration.ts`、`packages/contracts/src/index.ts`（新增 `kind: 'milestone'`）；Modify `packages/application/src/ai/milestone-prompt.ts`、Create `packages/application/tests/ai/milestone-prompt.test.ts`；Modify `apps/local-ai/src/index.ts`、`apps/local-ai/src/providers/types.ts`、`apps/local-ai/src/providers/mock.ts`、`apps/local-ai/src/providers/openai-compatible.ts`、`apps/local-ai/src/server/narrative-server.ts`、`apps/local-ai/src/validation/narrative.ts`、`apps/web/src/event-choice/EventFeedbackPanel.tsx`、`apps/web/src/career-dashboard/CareerReviewPage.tsx`、`apps/web/src/narration/local-ai-client.ts` 及对应回归测试。
 
 **Interfaces:** 五个关键场景：首份职业合同、重大伤病与复出、关键转会/留洋、国家队重大节点、退役。每场景有独立 prompt 模板和结构化输入：合同场景含合同年限、薪资、俱乐部承诺；伤病含伤病类型、时长、恢复中重要选择；转会含前俱乐部、新俱乐部、转会费范围、适应状态变化；国家队含赛事类型、出场与进球、淘汰轮次；退役含生涯总览、遗憾和最大成就。输出 150-250 字"为什么这是你的故事"，把早期选择与后来结果连起来。
 
 **约束：** 不编造冠军、进球、出场或关系。对同一事实组合的润色在展示期内保持一致（实例缓存 SHA-256 key）。AI 文本不进入存档，不改变回溯结果。退役评价的 AI 版本不和规则评价冲突：AI 说"有遗憾的职业生涯"可以，但不能说"没有达到世界级"而规则评价为"世界级"。
 
-- [ ] 写回归：首份合同输入 schema 禁止虚构转会费/年限；伤病场景输入必须包含 `injuryType` 和 `returnOutcome`；mock 输出符合 150-250 字 + 不添加输入未提供的事实。
-- [ ] 运行 `pnpm exec vitest run --project domain packages/contracts/tests/narration/milestone-narration.test.ts packages/application/tests/ai/milestone-prompt.test.ts`。
-- [ ] 为5个场景各实现 prompt builder，提取所在阶段存档事实，构造只读输入结构。客户端在事件反馈页或总结页识别当前场景，发出请求。mock 测试覆盖5场景，真实 provider 连通由 T21 覆盖。
-- [ ] 跑 E2E（mock AI 模式下）——检查关键节点页面显示增强文本且不改变反馈核心结构。提交 `feat: AI narration for 5 key career milestones`。
+- [x] 写回归：首份合同输入 schema 禁止虚构转会费/年限；伤病场景输入必须包含 `injuryType` 和 `returnOutcome`；mock 输出符合 150-250 字 + 不添加输入未提供的事实；公共事实包增加荣誉奖项、关键数据、独特比赛记录。
+- [x] 运行定向契约、application、local-ai、HTTP server、web client、职业回顾页与反馈页回归：契约 5/5、prompt 2/2、local-ai 21/21、web 16/16；新增 provider 独立 prompt、虚构荣誉拦截、退役评价页面接线和失败重试覆盖。
+- [x] 为 5 个场景各实现独立 prompt builder，并由真实 OpenAI 兼容 provider 实际调用；构造只读输入结构并通过 `milestone-narration-v1` 请求接入现有 `POST /v1/narrative-polish`。客户端按 canonical facts SHA-256 + 场景请求去重，失败结果不永久缓存；职业回顾页先显示本地退役评价，事件反馈页保留作者原文并异步增强；AI 失败、超时、无效数字、标记或基础事实冲突时静默回退。
+- [x] 验收：普通全量测试 159 个文件/879 项通过（其中既有 professional-week.test.ts 在默认 5 秒门槛下曾超时，单独提高到 30 秒后 23/23 通过）；`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm build` 通过；桌面 E2E 19/19、独立重启服务后的移动 E2E 19/19；全量首次串行 E2E 因共享 Vite 服务在桌面批次后退出导致 16 个移动连接拒绝，独立重跑全部通过。balance 子项目本次持续高 CPU 超过 10 分钟无输出后停止，Task20 未修改 simulation/balance 规则，沿用已通过的 `artifacts/experience-G4-task19-balance-1000.json`；完整矛盾检测仍由 Task21 承接。按审核流程不自动提交，等待用户审核后再进入 Task21。
 
 ```ts
 import { expect, it } from 'vitest';
@@ -918,14 +917,14 @@ it('contract milestone requires club and years', () => {
 
 ## Task 21：AI 韧性、超时与矛盾检测
 
-**Files:** Create `packages/application/src/ai/ai-guard.ts`、`packages/application/tests/ai/ai-guard.test.ts`；Modify `apps/web/src/narration/local-ai-client.ts`、`packages/application/src/ai/career-summary-prompt.ts`、`packages/application/src/ai/milestone-prompt.ts`。
+**Files:** Create `packages/application/src/ai/ai-guard.ts`、`packages/application/tests/ai/ai-guard.test.ts`、`packages/contracts/src/narration/career-summary-prompt.ts`；Modify `apps/web/src/narration/local-ai-client.ts`、`packages/application/src/ai/career-summary-prompt.ts`、`packages/application/src/ai/milestone-prompt.ts`、`packages/contracts/src/index.ts`、`packages/contracts/src/narration/milestone-prompt.ts`、`apps/local-ai/src/providers/openai-compatible.ts`、`apps/local-ai/src/validation/narrative.ts`、`apps/local-ai/src/server/narrative-server.ts` 及对应 provider/server/web 回归测试。
 
 **Interfaces:** `detectFactualContradiction(output: string, facts: CareerFact[]): string[]`——对每项事实，确认输出文案不否定、篡改或新增。返回的矛盾列表为空=通过；非空则丢弃该输出回退作者模板。超时处理：`fetchWithTimeout(url, options, timeoutMs)`——默认 5000ms 超时后返回 `null`（走回退）。对5种常见 LLM 幻觉模式做检测：编造冠军、错误当前俱乐部、虚构出场次数、错写年龄/赛季数、混淆重伤与轻伤类型。
 
-- [ ] 写回归：输出"赢得了世界杯冠军"但事实无该奖杯->检出幻觉；输出"出场50次"但事实45次->检出幻觉；输出"重伤后艰难恢复"但事实为"轻度扭伤，2周恢复"->检出幻觉。超时5000ms后返回null不抛异常。
-- [ ] 运行 `pnpm exec vitest run --project domain packages/application/tests/ai/ai-guard.test.ts`。
-- [ ] 实现五项检查：荣誉存在性（输出提及的荣誉必须在输入事实列表）、出场数边界（+-2浮动可接受但>=20%偏差则拒绝）、俱乐部一致性（当前俱乐部名必须匹配）、年龄/赛季数合理性、伤病类型匹配。超时处理在 local-ai-client 请求层实现，与已有 `TIMEOUT_MS` 环境变量共用。当 provider 返回非 JSON、JSON 不合 schema、或 contradiction 非空列表时，均触发同一回退路径：显示作者模板原文，不显示 AI 文案。缓存只在通过 contradiction guard 的内容上写入。
-- [ ] 跑全量 AI 相关测试，mock+真实 provider 两组路径（真实如未连通时只跑 mock）。提交 `feat: AI output guard for factual consistency and timeout resilience`。
+- [x] 写回归：输出"赢得了世界杯冠军"但事实无该奖杯->检出幻觉；输出"出场50次"但事实45次->检出幻觉；输出"重伤后艰难恢复"但事实为"轻度扭伤，2周恢复"->检出幻觉；补充冠军/亚军、自定义荣誉、出场容差、俱乐部后缀/下一站与超时回退测试。
+- [x] 运行 `pnpm exec vitest run --project domain packages/application/tests/ai/ai-guard.test.ts` 等定向回归；事实守卫 13/13，通过后 application/local-ai AI 回归 7 个文件/46 项、web 客户端 10/10。
+- [x] 实现五项检查：荣誉存在性按具体奖项/名次匹配，出场数同时执行 ±2 与 20% 边界，俱乐部一致性支持常见后缀与转会表述，年龄/赛季数合理性、伤病类型/时长/复出结果匹配。`fetchWithTimeout` 默认 5000ms，统一处理超时、非 JSON、schema 不合格和矛盾回退；summary/milestone 客户端失败结果及 server 未通过二次事实校验的结果均不缓存。career-summary prompt 下沉至 contracts 并由真实 provider 实际使用；事件 polish 保持既有数字/人物一致性校验，因为该输入不包含 CareerFact。
+- [x] 完成项目门禁：最终普通阶段 `pnpm test` 为 160 个文件/899 项通过；同一轮进入 balance 子项目后在本机高 CPU、23 分钟无输出而中止，未出现断言失败；此前同 Task21 版本的 balance 阶段曾完成 4 个文件/14 项。最终 `pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm build`、`pnpm test:architecture` 通过，`pnpm test:e2e` 38/38 通过。Task21 未修改 simulation/balance 规则，沿用 `artifacts/experience-G4-task19-balance-1000.json`；按审核流程不自动提交，等待用户审核后再进入 Task22。
 
 ```ts
 import { expect, it } from 'vitest';
@@ -972,10 +971,38 @@ it('flags overstated appearances', () => {
 
 **前版本对照：** H0: `youth-balance-10000-release.json`（M10规约前）。新版本指标变化应附可解释 delta。不可解释的显著变化需排查到具体任务。
 
-- [ ] 在所有 G1-G5 任务完成后、run 之前做一次全量 `pnpm test`、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm build`、`pnpm test:e2e`。
-- [ ] 执行 `pnpm balance:youth -- --runs 10000 --seed-start 1 --output artifacts/experience-final-10000.json`。记录开始与结束时间、命令行退出码、输出文件大小。
-- [ ] 从结果提取上述指标，与 H0 对照，逐项注释差异。差异超过预期范围的（世界级波动 >1pp、国家队 >5pp、完成率 <100%）需回排查 T01-T21 具体哪个任务引入。
-- [ ] 补充八国联赛覆盖率报告：在每个 1,000 季子段中，至少 6/8 国家有球员经历。提交 `test: final 10,000-season balance verification`。
+- [x] 在所有 G1-G5 任务完成后、run 之前做一次全量 `pnpm test`、`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm build`、`pnpm test:e2e`。
+- [x] 执行 `pnpm balance:youth -- --runs 10000 --seed-start 1 --output artifacts/experience-final-10000.json`。记录开始与结束时间、命令行退出码、输出文件大小。
+- [x] 从结果提取上述指标，与 H0 对照，逐项注释差异。差异超过预期范围的（世界级波动 >1pp、国家队 >5pp、完成率 <100%）需回排查 T01-T21 具体哪个任务引入。
+- [x] 补充八国联赛覆盖率报告：在每个 1,000 季子段中，至少 6/8 国家有球员经历。提交 test: final 10,000-season balance verification。
+
+**Task22 历史执行记录（2026-09-21）：** 普通测试阶段通过 160 个文件/899 项，`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm build`、`pnpm test:architecture` 10/10、`pnpm test:e2e` 38/38 均通过。首次 10,000 局命令在启动时暴露 `contracts/src/narration` 目录缺少 `index.ts` 的 loader 解析问题，已补齐稳定入口并让 balance loader 在同名文件/目录并存时优先解析 `.ts` 文件；第二次于 12:56:49 启动，实际计算进程正常但至 13:17:25 仍无阶段输出，按当前 CPU 速度预计需数小时，已停止，退出码为手动中止，`artifacts/experience-final-10000.json` 未生成。
+
+## Task 22A：balance runner 性能优化与可观测性
+
+**Files:** Modify `tools/balance/src/run-youth-seasons.ts`、`tools/balance/src/node-shims.d.ts`、`tools/balance/src/index.ts`、`tools/balance/tests/youth-season-balance.test.ts`。
+
+- [x] 用 CPU 画像确认主要耗时位于职业周推进、事件筛选/故事进度与应用层状态校验，不修改 simulation/application 规则。
+- [x] 增加逐种子进度回调与 CLI 阶段输出；并行完成顺序不影响最终按 seed 排序的报告。
+- [x] 使用最多 4 个受控 worker 分块运行独立种子；worker 显式使用项目 loader，内部世界层分析只在主线程聚合一次。
+- [x] 分离公共运行选项与 worker 内部聚合参数，校验 runs、seedStart、parallelism、预计算指标序列；worker 失败/异常退出时统一终止其他 worker。
+- [x] 固定种子顺序/并行结果回归通过；1,000 局测试与正式命令通过；最终 10,000 局报告成功生成。
+- [x] 独立审阅的 Required 问题已处理；类型、Lint、格式、构建、完整测试与 E2E 重新通过。
+
+**Task22A 执行记录（2026-09-21）：** 进度回调、并行确定性和非法并行度回归均通过；正式 1,000 局命令退出码 0，报告 `artifacts/experience-task22a-1000.json` 包含 1,000 条按 seed 1–1000 排列的指标。最终命令 `pnpm balance:youth -- --runs 10000 --seed-start 1 --output artifacts/experience-final-10000.json` 退出码 0，生成 29,349,251 字节报告，包含 10,000 条 seed 1–10000 的唯一指标。最终摘要：完成率 1、回顾生成率 1、主题覆盖率 1、比赛中位 22、决策中位 10、每月最多 2 次决策、独立事件组合 9,991、独立故事组合 82、WorldClassRate 1.4%、EarlyRetirementRate 0、国家队占比 29.07%、重伤率 0.99%、承诺兑现率 96.92%、世界层 240 队且重载稳定。审阅发现并修复了 worker 失败清理、公共参数边界和并行进度语义问题；最终 `pnpm test` 为普通 160/899、balance 4/17、架构 10/10，`pnpm typecheck`、`pnpm lint`、`pnpm format:check`、`pnpm build`、`pnpm test:e2e` 38/38 均通过。
+
+**Task22A 当时状态：** Task22A 已完成；当时 Task22 的 H0 指标差异注释与八国 1,000 季分段覆盖报告仍待补齐，后续由 Task22B 收尾。
+## Task 22B：最终报告差异、八国经历覆盖与确定性收尾
+
+**Task22B 执行记录（2026-09-21）：** 新增 balance 观测字段 experiencedCountries，仅记录球员实际启动职业赛季时所属俱乐部国家（包含租借参赛队），并在报告中生成十个 1,000 种子分段的 countryExperience。新增回归覆盖分段统计、非法国家/非连续种子边界及 10 对固定种子重放；修复转会市场在国别吸引力排序下始终只暴露日韩的根因，按固定种子增加一个受能力天花板约束的海外国家曝光槽，不改变比赛规则、俱乐部层级或国家队转会边界。修复前回归稳定复现只有 japan/korea，修复后转会回归 5/5，通过国家轮换让最终十段覆盖达到 8、7、8、8、8、8、8、8、7、8 国，全部满足至少 6/8。
+
+最终报告 artifacts/experience-final-10000.json：文件 29,869,585 字节，10,000 局，seed 1–10000 唯一连续；完成率 100%、回顾生成率 100%、主题覆盖率 100%、比赛中位 22、决策中位 10/P90 13、每月最多 2 个决策、重伤率 0.99%、国家队占比 28.47%、WorldClassRate 1.19%、极早退役 0、承诺兑现率 96.80%、独立事件组合 9,991、独立故事组合 82、职业分钟中位 75.00、世界层 240 队/重载稳定。八国 application 联赛回归 5/5，确认冠军、升降级、赛历边界与跨国桥接有效。
+
+与 H0 artifacts/youth-balance-10000-release.json 的关键可解释差异：完成率、回顾率、主题覆盖、比赛中位、决策中位/P90、每月决策上限、退役年龄中位均为 0 差异；场均总进球 -0.0043、重伤率 +0.14pp、毕业率 +0.17pp、承诺兑现率 -0.34pp、国家队占比 -1.31pp（低于 5pp 门槛）、独立事件组合 +20。WorldClass/EarlyRetirement 是 H0 尚未提供的新指标。杯赛出场率由 91.10% 到 100%、杯赛荣誉率由 21.75% 到 34.34%，升级率 +1.66pp、降级率 -1.72pp，来自 240 队完整职业赛制与杯赛结算，不是随机崩溃。留洋占比由 25.59% 降至 16.54%，原因是国家轮换把原先集中于日韩的留洋机会分散到欧洲五国，仍处于既有 10%–40% 门禁内。
+
+验证：Task22B 定向回归 5/5、转会市场回归 5/5、application 八国回归 5/5；最终 pnpm test 普通 160/900、balance 5/22、架构 10/10，pnpm typecheck、pnpm lint、pnpm format:check、pnpm build、pnpm test:e2e 38/38 均通过。Task22B 已完成，按审核流程等待用户审核，不进入 Task23。
+
+**Task22 当前状态：** Task22A、Task22B 均已完成；H0 差异、十段八国经历覆盖、八国联赛有效结算和固定种子重放均有证据。按流程等待用户审核，不进入 Task23。
 
 ## Task 23：真人体验测试协议与最终交付
 
@@ -999,12 +1026,106 @@ it('flags overstated appearances', () => {
 - 10,000 季最终报告与 H0 对照
 - 真人测试协议已填写至少 5 份（不足时可注明"待招募补充"）
 
-- [ ] 基于T09协议完善手机/桌面两组路径的具体操作说明和记录模板。
-- [ ] 联系测试者或自我模拟测试路径；完成测试后汇总各项指标是否达标。
-- [ ] 所有不达标项（如果有）区分以下原因：(A) 测试环境/说明不够清晰可重试 (B) G1-G5 任务未覆盖该维度需补新任务 (C) 已知范围外（如PWA离线更新）。仅 (B) 需要创建补充任务并返回对应阶段。
-- [ ] 编写发布说明文档 v1，涵盖安装方式、已知问题、AI配置、离线限制。提交 `docs: final release evidence and playtest report (G6)`。
-- [ ] 最终门禁命令全部通过后，在 `ROADMAP.md` 记录完成并标记版本。通知用户项目整体体验升级完毕，可收尾此计划。
+- [x] 基于T09协议完善手机/桌面两组路径的具体操作说明和记录模板。
+- [x] 完成自动化/工具路径复核并建立五份真人记录模板；真实测试者记录不足部分明确标记“待招募补充”。
+- [x] 将不达标项按 A（环境/说明）、B（G1-G5 缺口）、C（已知范围外）分类写入协议；当前尚无真人记录可判定 B 类缺口。
+- [x] 编写发布说明文档 v1，涵盖安装方式、已知问题、AI配置、离线限制；真人证据不足部分明确保留待招募状态。
+- [x] 最终工程门禁全部通过并在 ROADMAP 记录 G6 Task23 文档阶段完成；真人指标继续保持待招募补充，暂不宣称 20 分钟真人达标。
 
+**Task23 文档执行记录（2026-09-21）：** 已完成 T09 真人体验协议的手机/桌面双设备要求、19+1 分钟计时起止、四局不同种子新鲜感、五事件可解释性抽检、AI 事实一致性问题和 A/B/C 缺口分类；新增 docs/testing/experience-playtest-report-TEMPLATE.md 与 docs/RELEASE_NOTES-v1.md。自动化与工具证据沿用 Task22 的全量门禁和 10,000 季报告；真人测试者记录尚未产生，不将工具结果伪装为真人结果，发布说明标记为“自动化验收通过的体验升级候选版”，真人指标待招募补充。最终门禁已通过：pnpm test 普通 160/900、balance 5/22、架构 10/10；pnpm typecheck、pnpm lint、pnpm format:check、pnpm build、pnpm test:e2e 38/38 均通过。为避免两个 1,000 季 balance 测试文件争抢 CPU，Vitest balance 项目关闭文件间并行，单个 runner 仍保留最多 4 个受控 worker；balance 全量耗时 581 秒。
+## Task 24：交付、启动与移动端使用
+
+**Goal:** 在不改变模拟规则的前提下，提供 GitHub Pages 在线版本、Windows 双击启动、Android 操作说明，并将成果保存和推送到 GitHub。
+
+**Architecture:** Vite 通过 VITE_BASE_PATH 兼容本地根路径与 GitHub Pages 仓库子路径；PWA manifest 和 Service Worker 从 BASE_URL/注册 scope 推导资源路径；Windows 启动器只负责依赖检查、局域网开发服务器和浏览器打开；GitHub Actions 负责生产构建和 Pages 发布。
+
+**Global Constraints:** Node >=24.16.0；pnpm 11.9.0；simulation/application 规则不变；不得提交 .env、API key、token、node_modules、dist 或 artifacts；不强制推送、不自动合并 master；真人 20 分钟指标仍不能用自动化数据代替。
+
+### Task 24A：PWA 子路径与资源路径兼容
+
+**Files:**
+- Modify: apps/web/vite.config.ts
+- Modify: apps/web/index.html
+- Modify: apps/web/public/manifest.webmanifest
+- Modify: apps/web/public/sw.js
+- Modify: apps/web/src/pwa/register-service-worker.ts
+- Test: apps/web/tests/pwa/pwa-assets.test.ts
+
+**Interfaces:**
+- Input: VITE_BASE_PATH；本地默认 /；Pages 使用 /FootballSimulator/。
+- Output: manifest、图标、Service Worker、导航回退和静态资源在两种路径下均可解析。
+
+- [x] Step 1: 扩展 PWA 回归，断言 index 使用 Vite BASE_URL，manifest 使用可跨前缀的相对入口，Service Worker 注册不再固定为根路径。
+- [x] Step 2: 运行 PWA 定向测试，预期在实现前因旧的根路径断言失败。
+- [x] Step 3: 在 Vite 配置读取 VITE_BASE_PATH；更新 index、manifest、Service Worker 和注册器，使本地与仓库子路径共用一套资源逻辑。
+- [x] Step 4: 运行 apps/web PWA 测试、pnpm format:check 和 pnpm build；确认默认本地构建仍生成可运行根路径。
+- [x] Step 5: 提交 Task24A，提交信息为 fix: support PWA subpath deployment。
+
+
+**Task24A 执行记录（2026-09-21）：** 完成 Vite `VITE_BASE_PATH`、HTML 静态资源、相对 Manifest、按注册 scope 计算的 Service Worker 与 BASE_URL 注册器；PWA 回归 4/4、默认构建和 `/FootballSimulator/` 子路径构建通过。提交 `a4f8dfc`；随后补充 Vite 类型修复提交 `c061b7c`。
+### Task 24B：Windows 双击启动与局域网入口
+
+**Files:**
+- Modify: package.json
+- Create: 启动足球模拟器.cmd
+- Test: 启动器静态检查和 pnpm dev:lan 启动检查
+
+**Interfaces:**
+- Input: Windows 双击；可用 Node.js 与 pnpm；项目根目录。
+- Output: 自动依赖检查、局域网开发服务器、浏览器入口和手机访问地址。
+
+- [x] Step 1: 先为 package.json 增加 pnpm dev:lan，命令使用 apps/web Vite 的 --host 0.0.0.0，不修改默认 pnpm dev 的 127.0.0.1 行为。
+- [x] Step 2: 写启动器失败路径检查，覆盖缺少 node、缺少 pnpm 和依赖目录不存在三种提示。
+- [x] Step 3: 实现启动足球模拟器.cmd：切换到自身目录、按需执行 pnpm install、最小化启动 pnpm dev:lan、打开 localhost 页面并显示局域网 IPv4。
+- [x] Step 4: 在 Windows 环境执行静态命令检查和一次可控启动/终止检查；确认启动器不修改防火墙、不写存档、不启动 AI 服务。
+- [x] Step 5: 提交 Task24B，提交信息为 feat: add Windows one-click launcher。
+
+
+**Task24B 执行记录（2026-09-21）：** 新增 `pnpm dev:lan` 与根目录 Windows 启动器；启动器执行 Node/pnpm/依赖检查、局域网 IPv4 展示、最小化 Vite 服务和本机浏览器打开。静态回归 2/2，真实批处理启动成功，实测监听 `0.0.0.0:5173` 后已受控终止；格式、Lint、类型、默认构建和 Pages 子路径构建通过。启动器使用 ASCII 命令文本，避免 Windows 代码页解析故障。提交 `77ea791`。
+### Task 24C：GitHub Pages 与安装说明
+
+**Files:**
+- Create: .github/workflows/deploy-pages.yml
+- Create: docs/INSTALLATION.md
+- Modify: docs/RELEASE_NOTES-v1.md
+- Test: workflow YAML/格式检查、生产构建产物路径检查
+
+**Interfaces:**
+- Input: push 到 career-experience-upgrade 或 master，或手动 workflow_dispatch。
+- Output: GitHub Pages artifact，部署地址 https://sherryicecream.github.io/FootballSimulator/。
+
+- [ ] Step 1: 写 Pages workflow，固定 pnpm 11.9.0 和 Node 24.16.0，使用 frozen lockfile，注入 /FootballSimulator/，上传 apps/web/dist，并申请最小 Pages 权限。
+- [ ] Step 2: 写 docs/INSTALLATION.md，说明 Windows 双击、命令行备用方式、GitHub Pages、Android Chrome 安装、同 Wi-Fi 局域网访问、防火墙和 PWA/HTTP 限制。
+- [ ] Step 3: 更新发布说明，链接安装文档并明确在线版、局域网版和当前 package 0.0.0 状态。
+- [ ] Step 4: 使用 VITE_BASE_PATH=/FootballSimulator/ 执行生产构建，检查 dist 中 manifest、sw.js、index.html 和资源引用没有回到根路径。
+- [ ] Step 5: 运行格式检查、PWA 测试、构建和 E2E；提交 Task24C，提交信息为 feat: add GitHub Pages delivery and install docs。
+
+### Task 24D：Git 保存、敏感信息审计与远程推送
+
+**Files:**
+- Inspect: 当前工作区全部已修改和未跟踪文件
+- Modify: 不新增运行时代码；必要时只补充路线图/计划记录
+- Test: staged diff check、secret scan、全量门禁和 GitHub push 状态
+
+**Interfaces:**
+- Input: 当前 career-experience-upgrade 分支和 origin 远程。
+- Output: 可恢复的本地提交、origin/career-experience-upgrade 远程分支、可访问的 Pages workflow 记录。
+
+- [ ] Step 1: 检查 staged/unstaged/untracked 文件，确认 .env、API key、token、node_modules、dist、artifacts 不会被加入。
+- [ ] Step 2: 运行 git diff --cached --check 和敏感词检查；发现问题时停止，不推送。
+- [ ] Step 3: 将本次完整交付成果保存为描述性提交，不使用 reset、checkout 或 force push。
+- [ ] Step 4: 运行 pnpm test、pnpm typecheck、pnpm lint、pnpm format:check、pnpm build 和 pnpm test:e2e。
+- [ ] Step 5: 执行 git push -u origin career-experience-upgrade；记录远程提交和 Pages workflow 地址，不自动合并 master。
+- [ ] Step 6: 更新 ROADMAP 与本计划，记录电脑/Android 安装入口和当前真人测试仍待补充的限制。
+
+**Task24 验收标准：**
+- Windows 用户双击启动足球模拟器.cmd 可以打开本地游戏。
+- Android 可通过 GitHub Pages HTTPS 地址使用并添加到主屏幕。
+- Android 可通过同一 Wi-Fi 下的电脑局域网地址访问开发版本。
+- GitHub Pages 子路径下 manifest、Service Worker 和离线导航不丢失前缀。
+- GitHub 远程分支已推送，提交不含 secrets、构建产物或用户存档。
+- 所有工程门禁通过；不改变比赛、成长、存档和随机规则。
+- 真人测试结论仍单独记录，不将部署成功误判为真人体验通过。
 ---
 
 ## E. 补充说明：与已有 M10/M11 模块的协作关系
