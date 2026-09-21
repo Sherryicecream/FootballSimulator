@@ -12,6 +12,7 @@ import { HealthStateSchema } from './health';
 import { AttributeChangeSchema, TrainingIntensitySchema } from './career';
 
 const IdSchema = z.string().min(1).max(60);
+const LedgerIdSchema = z.string().min(1).max(76);
 const ScoreSchema = z.number().int().min(0).max(100);
 const IsoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
@@ -209,7 +210,7 @@ export const MonthlyAdvanceCursorSchema = z.strictObject({
   totalWeeks: z.number().int().min(4).max(5),
   status: z.enum(['idle', 'advancing', 'awaiting-decision', 'report-ready']),
   developmentAccrual: z.record(z.string(), z.number().min(0)).default({}),
-  factIds: z.array(IdSchema).default([]),
+  factIds: z.array(LedgerIdSchema).default([]),
   matchIds: z.array(IdSchema).default([]),
   interactiveEventCount: z.number().int().min(0).max(2).default(0),
   feedbackStartHealth: HealthStateSchema.nullable().optional(),
@@ -233,7 +234,7 @@ export const YouthEventInstanceSchema = z.strictObject({
   choices: z.array(EventChoiceSchema).min(1).max(4),
   resolvedChoiceId: IdSchema.nullable(),
   participantIds: z.array(IdSchema),
-  factRefs: z.array(IdSchema),
+  factRefs: z.array(LedgerIdSchema),
   storyId: IdSchema.nullable().default(null),
   nextEventIds: z.array(IdSchema).default([]),
   interaction: EventInteractionSchema.default('decision'),
@@ -312,7 +313,7 @@ export const MatchContextSchema = z.strictObject({
 export type MatchContext = z.infer<typeof MatchContextSchema>;
 
 export const CareerLedgerEntryV2Schema = z.strictObject({
-  id: IdSchema,
+  id: LedgerIdSchema,
   weekKey: z.string().min(1).max(20),
   type: z.enum([
     'training',

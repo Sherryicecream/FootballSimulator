@@ -5,20 +5,17 @@ import {
   CareerSaveV8Schema,
   type CareerLedgerEntryV2,
   type CareerSaveV2Like,
+  type CareerSaveV4Like,
   type CareerSaveV6Like,
 } from '@football/contracts';
 import {
   applyRelationshipEffects,
   buildEventFeedback,
   resolveChoiceOutcome,
-  careerMoment,
   stampCareerFact,
 } from '@football/simulation';
 
 export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId: string): S => {
-  const moment = careerMoment(save as unknown as CareerSaveV6Like);
-  const momentYear = moment.seasonId.match(/[0-9]{4}/)?.[0] ?? moment.date.slice(0, 4);
-  const momentWeekKey = momentYear + '-W' + String(moment.weekIndex).padStart(2, '0');
   const event = save.story.pendingEvent;
   if (!event) throw new Error('没有待处理的生涯事件');
   if (event.resolvedChoiceId !== null) throw new Error('该事件已经处理，不能重复提交');
@@ -46,6 +43,7 @@ export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId
     ...save.clubContext,
     coachEvaluation: applyScore(save.clubContext.coachEvaluation, effects.coachTrust),
   };
+  const eventTime = eventTimeContextOf(save);
   const effectTotal = Object.values(effects).reduce((sum, value) => sum + value, 0);
   const impact = effectTotal > 0 ? 'positive' : effectTotal < 0 ? 'negative' : 'neutral';
   const relationships = applyRelationshipEffects(
@@ -59,16 +57,16 @@ export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId
     {
       eventId: event.eventId,
       summary: `[${event.title}] ${choice.text}`,
-      season: Number(momentYear),
-      week: moment.weekIndex,
+      season: eventTime.season,
+      week: eventTime.week,
       impact,
     },
   );
   const automatic = event.interaction === 'automatic';
   const rawFact: CareerLedgerEntryV2 = {
-    id: `${automatic ? 'event' : 'decision'}-${event.eventId}-${moment.weekIndex}`,
+    id: `${automatic ? 'event' : 'decision'}-${event.eventId}-${eventTime.idSuffix}`,
     eventId: event.eventId,
-    weekKey: momentWeekKey,
+    weekKey: eventTime.weekKey,
     type: automatic ? 'event' : 'decision',
     summary: resolvedChoice.summary
       ? `[${event.title}] ${choice.text}（${resolvedChoice.summary.label}：${resolvedChoice.summary.reason}）`
@@ -76,7 +74,10 @@ export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId
     participantIds: event.participantIds,
     outcome: resolvedChoice.summary ?? undefined,
   };
-  const fact = stampCareerFact(save as unknown as CareerSaveV6Like, rawFact);
+  const fact = {
+    ...stampCareerFact(save as unknown as CareerSaveV6Like, rawFact),
+    id: rawFact.id,
+  };
   const activeStorylines = save.story.activeStorylines.filter((id) => id !== event.eventId);
   const nextEventIds = resolvedChoice.nextEventIds ?? choice.nextEventIds ?? event.nextEventIds;
   const completedStoryIds = new Set(save.story.completedStoryIds);
@@ -107,7 +108,7 @@ export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId
             {
               id: `delayed-${event.eventId}-${choiceId}`,
               sourceEventId: event.eventId,
-              triggerWeekKey: momentYear + '-W' + String(moment.weekIndex + 2).padStart(2, '0'),
+              triggerWeekKey: `${eventTime.season}-W${String(eventTime.week + 2).padStart(2, '0')}`,
               effects: choice.delayEffects,
               participantIds: event.participantIds,
             },
@@ -141,3 +142,16 @@ export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId
 
 const applyScore = (current: number, delta: number | undefined) =>
   Math.min(100, Math.max(0, current + (delta ?? 0)));
+
+const eventTimeContextOf = (save: CareerSaveV2Like) => {
+  const proSeason = (save as Partial<CareerSaveV4Like>).proSeason;
+  const season = Number((proSeason?.startDate ?? save.season.startDate).slice(0, 4));
+  const week = proSeason?.currentWeek ?? save.season.currentWeek;
+  const paddedWeek = String(week).padStart(2, '0');
+  return {
+    season,
+    week,
+    weekKey: `${season}-W${paddedWeek}`,
+    idSuffix: `${season}${paddedWeek}`,
+  };
+};
