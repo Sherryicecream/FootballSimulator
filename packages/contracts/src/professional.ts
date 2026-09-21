@@ -3,6 +3,7 @@ import { CareerSaveV3Schema, migrateCareerSaveV3 } from './graduation';
 import { LeagueStandingSchema } from './match';
 import { PositionSchema } from './primitives';
 import { ScheduledYouthFixtureSchema } from './youth-season';
+import { CountrySchema } from './country';
 
 const IdSchema = z.string().min(1).max(60);
 const ScoreSchema = z.number().int().min(0).max(100);
@@ -18,6 +19,8 @@ export const ProSquadMemberSchema = z.strictObject({
   form: ScoreSchema,
   fitness: ScoreSchema,
   minutesPlayed: z.number().int().min(0).default(0),
+  traits: z.record(z.string().min(1).max(30), ScoreSchema).optional(),
+  relationshipToPlayer: z.enum(['teammate', 'friendship', 'rivalry']).optional(),
 });
 export type ProSquadMember = z.infer<typeof ProSquadMemberSchema>;
 
@@ -43,6 +46,18 @@ export const ProCupStateSchema = z.strictObject({
   completed: z.boolean(),
 });
 export type ProCupState = z.infer<typeof ProCupStateSchema>;
+
+export const CalendarBridgeSchema = z.strictObject({
+  fromCountry: CountrySchema,
+  toCountry: CountrySchema,
+  fromDate: IsoDateSchema,
+  toDate: IsoDateSchema,
+  gapDays: z.number().int().min(0).max(730),
+  bridgeYears: z.number().min(0).max(2),
+  kind: z.enum(['same-calendar', 'cross-calendar', 'long-break']),
+});
+export type CalendarBridge = z.infer<typeof CalendarBridgeSchema>;
+
 export const ProSeasonStateSchema = z.strictObject({
   id: IdSchema,
   startDate: IsoDateSchema,
@@ -53,6 +68,7 @@ export const ProSeasonStateSchema = z.strictObject({
   clubId: IdSchema,
   competitionId: IdSchema,
   domesticCup: ProCupStateSchema.nullable().default(null),
+  calendarBridge: CalendarBridgeSchema.optional(),
   nextClubTier: DomesticTierSchema.nullable().default(null),
   fixtures: z.array(ProFixtureSchema),
   standings: z.array(LeagueStandingSchema),

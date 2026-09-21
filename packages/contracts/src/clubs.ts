@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CountrySchema } from './country';
 
 const IdSchema = z.string().min(1).max(60);
 
@@ -10,7 +11,11 @@ export const ClubProfileSchema = z.strictObject({
   positionalNeeds: z.array(z.string().min(1).max(40)).max(6),
   youthCycle: z.enum(['rebuilding', 'stable', 'contending']),
   overseas: z.boolean().default(false),
+  /** v8 国别字段；旧内容缺失时由迁移层按海外区域补齐。 */
+  country: CountrySchema.optional(),
   overseasRegion: z.enum(['europe', 'asia']).optional(),
+  /** 职业阵容使用的本地化球员姓名池；旧内容缺失时由模拟层使用中文回退池。 */
+  personNamePool: z.array(z.string().min(1).max(50)).max(120).optional(),
   wageBudget: z.number().int().min(0).max(100),
 });
 export type ClubProfile = z.infer<typeof ClubProfileSchema>;

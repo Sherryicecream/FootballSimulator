@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CountrySchema } from './country';
 
 export const RaritySchema = z.enum(['common', 'uncommon', 'rare', 'legendary']);
 
@@ -63,6 +64,7 @@ export type ChoiceResolutionAttribute = z.infer<typeof ChoiceResolutionAttribute
 
 export const ChoiceResolutionOutcomeSchema = z.object({
   label: z.string().min(1).max(40),
+  eventOutcome: z.literal('adapted').optional(),
   effects: z.record(z.string(), z.number().int()).default({}),
   delayEffects: z.record(z.string(), z.number().int()).optional(),
   memoryKey: z.string().optional(),
@@ -132,6 +134,7 @@ export const EventChoiceSchema = z.object({
   id: z.string().min(1).max(40),
   text: z.string().min(1).max(200),
   riskLabel: z.string().min(1).max(10),
+  eventOutcome: z.literal('adapted').optional(),
   effects: z.record(z.string(), z.number().int()).default({}),
   resolution: ChoiceResolutionSchema.optional(),
   delayEffects: z.record(z.string(), z.number().int()).optional(),
@@ -207,12 +210,14 @@ export const EventConditionSchema = z.object({
   minStability: z.number().int().min(0).max(100).optional(),
   requireOverseas: z.boolean().optional(),
   overseasRegions: z.array(z.enum(['europe', 'asia'])).optional(),
+  requireCountry: CountrySchema.optional(),
   requireNationalTeam: z.boolean().optional(),
   minCaps: z.number().int().min(0).optional(),
 });
 
 export const EventDefinitionSchema = z.object({
   id: z.string().min(1).max(40),
+  storyFamilyId: z.string().min(1).max(60).optional(),
   version: z.number().int().min(1),
   category: EventCategorySchema,
   rarity: RaritySchema,

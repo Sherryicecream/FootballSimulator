@@ -1,6 +1,8 @@
 import type {
   CareerLedgerEntryV2,
   CareerSaveV5Like,
+  CareerSaveV6Like,
+  Country,
   LoanHistoryEntry,
   YouthContentBundle,
 } from '@football/contracts';
@@ -9,6 +11,9 @@ import {
   createSeededRandomSource,
   generateProfessionalMarketOffers,
   generateTransferOffers,
+  nextProfessionalSeasonStartDate,
+  professionalSeasonDates,
+  stampCareerFact,
 } from '@football/simulation';
 import type { TransferMarketKind } from '@football/simulation';
 
@@ -18,13 +23,14 @@ const currentDateOf = (save: CareerSaveV5Like): string =>
   save.offseason?.nextSeasonStart ??
   save.season.endDate;
 
-const nextProfessionalSeasonStartOf = (save: CareerSaveV5Like): string => {
-  const year = save.proSeason
-    ? Number(save.proSeason.startDate.slice(0, 4)) + 1
-    : Number((save.contract?.signedOn ?? currentDateOf(save)).slice(0, 4));
-  if (!Number.isFinite(year) || year <= 0) throw new Error('无法确定下一职业赛季年份');
-  return `${year}-08-01`;
-};
+const nextProfessionalSeasonStartOf = (
+  save: CareerSaveV5Like,
+  targetCountry: Country = save.contract?.country ?? 'china',
+): string =>
+  nextProfessionalSeasonStartDate(
+    save.proSeason?.endDate ?? save.contract?.signedOn ?? currentDateOf(save),
+    targetCountry,
+  );
 
 const nextProfessionalSeasonIdOf = (save: CareerSaveV5Like): string =>
   `pro-${nextProfessionalSeasonStartOf(save).slice(0, 4)}`;
@@ -61,12 +67,16 @@ export const requestCareerMarket = (
     save.randomState.seed + 8200 + year * 29 + (kind === 'loan' ? 17 : 0),
   );
   const offers = generateProfessionalMarketOffers(save, content, rng, kind);
+  const windowId = save.proSeason?.id ?? nextProfessionalSeasonIdOf(save);
   const fact = marketWindowFact(save, kind, offers.length);
-  const ledger = save.ledger.filter(({ id }) => id !== fact.id);
+  const ledger = save.ledger.filter(
+    ({ id, type, seasonId }) =>
+      id !== fact.id && !(type === 'market-window' && seasonId === windowId),
+  );
   return {
     ...save,
     pendingOffers: offers,
-    ledger: [...ledger, fact],
+    ledger: [...ledger, stampCareerFact(save as unknown as CareerSaveV6Like, fact)],
   };
 };
 
@@ -91,7 +101,7 @@ export const generateFreeAgentOffers = (
     ...save,
     pendingOffers: offers,
     freeAgentSeasons: save.freeAgentSeasons + 1,
-    ledger: [...save.ledger, fact],
+    ledger: [...save.ledger, stampCareerFact(save as unknown as CareerSaveV6Like, fact)],
   };
 };
 
@@ -133,7 +143,7 @@ export const signTransfer = (save: CareerSaveV5Like, offerId: string): CareerSav
     overseasSince: offer.overseas ? signedOn : null,
     freeAgentSeasons: 0,
     clubHistory,
-    ledger: [...save.ledger, fact],
+    ledger: [...save.ledger, stampCareerFact(save as unknown as CareerSaveV6Like, fact)],
   };
 };
 type CareerOffer = CareerSaveV5Like['pendingOffers'][number];
@@ -175,7 +185,7 @@ const signPermanentMarketOffer = (
     overseasSince: normalizedOffer.overseas ? signedOn : null,
     freeAgentSeasons: 0,
     clubHistory,
-    ledger: [...save.ledger, fact],
+    ledger: [...save.ledger, stampCareerFact(save as unknown as CareerSaveV6Like, fact)],
   };
 };
 
@@ -200,8 +210,10 @@ export const signMarketOffer = (save: CareerSaveV5Like, offerId: string): Career
     );
   }
   if (!save.contract) throw new Error('租借报价需要有效的母队合同');
-  const startedOn = nextProfessionalSeasonStartOf(save);
+  const targetCountry = offer.country ?? 'china';
+  const startedOn = nextProfessionalSeasonStartOf(save, targetCountry);
   const startYear = Number(startedOn.slice(0, 4));
+  const targetSeason = professionalSeasonDates(targetCountry, startYear);
   const activeLoan = {
     parentClubId: save.contract.clubId,
     parentClubName: save.contract.clubName,
@@ -210,7 +222,7 @@ export const signMarketOffer = (save: CareerSaveV5Like, offerId: string): Career
     loanClubName: offer.clubName,
     loanClubTier: offer.clubTier,
     startedOn,
-    returnsOn: `${startYear + 1}-05-31`,
+    returnsOn: targetSeason.endDate,
     seasonId: `pro-${startYear}`,
   };
   const fact: CareerLedgerEntryV2 = {
@@ -230,7 +242,7 @@ export const signMarketOffer = (save: CareerSaveV5Like, offerId: string): Career
     proSeason: null,
     pendingOffers: [],
     activeLoan,
-    ledger: [...save.ledger, fact],
+    ledger: [...save.ledger, stampCareerFact(save as unknown as CareerSaveV6Like, fact)],
   };
 };
 /** 租借赛季结算并回归母队；重复提交同一履历保持幂等。 */
@@ -262,6 +274,7 @@ export const returnFromLoan = (
   }
   const fact: CareerLedgerEntryV2 = {
     id: `loan-return-${entry.seasonId}`,
+    eventId: `loan-return-${entry.seasonId}`,
     weekKey: `${entry.to.slice(0, 4)}-W53`,
     type: 'decision',
     summary: `${entry.loanClubName}租借结束，回归母队${entry.parentClubName}`,
@@ -274,7 +287,7 @@ export const returnFromLoan = (
     loanHistory: [...save.loanHistory, entry],
     proSeason: { ...save.proSeason, nextClubTier: null },
     pendingOffers: [],
-    ledger: [...save.ledger, fact],
+    ledger: [...save.ledger, stampCareerFact(save as unknown as CareerSaveV6Like, fact)],
   };
 };
 

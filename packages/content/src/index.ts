@@ -1,11 +1,27 @@
 export { getRegionProfile, getKeyRegions, getAllRegions } from './regions';
-export { getYouthEvents } from './events/youth-events';
+export { eventCountByCountry, getYouthEvents } from './events/youth-events';
 export { youthAcademies } from './academies';
-export { youthClubs, overseasClubs } from './clubs';
+export { allClubProfiles, clubCountByCountry, youthClubs, overseasClubs } from './clubs';
 export { youthAgents } from './agent-archetypes';
 export { youthCompetitions } from './youth-competitions';
+export { continentalCompetitions } from '../data/continental-competitions';
 export { youthPersonArchetypes } from './person-archetypes';
+export { professionalPlayerNamePools } from '../data/person-archetypes';
 export { validateYouthContent } from './validation/validate-content';
+export {
+  countFamilies,
+  countFamiliesByDomain,
+  familiesBelowThreshold,
+  storyFamilyEvents,
+  storyFamilyRegistry,
+} from './story-family-registry';
+export type {
+  StoryFamilyCoverage,
+  StoryFamilyCoverageSummary,
+  StoryFamilyDefinition,
+  StoryFamilyDomain,
+  StoryPhase,
+} from './story-family-registry';
 export type { YouthContentBundle } from '@football/contracts';
 
 import { YouthContentBundleSchema, type YouthContentBundle } from '@football/contracts';

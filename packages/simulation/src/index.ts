@@ -33,6 +33,8 @@ export {
 } from './career/match-moment';
 export type { YouthEventPickResult } from './career/event-integration';
 export { simulateMatch } from './match/match-engine';
+export { allocatePlayerContribution } from './match/player-contribution';
+export type { PlayerContribution } from './match/player-contribution';
 export { simulateYouthMatch } from './match/youth-match';
 export type { YouthMatchOpponent } from './match/youth-match';
 export {
@@ -91,10 +93,62 @@ export type { GenerateOffersOptions, MarketPerformanceSnapshot } from './career/
 export { createLeagueFixtures } from './career/league-fixtures';
 export { createDomesticCup, advanceDomesticCup } from './career/domestic-cup';
 export { generateProSquad, buildDepthChart, depthRank } from './career/pro-squad';
-export { simulateProfessionalWeek, decideAppearance } from './career/professional-week';
+export {
+  carryOverRoster,
+  inheritRelationship,
+  pickLocalizedName,
+  toPersonMemory,
+} from './people/person-memory';
+export type {
+  CarryOverRosterOptions,
+  PersonMemory,
+  ProfessionalNamePool,
+  RosterRelationship,
+} from './people/person-memory';
+export {
+  simulateProfessionalWeek,
+  decideAppearance,
+  trainingReadinessModifier,
+} from './career/professional-week';
+export { countClubFixtures } from './career/competition-summary';
+export { selectContinentalParticipants } from './competition/continental-qualification';
+export { simulateContinentalSeason } from './competition/continental-season';
+export {
+  simulateWorldTransferWindow,
+  selectPlayerMarketClubs,
+} from './transfer/world-transfer-market';
+export { buildWorldNews } from './world/world-news';
+export type { BuildWorldNewsInput } from './world/world-news';
+export { buildWorldClubPulses } from './world/club-season-pulse';
 export { reviewPromise, evaluateProRole, buildRenewalOffer } from './career/promise-review';
 export { growthAgeFactor, applyAgeDecline } from './career/age-curve';
-export { generateProfessionalMarketOffers, generateTransferOffers } from './career/transfer-offers';
+export {
+  generateProfessionalMarketOffers,
+  generateTransferOffers,
+  selectOverseasMarketRepresentatives,
+} from './career/transfer-offers';
 export type { TransferMarketKind } from './career/transfer-offers';
+export {
+  buildCalendarBridge,
+  bridgeContractYears,
+  computeCountryAppeal,
+  isEuropeanCountry,
+  nextProfessionalSeasonStartDate,
+  professionalSeasonDates,
+  professionalSeasonStartMonth,
+} from './transfer/cross-country-transfer';
+export type { ProfessionalSeasonDates } from './transfer/cross-country-transfer';
 export { isEligibleForNationalTeam, accrueNationalTeam } from './career/national-team';
 export { buildCareerReview } from './career/career-review';
+export {
+  careerMoment,
+  makeFactId,
+  stampCareerFact,
+  stampCareerFacts,
+} from './career/career-moment';
+export { advanceToNextNode, summarizeMonth } from './career/advance-to-node';
+export type {
+  NodeAdvanceResult,
+  NodeAdvanceState,
+  NodeAdvanceTransition,
+} from './career/advance-to-node';

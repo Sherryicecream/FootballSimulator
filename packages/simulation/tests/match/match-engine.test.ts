@@ -54,6 +54,32 @@ describe('simulateMatch', () => {
     expect(result.homePossession + result.awayPossession).toBe(100);
   });
 
+  it('比分分布保留小比分和输球，同时有适度大比分', () => {
+    const strength = { attack: 75, midfield: 70, defence: 68, overall: 71 };
+    let lowScoreMatches = 0;
+    let highScoreMatches = 0;
+    let awayWins = 0;
+
+    for (let seed = 0; seed < 1000; seed += 1) {
+      const result = simulateMatch(
+        'home',
+        'away',
+        strength,
+        strength,
+        1,
+        2024,
+        createSeededRandomSource(seed),
+      );
+      const totalGoals = result.homeScore + result.awayScore;
+      if (totalGoals <= 2) lowScoreMatches += 1;
+      if (totalGoals >= 5) highScoreMatches += 1;
+      if (result.awayScore > result.homeScore) awayWins += 1;
+    }
+
+    expect(lowScoreMatches).toBeGreaterThanOrEqual(250);
+    expect(highScoreMatches).toBeGreaterThanOrEqual(20);
+    expect(awayWins).toBeGreaterThanOrEqual(50);
+  });
   it('比分不会过大', () => {
     const rng = createSeededRandomSource(42);
     const result = simulateMatch('a', 'b', homeStrength, awayStrength, 1, 2024, rng);

@@ -1,7 +1,24 @@
-import type { CareerSaveV5, CareerSaveV6 } from '@football/contracts';
-import { buildCareerReview } from '@football/application';
+import { useEffect, useMemo, useState } from 'react';
+import type {
+  CareerArchiveV1,
+  CareerSaveV5,
+  CareerSaveV6,
+  CareerSaveV7,
+  MilestoneInput,
+} from '@football/contracts';
+import { MilestoneInputSchema } from '@football/contracts';
+import {
+  buildCareerReview,
+  buildCareerSummaryFacts,
+  generateCareerSummary,
+} from '@football/application';
 import { FootballGlyph } from '../design-system/FootballGlyph';
 import { SceneBanner } from '../design-system/SceneBanner';
+import {
+  createCareerSummaryRequest,
+  createMilestoneNarrationRequest,
+  type LocalNarrativeClient,
+} from '../narration/local-ai-client';
 
 const replayGlyphs = {
   story: 'form',
@@ -23,15 +40,161 @@ const replayKindLabels = {
   health: '健康',
 } as const;
 
+type CareerReviewSave = CareerSaveV5 | CareerSaveV6 | CareerSaveV7;
+
+type CareerReviewPageProps =
+  | {
+      save: CareerReviewSave;
+      archive?: never;
+      onOpenArchives: () => void;
+      narrativeClient?: LocalNarrativeClient | undefined;
+    }
+  | {
+      save?: never;
+      archive: CareerArchiveV1;
+      onOpenArchives: () => void;
+      narrativeClient?: LocalNarrativeClient | undefined;
+    };
+
+const buildLocalRetirementNarrative = (input: MilestoneInput): string => {
+  if (input.kind !== 'retirement') return '';
+  const { careerOverview } = input;
+  const honourSummary =
+    input.honours.length > 0
+      ? '荣誉记录包括' + input.honours.map(({ label }) => label).join('、') + '。'
+      : '档案中没有记录在案的生涯荣誉。';
+  const signatureSummary =
+    input.signatureMatches.length > 0
+      ? '独特比赛记录包括' +
+        input.signatureMatches.map(({ highlight }) => highlight).join('；') +
+        '。'
+      : '档案中没有可单独提取的独特比赛记录，因此不对空白作额外推断。';
+  return (
+    input.playerName +
+    '的球员生涯在' +
+    input.seasonId.replace('retirement-', '') +
+    '进入退役结算。职业生涯共经历' +
+    careerOverview.seasons +
+    '个赛季，效力' +
+    careerOverview.clubs +
+    '家俱乐部，累计出场' +
+    careerOverview.appearances +
+    '次、踢满' +
+    careerOverview.minutes +
+    '分钟，贡献' +
+    careerOverview.goals +
+    '个进球和' +
+    careerOverview.assists +
+    '次助攻。' +
+    honourSummary +
+    signatureSummary +
+    '这份本地评价只复述已保存的履历、荣誉和关键数据；没有记录的经历会保持为空白。'
+  );
+};
+
 /** 生涯回顾页（设计 §9）：退役后的 MVP 终点。 */
 export function CareerReviewPage({
   save,
+  archive,
   onOpenArchives,
-}: {
-  save: CareerSaveV5 | CareerSaveV6;
-  onOpenArchives: () => void;
-}) {
-  const review = buildCareerReview(save);
+  narrativeClient,
+}: CareerReviewPageProps) {
+  const review = useMemo(
+    () => (archive ? archive.review : buildCareerReview(save!)),
+    [archive, save],
+  );
+  const summaryFacts = useMemo(() => buildCareerSummaryFacts(archive ?? save!), [archive, save]);
+  const retirementInput = useMemo(() => {
+    if (!review.ending) return null;
+    return MilestoneInputSchema.parse({
+      kind: 'retirement',
+      playerName: summaryFacts.player.name,
+      seasonId: 'retirement-' + review.ending.endedOn,
+      careerOverview: {
+        seasons: review.seasons,
+        clubs: review.clubs,
+        appearances: review.totals.appearances,
+        minutes: review.totals.minutes,
+        goals: review.totals.goals,
+        assists: review.totals.assists,
+      },
+      honours: review.honours.map(({ kind, label, seasonId }) => ({ kind, label, seasonId })),
+      keyStats: [
+        { label: '职业生涯出场', value: review.totals.appearances, unit: '次' },
+        { label: '职业生涯进球', value: review.totals.goals, unit: '球' },
+        { label: '职业生涯助攻', value: review.totals.assists, unit: '次' },
+        { label: '职业生涯分钟', value: review.totals.minutes, unit: '分钟' },
+      ],
+      signatureMatches: [],
+      regret: null,
+      biggestAchievement: review.honours[0]?.label ?? null,
+    });
+  }, [review, summaryFacts]);
+  const localRetirementNarrative = useMemo(
+    () => (retirementInput ? buildLocalRetirementNarrative(retirementInput) : null),
+    [retirementInput],
+  );
+  const localShortSummary = useMemo(
+    () => generateCareerSummary(summaryFacts, 'short'),
+    [summaryFacts],
+  );
+  const localLongSummary = useMemo(
+    () => generateCareerSummary(summaryFacts, 'long'),
+    [summaryFacts],
+  );
+  const [aiShortSummary, setAiShortSummary] = useState<string | null>(null);
+  const [aiLongSummary, setAiLongSummary] = useState<string | null>(null);
+  const [aiLongRequested, setAiLongRequested] = useState(false);
+  const [aiLongLoading, setAiLongLoading] = useState(false);
+  const [showLocalLong, setShowLocalLong] = useState(false);
+  const [aiRetirementNarrative, setAiRetirementNarrative] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!narrativeClient) return;
+    let active = true;
+    void createCareerSummaryRequest(summaryFacts, 'short')
+      .then((request) => narrativeClient.summarize(request))
+      .then((output) => {
+        if (active && output) setAiShortSummary(output.summary);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [narrativeClient, summaryFacts]);
+
+  useEffect(() => {
+    setAiRetirementNarrative(null);
+    const narrateMilestone = narrativeClient?.narrateMilestone;
+    if (!narrateMilestone || !retirementInput) return;
+    let active = true;
+    void createMilestoneNarrationRequest(retirementInput)
+      .then((request) => narrateMilestone(request))
+      .then((output) => {
+        if (active && output) setAiRetirementNarrative(output.narrative);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [narrativeClient, retirementInput]);
+
+  const requestAiLongSummary = () => {
+    if (!narrativeClient || aiLongRequested || aiLongLoading) return;
+    setAiLongRequested(true);
+    setShowLocalLong(true);
+    setAiLongLoading(true);
+    void createCareerSummaryRequest(summaryFacts, 'long')
+      .then((request) => narrativeClient.summarize(request))
+      .then((output) => {
+        if (output) setAiLongSummary(output.summary);
+      })
+      .catch(() => undefined)
+      .finally(() => setAiLongLoading(false));
+  };
+  const loanHistory = archive?.history.loanHistory ?? save?.loanHistory ?? [];
+  const clubHistory = archive?.history.clubHistory ?? save?.clubHistory ?? [];
+  const nationalTeam = archive?.history.nationalTeam ?? save?.nationalTeam ?? null;
   const isYouthOnlyEnding = review.ending?.kind === 'youth-no-contract';
   return (
     <section className="career-review" aria-label="生涯回顾">
@@ -52,6 +215,74 @@ export function CareerReviewPage({
       )}
       <p className="review-tier">{review.tierLabel}</p>
       <p className="review-commentary">{review.commentary}</p>
+
+      {retirementInput && localRetirementNarrative && (
+        <section className="review-summary review-milestone" role="group" aria-label="退役节点评价">
+          <div className="review-section-heading">
+            <span className="review-kicker">关键节点 · 退役</span>
+            <h3>退役节点评价</h3>
+            <p>本地评价先行保留；接入本地 AI 后，只会在同一份事实包上改善表达。</p>
+          </div>
+          <article className="review-summary-card review-summary-local">
+            <strong>本地退役评价</strong>
+            <p>{localRetirementNarrative}</p>
+          </article>
+          {aiRetirementNarrative && (
+            <article className="review-summary-card review-summary-ai">
+              <strong>AI 退役节点评价</strong>
+              <p>{aiRetirementNarrative}</p>
+            </article>
+          )}
+        </section>
+      )}
+
+      <section className="review-summary" role="group" aria-label="人生总结">
+        <div className="review-section-heading">
+          <span className="review-kicker">生涯叙事</span>
+          <h3>人生总结</h3>
+          <p>本地总结始终根据当前存档生成；AI 只负责改善表达，不会覆盖事实评价。</p>
+        </div>
+        <article className="review-summary-card review-summary-local">
+          <strong>本地生涯总结</strong>
+          <p>{localShortSummary}</p>
+        </article>
+        {aiShortSummary && (
+          <article className="review-summary-card review-summary-ai">
+            <strong>AI 叙事增强</strong>
+            <p>{aiShortSummary}</p>
+          </article>
+        )}
+        <div className="review-summary-actions">
+          <button
+            className="secondary-action"
+            type="button"
+            onClick={() => setShowLocalLong((visible) => !visible)}
+          >
+            {showLocalLong ? '收起本地人生总结' : '展开本地人生总结'}
+          </button>
+          {narrativeClient && (
+            <button type="button" onClick={requestAiLongSummary} disabled={aiLongLoading}>
+              {aiLongLoading
+                ? '正在生成 AI 人生总结…'
+                : aiLongRequested
+                  ? 'AI 人生总结已请求'
+                  : '展开 AI 人生总结'}
+            </button>
+          )}
+        </div>
+        {showLocalLong && (
+          <article className="review-summary-card review-summary-long">
+            <strong>本地长版总结</strong>
+            <p>{localLongSummary}</p>
+          </article>
+        )}
+        {aiLongSummary && (
+          <article className="review-summary-card review-summary-ai">
+            <strong>AI 长版叙事增强</strong>
+            <p>{aiLongSummary}</p>
+          </article>
+        )}
+      </section>
 
       <div className="review-goals" role="group" aria-label="长期目标">
         <div className="review-section-heading">
@@ -95,6 +326,10 @@ export function CareerReviewPage({
           <dd>{review.totals.appearances}</dd>
         </div>
         <div>
+          <dt>累计分钟</dt>
+          <dd>{review.totals.minutes} 分钟</dd>
+        </div>
+        <div>
           <dt>进球 / 助攻</dt>
           <dd>
             {review.totals.goals} / {review.totals.assists}
@@ -113,6 +348,45 @@ export function CareerReviewPage({
           <dd>{review.overseasSpells ? '有' : '无'}</dd>
         </div>
       </dl>
+
+      <section className="review-history" role="group" aria-label="俱乐部履历">
+        <div className="review-section-heading">
+          <span className="review-kicker">效力轨迹</span>
+          <h3>俱乐部履历</h3>
+          <p>每段效力经历都来自生涯存档，不会因为进入历史档案而丢失。</p>
+        </div>
+        {clubHistory.length > 0 ? (
+          <ul className="review-club-list">
+            {clubHistory.map((club) => (
+              <li className="review-club-item" key={`${club.clubId}-${club.from}`}>
+                <strong>{club.clubName}</strong>
+                <span>
+                  {club.from} 至 {club.to ?? '退役'} · {club.seasons} 个赛季 · 出场{' '}
+                  {club.appearances} 次，进球 {club.goals} 个
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="review-empty">没有记录在案的俱乐部履历。</p>
+        )}
+      </section>
+
+      <section className="review-history" role="group" aria-label="国家队履历">
+        <div className="review-section-heading">
+          <span className="review-kicker">国家记忆</span>
+          <h3>国家队履历</h3>
+          <p>国家队数据与俱乐部履历分开记录，保留首秀、出场和进球。</p>
+        </div>
+        {nationalTeam?.capped ? (
+          <p>
+            国家队首秀：{nationalTeam.debutOn ?? '日期未知'} · {nationalTeam.caps} 场{' '}
+            {nationalTeam.goals} 球
+          </p>
+        ) : (
+          <p className="review-empty">未留下国家队履历。</p>
+        )}
+      </section>
 
       <section className="review-dimensions" role="group" aria-label="生涯八维">
         <div className="review-section-heading">
@@ -225,7 +499,7 @@ export function CareerReviewPage({
         )}
       </section>
 
-      {save.loanHistory.length > 0 && (
+      {loanHistory.length > 0 && (
         <section className="review-loans" role="group" aria-label="租借经历">
           <div className="review-section-heading">
             <span className="review-kicker">流动的赛季</span>
@@ -233,7 +507,7 @@ export function CareerReviewPage({
             <p>租借不会抹去母队合同，但会留下独立的出场和成长记录。</p>
           </div>
           <div className="review-loan-list">
-            {save.loanHistory.map((loan) => (
+            {loanHistory.map((loan) => (
               <article className="review-loan-card" key={`${loan.seasonId}-${loan.loanClubId}`}>
                 <div className="review-loan-heading">
                   <strong>{loan.loanClubName}</strong>

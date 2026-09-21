@@ -1,7 +1,12 @@
-import type { NarrativePolishOutput, NarrativePolishRequest } from '@football/contracts';
+import type {
+  CareerSummaryOutput,
+  MilestoneNarrationOutput,
+  NarrativePolishOutput,
+  NarrativeRequest,
+} from '@football/contracts';
 
 export interface NarrativeProvider {
-  generate(request: NarrativePolishRequest): Promise<unknown>;
+  generate(request: NarrativeRequest): Promise<unknown>;
 }
 
 export type NarrativeFallbackReason =
@@ -14,7 +19,37 @@ export type NarrativeAdapterResult =
       draft: NarrativePolishOutput;
     }
   | {
+      source: 'provider';
+      reason: 'provider';
+      draft: CareerSummaryOutput;
+    }
+  | {
+      source: 'provider';
+      reason: 'provider';
+      draft: MilestoneNarrationOutput;
+    }
+  | {
       source: 'fallback';
       reason: NarrativeFallbackReason;
       draft: NarrativePolishOutput;
+    }
+  | {
+      source: 'fallback';
+      reason: NarrativeFallbackReason;
+      draft: CareerSummaryOutput;
+    }
+  | {
+      source: 'fallback';
+      reason: NarrativeFallbackReason;
+      draft: MilestoneNarrationOutput;
     };
+
+export type NarrativeSummaryAdapterResult = Extract<
+  NarrativeAdapterResult,
+  { draft: CareerSummaryOutput }
+>;
+
+export type NarrativeMilestoneAdapterResult = Extract<
+  NarrativeAdapterResult,
+  { draft: MilestoneNarrationOutput }
+>;

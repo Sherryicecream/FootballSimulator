@@ -1,7 +1,8 @@
 // 由既有 TS 内容源一次性生成（M11 模块 3 内容外置）；编辑后经 zod 校验生效。
 import type { EventDefinition } from '@football/contracts';
+import { buildCountryCareerEvent, threeTierResolution } from './country-career';
 
-export const asiaCareerEvents: EventDefinition[] = [
+export const japanCareerEvents: EventDefinition[] = [
   {
     id: 'asia-language-class',
     version: 1,
@@ -10,12 +11,13 @@ export const asiaCareerEvents: EventDefinition[] = [
     theme: 'relationships',
     interaction: 'decision',
     baseWeight: 26,
-    title: '东亚语言课',
+    title: '日本语言与敬语课',
     description:
-      '俱乐部为亚洲联赛的外援球员安排了当地语言课，教练希望你尽快听懂更衣室里的呼喊和战术用语。每周两次的课会占去你仅有的休息时间。',
+      '俱乐部为外援安排了日语和敬语课。训练之外，称呼、致意和听懂更衣室里的简短指令，都是被认真对待的团队规矩。',
     condition: {
       requireOverseas: true,
       overseasRegions: ['asia'],
+      requireCountry: 'japan',
     },
     participantRoles: ['assistant-coach', 'teammate'],
     cooldownWeeks: 12,
@@ -45,6 +47,7 @@ export const asiaCareerEvents: EventDefinition[] = [
           outcomes: {
             success: {
               label: '语言上手',
+              eventOutcome: 'adapted',
               effects: {
                 closeness: 3,
                 confidence: 2,
@@ -108,12 +111,13 @@ export const asiaCareerEvents: EventDefinition[] = [
     theme: 'off-pitch',
     interaction: 'decision',
     baseWeight: 20,
-    title: '球迷开放日',
+    title: '主场礼仪与球迷开放日',
     description:
-      '当地球迷对球队的新外援充满好奇，俱乐部安排了公开训练和签名会。看台上举着你的名字牌，用你不熟悉的语言拼出你的位置。',
+      '主场开放日安排了公开训练和签名会。工作人员提醒你按流程致意、耐心排队，球迷会把这种细节视为球队态度的一部分。',
     condition: {
       requireOverseas: true,
       overseasRegions: ['asia'],
+      requireCountry: 'japan',
     },
     participantRoles: ['teammate'],
     cooldownWeeks: 12,
@@ -151,12 +155,13 @@ export const asiaCareerEvents: EventDefinition[] = [
     theme: 'health',
     interaction: 'decision',
     baseWeight: 22,
-    title: '洲际远征归来',
+    title: '日本客场的准点远征',
     description:
-      '一周双赛加上长途飞行，回到基地时你的小腿还是沉的。这里的客场动辄跨越海岸线，恢复节奏和国内完全不同。',
+      '一周双赛加上跨岛远征，球队仍然按分钟执行集合和恢复安排。你的小腿很沉，却不能把准点和团队流程当成可有可无。',
     condition: {
       requireOverseas: true,
       overseasRegions: ['asia'],
+      requireCountry: 'japan',
       requireFactType: 'pro-match',
     },
     participantRoles: ['assistant-coach'],
@@ -237,12 +242,13 @@ export const asiaCareerEvents: EventDefinition[] = [
     theme: 'health',
     interaction: 'decision',
     baseWeight: 18,
-    title: '饮食与作息',
+    title: '球队聚餐与作息规矩',
     description:
-      '当地饮食和国内差别不小，队里庆祝聚餐也总在深夜。你有自己的习惯，但每次推脱都让饭桌安静一秒。',
+      '球队聚餐有固定的座次和时间，营养师也把恢复餐安排得很细。你有自己的习惯，但团队会观察你怎样参与共同生活。',
     condition: {
       requireOverseas: true,
       overseasRegions: ['asia'],
+      requireCountry: 'japan',
     },
     participantRoles: ['teammate'],
     cooldownWeeks: 14,
@@ -281,12 +287,13 @@ export const asiaCareerEvents: EventDefinition[] = [
     theme: 'off-pitch',
     interaction: 'decision',
     baseWeight: 20,
-    title: '本国媒体连线',
+    title: '校园联赛与本国媒体',
     description:
-      '国内体育频道联系到你，想采访在亚洲联赛站稳脚跟的你。报道会连同你近期的比赛画面一起播出。',
+      '本国体育频道想采访你在日本联赛的适应情况，也想听你谈高中、大学联赛如何把球员带进职业队。俱乐部提醒你把队友和团队目标放在表达里。',
     condition: {
       requireOverseas: true,
       overseasRegions: ['asia'],
+      requireCountry: 'japan',
     },
     participantRoles: ['family'],
     cooldownWeeks: 12,
@@ -323,12 +330,13 @@ export const asiaCareerEvents: EventDefinition[] = [
     theme: 'trajectory',
     interaction: 'decision',
     baseWeight: 16,
-    title: '冬窗传闻',
+    title: '冬窗传闻与团队优先',
     description:
-      '转会窗临近，有报道称欧洲球探在跟踪你近五场的表现。更衣室里开始有人拿这个开玩笑，教练的眼神也更深了。',
+      '冬窗临近，有报道称海外球探在跟踪你近五场的表现。队友仍按日常流程训练，教练希望你先把团队承诺和个人选择分开。',
     condition: {
       requireOverseas: true,
       overseasRegions: ['asia'],
+      requireCountry: 'japan',
       requireFactType: 'pro-match',
     },
     participantRoles: ['assistant-coach', 'teammate'],
@@ -407,3 +415,219 @@ export const asiaCareerEvents: EventDefinition[] = [
     ],
   },
 ];
+
+export const koreaCareerEvents: EventDefinition[] = [
+  buildCountryCareerEvent({
+    id: 'korea-service-window',
+    country: 'korea',
+    title: '队友的服役窗口',
+    description:
+      '韩国本土队友正在和俱乐部讨论服役安排。训练计划、合同长度和代表国家出场的愿望被放在同一张时间表上，整个团队都在帮他做长期决定。',
+    theme: 'off-pitch',
+    rarity: 'rare',
+    baseWeight: 16,
+    cooldownWeeks: 20,
+    participantRoles: ['teammate', 'assistant-coach'],
+    choices: [
+      {
+        id: 'support-planning',
+        text: '尊重队友的安排，帮他把训练目标拆到眼前赛季',
+        riskLabel: '低',
+        effects: { closeness: 2, morale: 1 },
+        response: '你没有替他做决定，只是在训练后陪他把眼前几个月的目标写清楚。',
+        followUp: '职业生涯有时要面对制度和时间表，队友之间的理解本身就是支持。',
+      },
+      {
+        id: 'push-for-now',
+        text: '劝他只看当下，用表现争取更多荣誉',
+        riskLabel: '中',
+        effects: { confidence: 1, closeness: -1, fatigue: 1 },
+        response: '你的话让他短暂振作，却也让他更难面对必须提前规划的现实。',
+        followUp: '民族荣誉很重要，但长期决定不能只用一次比赛的情绪衡量。',
+      },
+    ],
+  }),
+  buildCountryCareerEvent({
+    id: 'korea-national-pride',
+    country: 'korea',
+    title: '国旗旁的训练服',
+    description:
+      '国家队比赛日临近，俱乐部里的韩国球员把训练服叠得格外整齐。民族荣誉让大家兴奋，也让每一次失误都显得更沉重。',
+    theme: 'trajectory',
+    rarity: 'uncommon',
+    baseWeight: 18,
+    cooldownWeeks: 18,
+    participantRoles: ['teammate', 'youth-coach'],
+    choices: [
+      {
+        id: 'turn-pride-into-work',
+        text: '把荣誉感转成训练目标，和队友一起提高标准',
+        riskLabel: '中',
+        effects: { determination: 2, coachTrust: 1, closeness: 1 },
+        response: '你们把情绪放进跑动和回防，训练强度提高了，却没有变成互相指责。',
+        followUp: '荣誉不是压力的终点，它可以成为团队愿意一起承担的标准。',
+        resolution: threeTierResolution({
+          attribute: 'determination',
+          difficulty: 60,
+          success: {
+            label: '荣誉凝成合力',
+            effects: { determination: 2, coachTrust: 2, closeness: 2 },
+            response:
+              '训练最后一组冲刺里，所有人都没有提前收步。教练说这才是代表球队和国家时需要的态度。',
+            followUp: '民族荣誉最可靠的样子，是把个人情绪变成互相补位的行动。',
+          },
+          partial: {
+            label: '保持专注',
+            effects: { determination: 1, coachTrust: 1 },
+            response: '你们完成了计划，却没有把兴奋延伸到每个训练细节。团队至少保持了稳定。',
+            followUp: '荣誉感不必每天高涨，能在重要时刻守住标准同样重要。',
+          },
+          failure: {
+            label: '压力变成急躁',
+            effects: { morale: -2, confidence: -1 },
+            response: '你太想证明自己，训练里几次提前出脚，反而让队友不得不反复补位。',
+            followUp: '为国家而战的愿望需要沉下来，急躁不会让球衣更有分量。',
+          },
+        }),
+      },
+      {
+        id: 'keep-routine',
+        text: '按平常流程训练，不让外界期待改变自己的节奏',
+        riskLabel: '低',
+        effects: { discipline: 1, fatigue: -1 },
+        response: '你照常完成恢复和训练，把国家队话题留到真正需要讨论的时候。',
+        followUp: '稳定的日常是承受重大荣誉压力的一种方式。',
+      },
+      {
+        id: 'share-the-stage',
+        text: '主动听队友讲述他们对国家队的记忆',
+        riskLabel: '低',
+        effects: { closeness: 2, morale: 1 },
+        response: '你听到不同年龄段对国家队的记忆，也更理解队友为何如此在意下一次征召。',
+        followUp: '荣誉不只属于上场的人，也连接着一整个更衣室的经历。',
+      },
+    ],
+  }),
+  buildCountryCareerEvent({
+    id: 'korea-team-first',
+    country: 'korea',
+    title: '先给团队鞠躬',
+    description:
+      '赛前仪式和集体致意被安排得很细。你想留下自己的个性，但教练强调，先完成团队流程才能让每个人安心进入比赛。',
+    theme: 'relationships',
+    rarity: 'common',
+    baseWeight: 22,
+    cooldownWeeks: 12,
+    participantRoles: ['teammate', 'assistant-coach'],
+    choices: [
+      {
+        id: 'follow-ritual',
+        text: '按团队流程完成致意，并主动照顾新队友',
+        riskLabel: '低',
+        effects: { closeness: 2, coachTrust: 1, morale: 1 },
+        response: '你没有把仪式当成负担，反而让第一次参加的队友不再手足无措。',
+        followUp: '团队优先不是抹掉个人，而是先确保每个人都在同一页上。',
+      },
+      {
+        id: 'keep-individuality',
+        text: '完成必要流程，其余时间保留自己的赛前习惯',
+        riskLabel: '中',
+        effects: { confidence: 1, closeness: -1 },
+        response: '你尊重集体安排，也在耳机和热身里保留了自己的节奏。',
+        followUp: '融入和个性可以并存，前提是别让个人习惯打断团队准备。',
+      },
+    ],
+  }),
+  buildCountryCareerEvent({
+    id: 'korea-pressing-standard',
+    country: 'korea',
+    title: '高强度训练的共同标准',
+    description:
+      '队里把跑动和回防指标公开给所有人，年轻球员希望你跟上老队员的标准。你可以追求数据，也可以先保证动作质量。',
+    theme: 'training',
+    rarity: 'uncommon',
+    baseWeight: 20,
+    cooldownWeeks: 14,
+    participantRoles: ['teammate', 'assistant-coach'],
+    choices: [
+      {
+        id: 'run-together',
+        text: '和队友一起完成高强度跑动，互相提醒节奏',
+        riskLabel: '中',
+        effects: { stamina: 1, closeness: 1, fatigue: 2 },
+        response: '你们没有把指标变成个人竞赛，而是让最后一组跑动保持同样的间距。',
+        followUp: '共同标准的意义，是让高强度变成团队行为而不是一个人的表演。',
+      },
+      {
+        id: 'protect-load',
+        text: '按身体反馈调整负荷，先完成恢复和技术动作',
+        riskLabel: '低',
+        effects: { fatigue: -1, fitness: 1, coachTrust: 1 },
+        response: '你没有追逐当天最高数据，训练师确认你的动作质量保持稳定。',
+        followUp: '持续的强度需要判断，懂得保护身体也是对团队负责。',
+      },
+    ],
+  }),
+  buildCountryCareerEvent({
+    id: 'korea-captain-courtesy',
+    country: 'korea',
+    title: '队长的赛前提醒',
+    description:
+      '队长在赛前逐一确认每个人的职责，最后才谈个人发挥。你发现这里的领导更像照顾秩序和关系，而不是大声发号施令。',
+    theme: 'relationships',
+    rarity: 'common',
+    baseWeight: 19,
+    cooldownWeeks: 16,
+    participantRoles: ['teammate', 'assistant-coach'],
+    choices: [
+      {
+        id: 'listen-first',
+        text: '先听完队长的安排，再补充自己的观察',
+        riskLabel: '低',
+        effects: { closeness: 1, coachTrust: 1, decision: 1 },
+        response: '你没有抢着表达，等职责确认后提出了一个关于对手跑位的提醒。',
+        followUp: '尊重秩序不是沉默，而是让建议在团队真正准备好时被听见。',
+      },
+      {
+        id: 'speak-early',
+        text: '直接提出自己的方案，争取改变赛前安排',
+        riskLabel: '中',
+        effects: { confidence: 1, coachTrust: -1 },
+        response: '你的建议有价值，但表达时机让部分队友需要重新确认自己的位置。',
+        followUp: '个人判断很重要，团队优先也要求你把表达放进合适的顺序。',
+      },
+    ],
+  }),
+  buildCountryCareerEvent({
+    id: 'korea-local-hero',
+    country: 'korea',
+    title: '本土英雄的期待',
+    description:
+      '一名韩国年轻队友在重要比赛前受到本地球迷热烈关注。你既是他的竞争者，也是帮助他承受期待的队友。',
+    theme: 'off-pitch',
+    rarity: 'uncommon',
+    baseWeight: 18,
+    cooldownWeeks: 18,
+    participantRoles: ['teammate', 'family'],
+    choices: [
+      {
+        id: 'share-attention',
+        text: '主动把采访话题引回球队和他的努力',
+        riskLabel: '低',
+        effects: { respect: 2, closeness: 1, morale: 1 },
+        response: '你没有抢走聚光灯，而是让外界看见他背后训练和团队配合的部分。',
+        followUp: '民族荣誉和个人期待容易集中在一个名字上，队友可以帮它重新回到团队。',
+      },
+      {
+        id: 'focus-on-self',
+        text: '保持低调，只准备自己的比赛任务',
+        riskLabel: '低',
+        effects: { confidence: 1, fatigue: -1 },
+        response: '你没有参与外界话题，把精力留给了自己的位置和恢复。',
+        followUp: '不主动成为故事的一部分，也是一种稳定团队的方式。',
+      },
+    ],
+  }),
+];
+
+export const asiaCareerEvents: EventDefinition[] = [...japanCareerEvents, ...koreaCareerEvents];

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { fireEvent } from '@testing-library/react';
 import { migrateCareerSave, type CareerSaveV2, type MonthlyReport } from '@football/contracts';
 import { createCareerSave } from '@football/application';
 import { CareerDashboard } from '../../src/career-dashboard/CareerDashboard';
@@ -69,7 +70,7 @@ describe('CareerDashboard v2', () => {
     );
     expect(screen.getByText('林河')).toBeDefined();
     expect(screen.getByText('浦江青训中心')).toBeDefined();
-    expect(screen.getByRole('button', { name: '推进到下个月' })).toBeDefined();
+    expect(screen.getByRole('button', { name: '推进到下一节点' })).toBeDefined();
     expect(screen.queryByRole('button', { name: /推进一周/ })).toBeNull();
   });
 
@@ -106,8 +107,14 @@ describe('CareerDashboard v2', () => {
       />,
     );
 
-    expect(screen.getByText('停球')).toBeVisible();
-    expect(screen.getByText('无球跑动')).toBeVisible();
+    const attributeSummary = screen.getByText('查看完整球员属性');
+    const attributeCard = attributeSummary.closest('section');
+    expect(attributeCard).not.toBeNull();
+    expect(within(attributeCard!).getByText('停球')).not.toBeVisible();
+    expect(within(attributeCard!).getByText('无球跑动')).not.toBeVisible();
+    fireEvent.click(attributeSummary);
+    expect(within(attributeCard!).getByText('停球')).toBeVisible();
+    expect(within(attributeCard!).getByText('无球跑动')).toBeVisible();
     expect(screen.queryByText('firstTouch')).toBeNull();
     expect(screen.queryByText('offTheBall')).toBeNull();
     expect(screen.queryByText('关键人物')).toBeNull();

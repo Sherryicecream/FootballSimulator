@@ -1,4 +1,5 @@
 // 由既有 TS 内容源一次性生成（M11 模块 3 内容外置）；编辑后经 zod 校验生效。
+/** @deprecated 仅保留旧存档与旧事件的兼容别名，联赛装配使用各国文件。 */
 import type { ClubProfile } from '@football/contracts';
 
 export const asiaClubProfiles: ClubProfile[] = [
@@ -12,6 +13,7 @@ export const asiaClubProfiles: ClubProfile[] = [
     overseas: true,
     wageBudget: 78,
     overseasRegion: 'asia',
+    country: 'japan',
   },
   {
     id: 'ov-baekho-athletic',
@@ -23,6 +25,7 @@ export const asiaClubProfiles: ClubProfile[] = [
     overseas: true,
     wageBudget: 66,
     overseasRegion: 'asia',
+    country: 'korea',
   },
   {
     id: 'ov-kansai-wave',
@@ -34,6 +37,7 @@ export const asiaClubProfiles: ClubProfile[] = [
     overseas: true,
     wageBudget: 58,
     overseasRegion: 'asia',
+    country: 'japan',
   },
   {
     id: 'ov-mokpo-marine',
@@ -45,6 +49,7 @@ export const asiaClubProfiles: ClubProfile[] = [
     overseas: true,
     wageBudget: 54,
     overseasRegion: 'asia',
+    country: 'korea',
   },
   {
     id: 'ov-kanto-frontier',
@@ -56,6 +61,7 @@ export const asiaClubProfiles: ClubProfile[] = [
     overseas: true,
     wageBudget: 81,
     overseasRegion: 'asia',
+    country: 'japan',
   },
   {
     id: 'ov-hanseong-arrows',
@@ -67,6 +73,7 @@ export const asiaClubProfiles: ClubProfile[] = [
     overseas: true,
     wageBudget: 76,
     overseasRegion: 'asia',
+    country: 'korea',
   },
   {
     id: 'ov-chiba-ports',
@@ -78,6 +85,7 @@ export const asiaClubProfiles: ClubProfile[] = [
     overseas: true,
     wageBudget: 64,
     overseasRegion: 'asia',
+    country: 'japan',
   },
   {
     id: 'ov-andong-stones',
@@ -89,6 +97,7 @@ export const asiaClubProfiles: ClubProfile[] = [
     overseas: true,
     wageBudget: 56,
     overseasRegion: 'asia',
+    country: 'korea',
   },
   {
     id: 'ov-baekdu-miners',
@@ -100,6 +109,7 @@ export const asiaClubProfiles: ClubProfile[] = [
     overseas: true,
     wageBudget: 46,
     overseasRegion: 'asia',
+    country: 'korea',
   },
   {
     id: 'ov-seto-marine',
@@ -111,6 +121,7 @@ export const asiaClubProfiles: ClubProfile[] = [
     overseas: true,
     wageBudget: 42,
     overseasRegion: 'asia',
+    country: 'japan',
   },
   {
     id: 'ov-halla-cranes',
@@ -122,6 +133,7 @@ export const asiaClubProfiles: ClubProfile[] = [
     overseas: true,
     wageBudget: 33,
     overseasRegion: 'asia',
+    country: 'korea',
   },
   {
     id: 'ov-ou-backwoods',
@@ -133,5 +145,6 @@ export const asiaClubProfiles: ClubProfile[] = [
     overseas: true,
     wageBudget: 30,
     overseasRegion: 'asia',
+    country: 'japan',
   },
 ];

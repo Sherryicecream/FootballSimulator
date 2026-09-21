@@ -4,6 +4,7 @@ import type {
   ContractOfferV3,
   AgentPreferences,
 } from '@football/contracts';
+import { inferLegacyClubCountry } from '@football/contracts';
 import { weightedAbility } from './graduation';
 import type { SeededRandomSource } from '../randomness';
 
@@ -28,6 +29,10 @@ export interface GenerateOffersOptions {
   offerKind?: ContractOfferV3['offerKind'];
   performance?: MarketPerformanceSnapshot;
   excludeClubIds?: readonly string[];
+  /** 跨国适应系数；只影响兴趣，不突破能力层级天花板。 */
+  interestMultiplier?: (club: ClubProfile) => number;
+  /** 市场分组曝光使用的最低兴趣；默认仍为常规 0.45。 */
+  minimumInterest?: number;
 }
 
 export const generateOffers = (
@@ -54,7 +59,7 @@ export const generateOffers = (
     const ageScore = save.player.age <= 16 ? 0.6 : save.player.age <= 19 ? 0.7 : 0.5;
     const preference = tierPreference(club.tier, agentPreferences.leagueTierBias);
     const noise = (rng.next() - 0.5) * 0.1;
-    const interest =
+    const rawInterest =
       0.3 * clamp01(ability / 100) +
       0.2 * clamp01(potential / 100) +
       0.15 * clamp01(performance + highlightBonus) +
@@ -62,6 +67,7 @@ export const generateOffers = (
       0.1 * ageScore +
       0.1 * preference +
       noise;
+    const interest = rawInterest * (options.interestMultiplier?.(club) ?? 1);
     // 能力 → 可签层级天花板：每 10 点能力 +1 档（能力 63 → 5 档）；
     // 位置高度契合时俱乐部愿意冒险上调一档。
     const ceiling =
@@ -72,8 +78,9 @@ export const generateOffers = (
   });
 
   // 入池条件：兴趣达标且俱乐部层级不超过能力天花板，形成能力 → 层级的单调映射。
+  const minimumInterest = options.minimumInterest ?? 0.45;
   const ranked = scored
-    .filter(({ club, interest, ceiling }) => interest >= 0.45 && club.tier <= ceiling)
+    .filter(({ club, interest, ceiling }) => interest >= minimumInterest && club.tier <= ceiling)
     .sort((a, b) => b.interest - a.interest || a.club.id.localeCompare(b.club.id));
 
   const targetCount = 2 + Math.floor(rng.next() * 3);
@@ -138,6 +145,7 @@ const buildOffer = (
     squadRole,
     offerKind,
     overseas: club.overseas,
+    country: inferLegacyClubCountry(club),
     promise,
     releaseClauseNote: club.tier >= 6 ? '附带降级解约条款：球队降级时可按约定条件解约' : '',
   };

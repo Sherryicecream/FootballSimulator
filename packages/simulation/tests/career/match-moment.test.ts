@@ -113,6 +113,58 @@ describe('buildMatchMomentEvent', () => {
     expect(forward!.choices.map(({ id }) => id)).not.toEqual(defender!.choices.map(({ id }) => id));
   });
 
+  it('uses legal risks and gives the defensive midfielder independent intents', () => {
+    const important = matchFact({ opponentStrength: 82 });
+    const defensiveMidfielderSave = createYouthSave();
+    const defensiveMidfielder = buildMatchMomentEvent(
+      {
+        ...defensiveMidfielderSave,
+        player: {
+          ...defensiveMidfielderSave.player,
+          identity: {
+            ...defensiveMidfielderSave.player.identity,
+            primaryPosition: 'DEFENSIVE_MIDFIELDER',
+          },
+        },
+      } as Parameters<typeof buildMatchMomentEvent>[0],
+      important,
+    );
+    const midfielderSave = createYouthSave();
+    const midfielder = buildMatchMomentEvent(
+      {
+        ...midfielderSave,
+        player: {
+          ...midfielderSave.player,
+          identity: { ...midfielderSave.player.identity, primaryPosition: 'MIDFIELDER' },
+        },
+      } as Parameters<typeof buildMatchMomentEvent>[0],
+      important,
+    );
+
+    expect(defensiveMidfielder!.choices.map(({ id }) => id)).not.toEqual(
+      midfielder!.choices.map(({ id }) => id),
+    );
+    expect(defensiveMidfielder!.choices.map(({ text }) => text)).toEqual(
+      expect.arrayContaining(['保护中卫身前区域', '拦截对手的传球线路', '完成第一脚向前出球']),
+    );
+    for (const choice of defensiveMidfielder!.choices) {
+      expect(['low', 'medium', 'high']).toContain(choice.riskLabel);
+    }
+  });
+
+  it('does not invent goals or assists when the settled score is 0:0', () => {
+    const event = buildMatchMomentEvent(createYouthSave(), {
+      ...matchFact({ opponentStrength: 82 }),
+      summary: '测试对手 0:0；你出场 90 分钟，表现稳健',
+    });
+
+    expect(event).not.toBeNull();
+    for (const choice of event!.choices) {
+      expect(choice.resolution?.outcomes.success.response).not.toMatch(/进球|破门|入网|助攻/);
+      expect(choice.resolution?.outcomes.partial.response).not.toMatch(/进球|破门|入网|助攻/);
+      expect(choice.resolution?.outcomes.failure.response).not.toMatch(/进球|破门|入网|助攻/);
+    }
+  });
   it('returns null for ordinary matches or unplayed important ones', () => {
     expect(
       buildMatchMomentEvent(createYouthSave(), matchFact({ opponentStrength: 60 })),

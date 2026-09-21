@@ -1,7 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import { getYouthEvents } from '../../src/events/youth-events';
 import { overseasClubs } from '../../src/clubs';
-import { getYouthContent } from '../../src';
+import { eventCountByCountry, getYouthContent } from '../../src';
+
+const overseasCountries = [
+  'england',
+  'spain',
+  'germany',
+  'italy',
+  'france',
+  'japan',
+  'korea',
+] as const;
 
 describe('youthEvents', () => {
   it('returns at least 5 events', () => {
@@ -81,6 +91,41 @@ describe('youthEvents', () => {
 });
 
 describe('pro-phase event coverage', () => {
+  it('exposes six country-specific events for every playable overseas country', () => {
+    for (const country of overseasCountries) {
+      expect(eventCountByCountry(country)).toBeGreaterThanOrEqual(6);
+    }
+  });
+
+  it('gives every country family distinct choices and at least one three-tier decision', () => {
+    const events = getYouthEvents();
+    for (const country of overseasCountries) {
+      const family = events.filter((event) => event.condition.requireCountry === country);
+      expect(family.filter((event) => event.choices.length > 1).length).toBeGreaterThanOrEqual(3);
+      expect(
+        family.filter((event) => event.choices.some((choice) => choice.resolution)).length,
+      ).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it('uses only the eight playable country codes in event conditions', () => {
+    const validCountries = [
+      'china',
+      'england',
+      'spain',
+      'germany',
+      'italy',
+      'france',
+      'japan',
+      'korea',
+    ];
+    for (const event of getYouthContent().events) {
+      if (event.condition.requireCountry) {
+        expect(validCountries).toContain(event.condition.requireCountry);
+      }
+    }
+  });
+
   it('covers asia-career, europe-career and national-team categories', () => {
     const events = getYouthEvents();
     const countBy = (category: string) =>

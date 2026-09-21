@@ -97,6 +97,7 @@ export const startNextSeason = <S extends CareerSaveV3Like>(
       factIds: [],
       matchIds: [],
       interactiveEventCount: 0,
+      nodeAdvance: null,
     },
     lastMonthlyReport: null,
     seasonStats: {

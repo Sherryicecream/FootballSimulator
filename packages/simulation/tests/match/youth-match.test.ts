@@ -119,6 +119,35 @@ describe('simulateYouthMatch', () => {
     expect(result1.rating).toBe(result2.rating);
   });
 
+  it('个人贡献不超过青训球队实际进球', () => {
+    const state: PlayerState = {
+      fitness: 80,
+      morale: 80,
+      coachTrust: 80,
+      fatigue: 5,
+      teamStatus: 'key',
+    };
+
+    for (let seed = 0; seed < 100; seed += 1) {
+      const result = simulateYouthMatch(
+        createMockPlayer({
+          identity: { ...createMockPlayer().identity, primaryPosition: 'FORWARD' },
+        }),
+        state,
+        5,
+        2024,
+        createSeededRandomSource(seed),
+      );
+      if (!result.played) {
+        expect(result.goals).toBe(0);
+        expect(result.assists).toBe(0);
+        continue;
+      }
+
+      const ownGoals = result.isHome ? result.homeScore : result.awayScore;
+      expect(result.goals + result.assists).toBeLessThanOrEqual(ownGoals);
+    }
+  });
   it('fitness decreases after playing a match', () => {
     const rng = createSeededRandomSource(42);
     const player = createMockPlayer();

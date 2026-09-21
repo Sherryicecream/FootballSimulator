@@ -35,14 +35,14 @@ export function ContractCard({ contract }: ContractCardProps) {
       </div>
       <ul>
         <li>
-          俱乐部：{contract.clubName}（层级 {contract.clubTier}）
+          俱乐部：{contract.clubName}（实力档位 {contract.clubTier}）
         </li>
         <li>签署日期：{contract.signedOn}</li>
         <li>
           期限：{contract.contractYears} 年（剩余{' '}
           {contract.contractYears - contract.seasonsCompleted} 年）
         </li>
-        <li>年薪：{contract.salaryPerYear.toLocaleString('zh-CN')}</li>
+        <li>年薪：{contract.salaryPerYear.toLocaleString('zh-CN')} 游戏币/年</li>
         <li>队内角色：{roleLabels[contract.squadRole]}</li>
         <li>
           {promiseLabel(contract)}：{promiseStatusLabels[contract.promiseStatus]}

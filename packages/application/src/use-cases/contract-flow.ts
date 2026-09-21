@@ -1,8 +1,8 @@
 import {
   AgentPreferencesSchema,
   type AgentPreferences,
-  type CareerLedgerEntryV2,
   type CareerSaveV3Like,
+  type CareerSaveV6Like,
   type YouthContentBundle,
 } from '@football/contracts';
 import {
@@ -10,6 +10,7 @@ import {
   generateOffers,
   applyReputationGain,
   leagueTierFactor,
+  stampCareerFact,
 } from '@football/simulation';
 import { isFinalYouthSeason } from '@football/simulation';
 
@@ -58,13 +59,21 @@ export const signContract = <S extends CareerSaveV3Like>(save: S, offerId: strin
   const offer = save.pendingOffers.find(({ id }) => id === offerId);
   if (!offer) throw new Error(`要约不存在或已失效：${offerId}`);
   const signedOn = save.offseason?.nextSeasonStart ?? save.season.endDate;
-  const fact: CareerLedgerEntryV2 = {
-    id: `contract-signed-${offer.clubId}-${signedOn}`,
-    weekKey: `${signedOn.slice(0, 4)}-W01`,
-    type: 'contract-signed',
-    summary: `签署首份职业合同：${offer.clubName}（${offer.contractYears} 年，角色 ${offer.squadRole}）`,
-    participantIds: [],
-  };
+  const fact = stampCareerFact(
+    save as unknown as CareerSaveV6Like,
+    {
+      id: `contract-signed-${offer.clubId}-${signedOn}`,
+      weekKey: `${signedOn.slice(0, 4)}-W01`,
+      type: 'contract-signed',
+      summary: `签署首份职业合同：${offer.clubName}（${offer.contractYears} 年，角色 ${offer.squadRole}）`,
+      participantIds: [],
+    },
+    {
+      seasonId: `pro-${signedOn.slice(0, 4)}`,
+      date: signedOn,
+      weekIndex: 1,
+    },
+  );
   return {
     ...save,
     careerPhase: 'professional-contract',
@@ -93,7 +102,7 @@ export const rejectOffers = <S extends CareerSaveV3Like>(save: S): S => {
     throw new Error(`非法阶段转移：当前阶段 ${save.careerPhase} 不能拒绝要约`);
   }
   const finalYouthWindow = isFinalYouthSeason(save.player.age);
-  const fact: CareerLedgerEntryV2 = {
+  const fact = stampCareerFact(save as unknown as CareerSaveV6Like, {
     id: `offers-rejected-${save.offseason?.nextSeasonStart ?? save.season.endDate}`,
     weekKey: `${save.season.startDate.slice(0, 4)}-W${String(save.season.currentWeek).padStart(2, '0')}`,
     type: 'decision',
@@ -101,7 +110,7 @@ export const rejectOffers = <S extends CareerSaveV3Like>(save: S): S => {
       ? '拒绝全部要约，进入职业市场等待其他机会'
       : '拒绝全部要约，留在青训体系继续培养',
     participantIds: [],
-  };
+  });
   return {
     ...save,
     careerPhase: finalYouthWindow ? 'free-agent' : 'offseason',

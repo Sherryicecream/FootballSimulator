@@ -1,4 +1,5 @@
 import type { CareerSaveV4Like, PromiseReview } from '@football/contracts';
+import { countClubFixtures } from './competition-summary';
 
 export interface PromiseReviewOutcome {
   review: PromiseReview;
@@ -19,10 +20,7 @@ export const reviewPromise = (save: CareerSaveV4Like): PromiseReviewOutcome | nu
   if (!pro || !contract) throw new Error('缺少职业赛季或合同，无法对照承诺');
   if (contract.promise.kind === 'none') return null;
 
-  const playedLeague = pro.fixtures.filter(
-    ({ status, homeClubId, awayClubId }) =>
-      status === 'played' && (homeClubId === pro.clubId || awayClubId === pro.clubId),
-  ).length;
+  const playedLeague = countClubFixtures(pro.fixtures, pro.clubId);
   const denominator = Math.max(1, playedLeague * 90);
   const share = Math.min(1, save.proSeasonStats.minutes / denominator);
   const promisedShare =

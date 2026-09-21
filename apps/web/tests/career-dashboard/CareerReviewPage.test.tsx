@@ -1,10 +1,107 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { CareerSaveV5Schema, CareerSaveV6Schema, migrateCareerSaveV5 } from '@football/contracts';
+import {
+  CareerSaveV5Schema,
+  CareerSaveV6Schema,
+  migrateCareerSaveV5,
+  migrateCareerSaveV7,
+  type CareerSummaryOutput,
+} from '@football/contracts';
+import { buildCareerArchive } from '@football/application';
 import { CareerReviewPage } from '../../src/career-dashboard/CareerReviewPage';
 import { createYouthSave } from '../../../../packages/simulation/tests/fixtures/youth-save';
 
 describe('CareerReviewPage', () => {
+  it('requests an optional retirement milestone evaluation from archived facts', async () => {
+    const base = migrateCareerSaveV5(createYouthSave());
+    const v6 = CareerSaveV6Schema.parse({
+      ...base,
+      schemaVersion: 6,
+      careerPhase: 'retired',
+      retiredOn: '2038-06-30',
+      careerEnd: {
+        kind: 'voluntary-retirement',
+        endedOn: '2038-06-30',
+        summary: '正式结束球员生涯。',
+        evidenceIds: [],
+      },
+    });
+    const archive = buildCareerArchive(migrateCareerSaveV7(v6));
+    const narrativeClient = {
+      summarize: async () => null,
+      narrateMilestone: vi.fn(async () => ({
+        narrative: 'AI 退役节点评价只复述荣誉、关键数据和已记录比赛事实。'.repeat(6),
+      })),
+    };
+
+    render(
+      <CareerReviewPage
+        archive={archive}
+        narrativeClient={narrativeClient}
+        onOpenArchives={() => undefined}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText('AI 退役节点评价')).toBeInTheDocument(), {
+      timeout: 10_000,
+    });
+    expect(narrativeClient.narrateMilestone).toHaveBeenCalledTimes(1);
+    expect(narrativeClient.narrateMilestone.mock.calls[0]![0].input).toMatchObject({
+      kind: 'retirement',
+      careerOverview: {
+        appearances: archive.review.totals.appearances,
+        goals: archive.review.totals.goals,
+      },
+      honours: [],
+      signatureMatches: [],
+    });
+  });
+
+  it('always renders a local career summary and keeps AI enhancement separate', () => {
+    const save = migrateCareerSaveV5(createYouthSave());
+    const narrativeClient = {
+      polish: async () => null,
+      summarize: async () =>
+        ({
+          summary: '这是对已存在事实的语言增强，不会覆盖本地总结。'.repeat(10),
+        }) as CareerSummaryOutput,
+    };
+    render(
+      <CareerReviewPage
+        save={save}
+        narrativeClient={narrativeClient}
+        onOpenArchives={() => undefined}
+      />,
+    );
+
+    expect(screen.getByRole('group', { name: '人生总结' })).toBeInTheDocument();
+    expect(screen.getByText('本地生涯总结')).toBeInTheDocument();
+  });
+
+  it('shows the AI short summary asynchronously and requests the long version on demand', async () => {
+    const save = migrateCareerSaveV5(createYouthSave());
+    const narrativeClient = {
+      polish: async () => null,
+      summarize: vi.fn(async (request: { mode: 'short' | 'long' }) => ({
+        summary:
+          request.mode === 'short'
+            ? 'AI 短版叙事增强。'.repeat(12)
+            : 'AI 长版叙事增强，仍然只复述事实包中的内容。'.repeat(20),
+      })),
+    };
+    render(
+      <CareerReviewPage
+        save={save}
+        narrativeClient={narrativeClient}
+        onOpenArchives={() => undefined}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText('AI 叙事增强')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: '展开 AI 人生总结' }));
+    await waitFor(() => expect(screen.getByText('AI 长版叙事增强')).toBeInTheDocument());
+    expect(narrativeClient.summarize).toHaveBeenCalledTimes(2);
+  });
   it('shows a youth-only ending without claiming a professional career', () => {
     const youthSave = migrateCareerSaveV5(createYouthSave());
     const save = CareerSaveV6Schema.parse({
@@ -69,6 +166,13 @@ describe('CareerReviewPage', () => {
           ],
         },
       ],
+      nationalTeam: {
+        capped: true,
+        caps: 4,
+        goals: 1,
+        debutOn: '2030-01-01',
+      },
+      totals: { appearances: 20, goals: 4, assists: 3, minutes: 1800 },
       clubHistory: [
         {
           clubId: 'pro-club-1',
@@ -118,6 +222,10 @@ describe('CareerReviewPage', () => {
     expect(screen.getByRole('group', { name: '租借经历' })).toHaveTextContent('租借');
     expect(screen.getByRole('group', { name: '租借经历' })).toHaveTextContent('山谷联');
     expect(screen.getByRole('group', { name: '租借经历' })).toHaveTextContent('出场 12 次');
+    expect(screen.getByRole('group', { name: '俱乐部履历' })).toHaveTextContent('东海职业');
+    expect(screen.getByRole('group', { name: '俱乐部履历' })).toHaveTextContent('出场 20 次');
+    expect(screen.getByRole('group', { name: '国家队履历' })).toHaveTextContent('4 场 1 球');
+    expect(screen.getByText('1800 分钟')).toBeInTheDocument();
   });
 });
 
@@ -174,5 +282,33 @@ describe('CareerReviewPage dimensions and behind-the-scenes', () => {
     fireEvent.click(screen.getByRole('button', { name: '返回生涯档案' }));
 
     expect(onOpenArchives).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders a compact historical archive from its precomputed review', () => {
+    const source = migrateCareerSaveV7(
+      CareerSaveV6Schema.parse({
+        ...migrateCareerSaveV5(createYouthSave()),
+        schemaVersion: 6,
+        careerPhase: 'retired',
+        retiredOn: '2038-06-30',
+        careerEnd: {
+          kind: 'voluntary-retirement',
+          endedOn: '2038-06-30',
+          summary: '正式结束球员生涯。',
+          evidenceIds: [],
+        },
+      }),
+    );
+    const archive = buildCareerArchive(source);
+    const historicalCommentary = '这段历史档案使用已经结算的生涯评价。';
+    const historicalArchive = {
+      ...archive,
+      review: { ...archive.review, commentary: historicalCommentary },
+    };
+
+    render(<CareerReviewPage archive={historicalArchive} onOpenArchives={() => undefined} />);
+
+    expect(screen.getByText(historicalCommentary)).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '生涯回顾' })).toBeInTheDocument();
   });
 });

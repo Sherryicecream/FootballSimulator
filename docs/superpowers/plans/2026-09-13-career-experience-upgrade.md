@@ -1113,10 +1113,10 @@ it('flags overstated appearances', () => {
 - Input: 当前 career-experience-upgrade 分支和 origin 远程。
 - Output: 可恢复的本地提交、origin/career-experience-upgrade 远程分支、可访问的 Pages workflow 记录。
 
-- [ ] Step 1: 检查 staged/unstaged/untracked 文件，确认 .env、API key、token、node_modules、dist、artifacts 不会被加入。
-- [ ] Step 2: 运行 git diff --cached --check 和敏感词检查；发现问题时停止，不推送。
-- [ ] Step 3: 将本次完整交付成果保存为描述性提交，不使用 reset、checkout 或 force push。
-- [ ] Step 4: 运行 pnpm test、pnpm typecheck、pnpm lint、pnpm format:check、pnpm build 和 pnpm test:e2e。
+- [x] Step 1: 检查 staged/unstaged/untracked 文件，确认 .env、API key、token、node_modules、dist、artifacts 不会被加入。
+- [x] Step 2: 运行 git diff --cached --check 和敏感词检查；发现问题时停止，不推送。
+- [x] Step 3: 将本次完整交付成果保存为描述性提交，不使用 reset、checkout 或 force push。
+- [x] Step 4: 运行 pnpm test、pnpm typecheck、pnpm lint、pnpm format:check、pnpm build 和 pnpm test:e2e。
 - [ ] Step 5: 执行 git push -u origin career-experience-upgrade；记录远程提交和 Pages workflow 地址，不自动合并 master。
 - [ ] Step 6: 更新 ROADMAP 与本计划，记录电脑/Android 安装入口和当前真人测试仍待补充的限制。
 

@@ -1,6 +1,7 @@
-import type { PlayerCareer, PlayerState, YouthMatchResult } from '@football/contracts';
+import type { PlayerCareer, PlayerState, Position, YouthMatchResult } from '@football/contracts';
 import type { SeededRandomSource } from '../randomness/seeded-random-source';
 import { simulateMatch } from './match-engine';
+import { allocatePlayerContribution } from './player-contribution';
 
 export interface YouthMatchOpponent {
   name: string;
@@ -53,22 +54,27 @@ export function simulateYouthMatch(
 
   // Player performance
   const minutesPlayed = played ? getMinutesForStatus(state.teamStatus, rng) : 0;
+  const ownGoals = isHome ? matchResult.homeScore : matchResult.awayScore;
+  const contribution = allocatePlayerContribution({
+    ownGoals,
+    minutes: played ? minutesPlayed : 0,
+    position: player.identity.primaryPosition as Position,
+    shooting: player.attributes.technical.shooting,
+    passing: player.attributes.technical.passing,
+    rng,
+  });
+  const goals = contribution.goals;
+  const assists = contribution.assists;
   const playerOverall = calculatePlayerOverall(player);
   const performanceBase = (playerOverall / 100) * 5 + 3;
   const performanceVariation = rng.nextInt(-2, 2);
-  const rating = Math.min(10, Math.max(1, Math.round(performanceBase + performanceVariation)));
-
-  const isForward = player.identity.primaryPosition === 'FORWARD';
-  const isWinger = player.identity.primaryPosition === 'WINGER';
-  const isMidfielder = player.identity.primaryPosition === 'MIDFIELDER';
-
-  const goals = played && (isForward || isWinger) ? (rng.next() < 0.3 ? rng.nextInt(1, 2) : 0) : 0;
-  const assists =
-    played && (isForward || isWinger || isMidfielder)
-      ? rng.next() < 0.2
-        ? rng.nextInt(1, 2)
-        : 0
-      : 0;
+  const rating = Math.min(
+    10,
+    Math.max(
+      1,
+      Math.round((performanceBase + goals * 0.7 + assists * 0.4 + performanceVariation) * 10) / 10,
+    ),
+  );
 
   const performanceSummary = played
     ? rating >= 8

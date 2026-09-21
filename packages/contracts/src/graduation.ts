@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { CareerSaveV2Schema, migrateCareerSave } from './save-migration';
 import { AttributeChangeSchema } from './career';
+import { CountrySchema } from './country';
 
 const IdSchema = z.string().min(1).max(60);
 const IsoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -53,6 +54,8 @@ export const ContractOfferV3Schema = z.strictObject({
   squadRole: z.enum(['youth-team', 'rotation', 'first-team-rotation', 'highlighted-prospect']),
   offerKind: z.enum(['permanent', 'loan']).default('permanent'),
   overseas: z.boolean().default(false),
+  /** 报价目标国家；历史报价缺失时由应用层按中国处理以保持兼容。 */
+  country: CountrySchema.optional(),
   promise: ContractPromiseSchema,
   releaseClauseNote: z.string().max(200),
 });

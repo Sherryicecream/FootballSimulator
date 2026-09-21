@@ -1,16 +1,24 @@
 import {
   CareerSaveV3Schema,
   CareerSaveV5Schema,
+  CareerSaveV7Schema,
+  CareerSaveV8Schema,
   type CareerLedgerEntryV2,
   type CareerSaveV2Like,
+  type CareerSaveV6Like,
 } from '@football/contracts';
 import {
   applyRelationshipEffects,
   buildEventFeedback,
   resolveChoiceOutcome,
+  careerMoment,
+  stampCareerFact,
 } from '@football/simulation';
 
 export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId: string): S => {
+  const moment = careerMoment(save as unknown as CareerSaveV6Like);
+  const momentYear = moment.seasonId.match(/[0-9]{4}/)?.[0] ?? moment.date.slice(0, 4);
+  const momentWeekKey = momentYear + '-W' + String(moment.weekIndex).padStart(2, '0');
   const event = save.story.pendingEvent;
   if (!event) throw new Error('没有待处理的生涯事件');
   if (event.resolvedChoiceId !== null) throw new Error('该事件已经处理，不能重复提交');
@@ -51,15 +59,16 @@ export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId
     {
       eventId: event.eventId,
       summary: `[${event.title}] ${choice.text}`,
-      season: Number(save.season.startDate.slice(0, 4)),
-      week: save.season.currentWeek,
+      season: Number(momentYear),
+      week: moment.weekIndex,
       impact,
     },
   );
   const automatic = event.interaction === 'automatic';
-  const fact: CareerLedgerEntryV2 = {
-    id: `${automatic ? 'event' : 'decision'}-${event.eventId}-${save.season.currentWeek}`,
-    weekKey: `${save.season.startDate.slice(0, 4)}-W${String(save.season.currentWeek).padStart(2, '0')}`,
+  const rawFact: CareerLedgerEntryV2 = {
+    id: `${automatic ? 'event' : 'decision'}-${event.eventId}-${moment.weekIndex}`,
+    eventId: event.eventId,
+    weekKey: momentWeekKey,
     type: automatic ? 'event' : 'decision',
     summary: resolvedChoice.summary
       ? `[${event.title}] ${choice.text}（${resolvedChoice.summary.label}：${resolvedChoice.summary.reason}）`
@@ -67,15 +76,23 @@ export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId
     participantIds: event.participantIds,
     outcome: resolvedChoice.summary ?? undefined,
   };
+  const fact = stampCareerFact(save as unknown as CareerSaveV6Like, rawFact);
   const activeStorylines = save.story.activeStorylines.filter((id) => id !== event.eventId);
   const nextEventIds = resolvedChoice.nextEventIds ?? choice.nextEventIds ?? event.nextEventIds;
+  const completedStoryIds = new Set(save.story.completedStoryIds);
+  if (event.storyId) completedStoryIds.add(event.storyId);
+  if (resolvedChoice.eventOutcome === 'adapted') completedStoryIds.add('cross-country-adapted');
 
-  // 按输入版本选择校验 Schema：v4 存档保留 v4 字段，v2/v3 走原路径
-  // v3 走原 Schema；v4/v5 归一化为 v5（补默认字段且保留新字段）
+  // 按输入版本选择校验 Schema：v3 → CareerSaveV3Schema；v5 → CareerSaveV5Schema；v6/v7 → CareerSaveV7Schema
   const isV3 = (save as { schemaVersion?: number }).schemaVersion === 3;
+  const isV6or7 =
+    (save as { schemaVersion?: number }).schemaVersion === 6 ||
+    (save as { schemaVersion?: number }).schemaVersion === 7;
+  const isV8 = (save as { schemaVersion?: number }).schemaVersion === 8;
+  const targetVersion = isV3 ? 3 : isV8 ? 8 : isV6or7 ? 7 : 5;
   const resolvedSave = {
     ...save,
-    schemaVersion: isV3 ? 3 : 5,
+    schemaVersion: targetVersion,
     currentState,
     health,
     clubContext,
@@ -83,17 +100,14 @@ export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId
     story: {
       ...save.story,
       activeStorylines: [...new Set([...activeStorylines, ...nextEventIds])],
-      completedStoryIds:
-        event.storyId && !save.story.completedStoryIds.includes(event.storyId)
-          ? [...save.story.completedStoryIds, event.storyId]
-          : save.story.completedStoryIds,
+      completedStoryIds: [...completedStoryIds],
       pendingDelayedEffects: resolvedChoice.delayEffects
         ? [
             ...save.story.pendingDelayedEffects,
             {
               id: `delayed-${event.eventId}-${choiceId}`,
               sourceEventId: event.eventId,
-              triggerWeekKey: `${save.season.startDate.slice(0, 4)}-W${String(save.season.currentWeek + 2).padStart(2, '0')}`,
+              triggerWeekKey: momentYear + '-W' + String(moment.weekIndex + 2).padStart(2, '0'),
               effects: choice.delayEffects,
               participantIds: event.participantIds,
             },
@@ -109,7 +123,14 @@ export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId
     ledger: [...save.ledger, fact],
   } as S;
   const feedback = buildEventFeedback(save, resolvedSave, event, choice, resolvedChoice);
-  return (isV3 ? CareerSaveV3Schema : CareerSaveV5Schema).parse({
+  const targetSchema = isV3
+    ? CareerSaveV3Schema
+    : isV8
+      ? CareerSaveV8Schema
+      : isV6or7
+        ? CareerSaveV7Schema
+        : CareerSaveV5Schema;
+  return targetSchema.parse({
     ...resolvedSave,
     story: {
       ...resolvedSave.story,

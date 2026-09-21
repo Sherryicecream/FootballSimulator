@@ -142,6 +142,30 @@ describe('generateOffers', () => {
     expect(offers.every(({ clubTier }) => clubTier <= 6)).toBe(true);
     expect(offers.some(({ clubTier }) => clubTier >= 7)).toBe(false);
   });
+
+  it('跨国吸引力只压低海外兴趣，并保留目标国家字段', () => {
+    const domestic = clubs.find(({ id }) => id === 'low-club')!;
+    const overseas = {
+      ...domestic,
+      id: 'england-low-club',
+      name: '英格兰低级联赛队',
+      overseas: true,
+      overseasRegion: 'europe' as const,
+      country: 'england' as const,
+    };
+    const offers = generateOffers(
+      asV3(strongForward),
+      [domestic, overseas],
+      { leagueTierBias: 'balanced', priority: 'salary' },
+      createSeededRandomSource(11),
+      {
+        allowFallback: false,
+        interestMultiplier: (club) => (club.overseas ? 0.38 : 1),
+      },
+    );
+
+    expect(offers.every(({ country }) => country === 'china')).toBe(true);
+  });
 });
 
 function club(

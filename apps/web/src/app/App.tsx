@@ -1,19 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  migrateCareerSaveV6,
+  migrateCareerSaveV7,
   type AgentPreferences,
+  type CareerArchiveV1,
   type CareerSave,
-  type CareerSaveV5,
   type CareerSaveV5Like,
-  type CareerSaveV6,
-  type CareerSaveV6Like,
+  type CareerSaveV7,
   type ContractOfferV3,
   type MonthlyReport,
   type TrainingPlan,
+  type WorldFact,
 } from '@football/contracts';
 import { getYouthContent } from '@football/content';
 import {
   advanceCareerMonth,
+  buildCareerArchive,
   completeYouthSeason,
   canContinueYouthSeason,
   createAdvanceToDecision,
@@ -23,6 +24,7 @@ import {
   generateContractOffers,
   acceptRenewal,
   advanceProMonth,
+  advanceToNextNode,
   canEndYouthCareer,
   clearEventFeedback,
   completeProfessionalSeason,
@@ -30,7 +32,6 @@ import {
   endProfessionalCareer,
   endYouthCareer,
   generateFreeAgentOffers,
-  loadCareer,
   rejectOffers,
   requestCareerMarket,
   signMarketOffer,
@@ -42,6 +43,7 @@ import {
   submitAgentPreferences,
   submitCareerDecision,
   updateTrainingPlan,
+  buildWorldNewsForCareer,
   type YouthSeasonOutcome,
 } from '@football/application';
 import { CareerCreationForm } from '../career-creation/CareerCreationForm';
@@ -52,6 +54,7 @@ import { CareerDashboard } from '../career-dashboard/CareerDashboard';
 import { OffseasonBriefing } from '../career-dashboard/OffseasonBriefing';
 import { ProDashboard } from '../career-dashboard/ProDashboard';
 import { ProOffseasonPanel } from '../career-dashboard/ProOffseasonPanel';
+import { NodeBrief } from '../career-dashboard/NodeBrief';
 import { CareerReviewPage } from '../career-dashboard/CareerReviewPage';
 import { AgentPreferencesForm } from '../career-dashboard/AgentPreferencesForm';
 import { OfferComparisonPanel } from '../career-dashboard/OfferComparisonPanel';
@@ -71,6 +74,7 @@ import {
   createLocalStorageCareerPort,
   type CareerSlotRecord,
 } from '../persistence/local-storage-save';
+import { downloadCareerExport } from '../persistence/career-export';
 import { CareerSaveSelector } from '../career-saves/CareerSaveSelector';
 import { SaveStatusIndicator, type SaveCommitState } from '../career-saves/SaveStatusIndicator';
 import './app.css';
@@ -102,22 +106,51 @@ const chooseYouthOpportunity = createSubmitYouthChoice();
 const savePort = createLocalStorageCareerPort();
 
 type PendingCommit = {
-  save: CareerSaveV6;
-  transition: (saved: CareerSaveV6) => void;
+  save: CareerSaveV7;
+  transition: (saved: CareerSaveV7) => void;
 };
 
 type FreeAgentRetireKind = 'market-exit' | 'voluntary-retirement';
 
-const careerEndDate = (save: CareerSaveV6): string =>
+const careerEndDate = (save: CareerSaveV7): string =>
   save.proSeason?.endDate ??
   save.contract?.signedOn ??
   save.offseason?.nextSeasonStart ??
   save.season.endDate;
 
+const worldFactsFromSave = (save: CareerSaveV7): WorldFact[] => {
+  const clubNames = new Map(professionalClubs.map(({ id, name }) => [id, name]));
+  const pulseFacts = save.worldRegistry.clubPulses.map((pulse) => {
+    const category: WorldFact['category'] =
+      pulse.continentalStatus === 'none' ? 'domestic' : 'continental';
+    return {
+      id: `world-pulse-${pulse.clubId}-${pulse.seasonId}`,
+      occurredOn: pulse.seasonId,
+      category,
+      relatedClubIds: [pulse.clubId],
+      summary:
+        pulse.finalRank === null
+          ? `${clubNames.get(pulse.clubId) ?? pulse.clubId} 已完成本赛季世界状态结算。`
+          : `${clubNames.get(pulse.clubId) ?? pulse.clubId} 本赛季联赛排名第 ${pulse.finalRank}，获得 ${pulse.points} 分。`,
+      window: 'season' as const,
+    };
+  });
+  const transferFacts = (save.worldRegistry.transferWindow?.activities ?? []).map((activity) => ({
+    id: activity.relatedFactId,
+    occurredOn: activity.seasonId,
+    category: 'transfer' as const,
+    relatedClubIds: [activity.fromClubId, activity.toClubId],
+    summary: `${clubNames.get(activity.toClubId) ?? activity.toClubId} 在${activity.window}窗口寻找 ${activity.position}。`,
+    window: activity.window,
+  }));
+  return [...pulseFacts, ...transferFacts];
+};
+
 export function App() {
   const [step, setStep] = useState<Step>('creation');
   const [bootstrapSave, setBootstrapSave] = useState<CareerSave | null>(null);
-  const [save, setSave] = useState<CareerSaveV6 | null>(null);
+  const [save, setSave] = useState<CareerSaveV7 | null>(null);
+  const [archive, setArchive] = useState<CareerArchiveV1 | null>(null);
   const [report, setReport] = useState<MonthlyReport | null>(null);
   const [outcome, setOutcome] = useState<YouthSeasonOutcome | null>(null);
   const [advancing, setAdvancing] = useState(false);
@@ -171,14 +204,24 @@ export function App() {
   };
   const writeCommit = async ({ save: candidate, transition }: PendingCommit) => {
     setCommitState({ status: 'saving' });
+    let completedArchive: CareerArchiveV1 | null = null;
     try {
-      await savePort.save(candidate.careerId, candidate);
+      if (candidate.careerEnd) {
+        completedArchive = buildCareerArchive(candidate);
+        await savePort.saveArchive(candidate.careerId, completedArchive);
+      } else {
+        await savePort.save(candidate.careerId, candidate);
+      }
     } catch (caught) {
-      setCommitState({ status: 'error', message: `保存失败：${message(caught)}` });
+      setCommitState({
+        status: 'error',
+        message: `${candidate.careerEnd ? '历史档案转换失败' : '保存失败'}：${message(caught)}`,
+      });
       return;
     }
 
-    setSave(candidate);
+    setArchive(completedArchive);
+    setSave(completedArchive ? null : candidate);
     setFreeAgentRetireConfirm(null);
     pendingCommit.current = null;
     setCommitState({ status: 'saved' });
@@ -190,10 +233,10 @@ export function App() {
     }
   };
   const commitCareer = async (
-    raw: CareerSaveV5Like | CareerSaveV6Like,
-    transition: (saved: CareerSaveV6) => void,
+    raw: CareerSaveV5Like | CareerSaveV7,
+    transition: (saved: CareerSaveV7) => void,
   ) => {
-    const pending = { save: migrateCareerSaveV6(raw), transition };
+    const pending = { save: migrateCareerSaveV7(raw), transition };
     pendingCommit.current = pending;
     await writeCommit(pending);
   };
@@ -211,12 +254,45 @@ export function App() {
   const continueCareer = async (slotId: string) => {
     const requestId = ++archiveRequest.current;
     clearPendingCommit();
+    setError(null);
     setFreeAgentRetireConfirm(null);
     setOpeningSlotId(slotId);
     try {
       const result = await savePort.load(slotId);
-      if (requestId !== archiveRequest.current || result.status !== 'loaded') return;
+      if (requestId !== archiveRequest.current) return;
+      if (result.status === 'archived') {
+        setSave(null);
+        setArchive(result.archive);
+        setReport(null);
+        setOutcome(null);
+        setStep('retired');
+        return;
+      }
+      if (result.status !== 'loaded') return;
       const restored = hydrateLoadedCareer(result.save);
+      if (restored.careerEnd) {
+        let convertedArchive: CareerArchiveV1 | null = null;
+        try {
+          convertedArchive = buildCareerArchive(restored);
+          await savePort.saveArchive(restored.careerId, convertedArchive);
+        } catch (caught) {
+          setError(`历史档案转换失败：${message(caught)}`);
+        }
+        if (requestId !== archiveRequest.current) return;
+        setArchive(convertedArchive);
+        setSave(convertedArchive ? null : restored);
+        setReport(null);
+        setOutcome(null);
+        if (convertedArchive) {
+          try {
+            await refreshRecords();
+          } catch (caught) {
+            setError(message(caught));
+          }
+        }
+        setStep('retired');
+        return;
+      }
       if (
         restored.careerPhase === 'youth-season' &&
         restored.season.completed &&
@@ -232,6 +308,7 @@ export function App() {
         });
         return;
       }
+      setArchive(null);
       setSave(restored);
       setReport(restored.lastMonthlyReport ?? null);
       setOutcome(null);
@@ -244,11 +321,21 @@ export function App() {
     cancelArchiveRequest();
     clearPendingCommit();
     setSave(null);
+    setArchive(null);
     setBootstrapSave(null);
     setReport(null);
     setOutcome(null);
     setFreeAgentRetireConfirm(null);
     setStep('creation');
+  };
+  const exportCareer = async (slotId: string) => {
+    setError(null);
+    try {
+      const raw = await savePort.exportRaw(slotId);
+      downloadCareerExport(raw, slotId);
+    } catch (caught) {
+      setError(`导出失败：${message(caught)}`);
+    }
   };
   const deleteCareer = async (slotId: string) => {
     await savePort.delete(slotId);
@@ -276,13 +363,13 @@ export function App() {
       setError(message(caught));
     }
   };
-  const prepareYouthProgressCommit = (current: CareerSaveV6): PendingCommit => {
+  const prepareYouthProgressCommit = (current: CareerSaveV7): PendingCommit => {
     const result = advanceCareerMonth(
       toApplicationSaveV5(current),
       youthContent.academies,
       youthContent.events,
     );
-    let candidate: CareerSaveV5Like | CareerSaveV6Like = result.save;
+    let candidate: CareerSaveV5Like | CareerSaveV7 = result.save;
     let completedOutcome: YouthSeasonOutcome | null = null;
     if (result.status === 'season-complete') {
       const completed = completeYouthSeason(result.save);
@@ -290,7 +377,7 @@ export function App() {
       completedOutcome = completed.outcome;
     }
     return {
-      save: migrateCareerSaveV6(candidate),
+      save: migrateCareerSaveV7(candidate),
       transition: () => {
         if (result.status === 'awaiting-decision') {
           setStep('event');
@@ -302,7 +389,7 @@ export function App() {
       },
     };
   };
-  const progress = async (current: CareerSaveV6) => {
+  const progress = async (current: CareerSaveV7) => {
     const pending = prepareYouthProgressCommit(current);
     await commitCareer(pending.save, pending.transition);
   };
@@ -322,13 +409,50 @@ export function App() {
       setAdvancing(false);
     }
   };
-  const prepareProProgressCommit = (current: CareerSaveV6): PendingCommit => {
+  const advanceToNode = async () => {
+    if (!save) return;
+    setAdvancing(true);
+    setError(null);
+    try {
+      const result = advanceToNextNode(save, {
+        academies: youthContent.academies,
+        clubs: professionalClubs,
+        events: youthContent.events,
+      });
+      await commitCareer(result.save, () => {
+        setReport(null);
+        setOutcome(result.youthOutcome ?? null);
+        if (result.save.careerEnd) {
+          setStep('retired');
+          return;
+        }
+        if (result.save.story.pendingEvent) {
+          setStep('event');
+          return;
+        }
+        if (result.save.careerPhase === 'pro-offseason') {
+          setStep('pro-offseason');
+          return;
+        }
+        if (result.save.careerPhase === 'free-agent') {
+          setStep('free-agent');
+          return;
+        }
+        setStep(result.save.careerPhase === 'pro-season' ? 'pro' : 'dashboard');
+      });
+    } catch (caught) {
+      setError(message(caught));
+    } finally {
+      setAdvancing(false);
+    }
+  };
+  const prepareProProgressCommit = (current: CareerSaveV7): PendingCommit => {
     const result = advanceProMonth(
       toApplicationSaveV5(current),
       professionalClubs,
       youthContent.events,
     );
-    let candidate: CareerSaveV5Like | CareerSaveV6Like = result.save;
+    let candidate: CareerSaveV5Like | CareerSaveV7 = result.save;
     let settledStep: Step | null = null;
     if (result.status === 'season-complete') {
       const settled = completeProfessionalSeason(result.save);
@@ -336,7 +460,7 @@ export function App() {
       settledStep = settled.save.story.pendingEvent ? 'event' : 'pro-offseason';
     }
     return {
-      save: migrateCareerSaveV6(candidate),
+      save: migrateCareerSaveV7(candidate),
       transition: () => {
         if (result.status === 'awaiting-decision') {
           setStep('event');
@@ -347,7 +471,7 @@ export function App() {
       },
     };
   };
-  const advancePro = async (current: CareerSaveV6) => {
+  const advancePro = async (current: CareerSaveV7) => {
     const pending = prepareProProgressCommit(current);
     await commitCareer(pending.save, pending.transition);
   };
@@ -376,7 +500,7 @@ export function App() {
     if (!save?.story.pendingFeedback) return;
     setError(null);
     try {
-      const cleared = migrateCareerSaveV6(clearEventFeedback(toApplicationSaveV5(save)));
+      const cleared = migrateCareerSaveV7(clearEventFeedback(toApplicationSaveV5(save)));
       if (cleared.careerPhase === 'pro-season') {
         const pending = prepareProProgressCommit(cleared);
         await commitCareer(pending.save, pending.transition);
@@ -572,6 +696,7 @@ export function App() {
     cancelArchiveRequest();
     clearPendingCommit();
     setSave(null);
+    setArchive(null);
     setBootstrapSave(null);
     setReport(null);
     setOutcome(null);
@@ -607,6 +732,7 @@ export function App() {
           onContinue={continueCareer}
           onCreate={createFromArchives}
           onDelete={deleteCareer}
+          onExport={exportCareer}
         />
       )}
       {step !== 'archives' && (
@@ -635,7 +761,8 @@ export function App() {
                 outcome={outcome}
                 advancing={advancing}
                 busy={isSaving}
-                onAdvance={advance}
+                onAdvanceToNode={advanceToNode}
+                onAdvanceOneMonth={advance}
                 onTrainingPlanChange={changePlan}
                 onOpenArchives={openArchives}
               />
@@ -680,8 +807,20 @@ export function App() {
               report={report}
               advancing={advancing}
               busy={isSaving}
-              onAdvance={advance}
+              onAdvanceToNode={advanceToNode}
+              onAdvanceOneMonth={advance}
               onOpenArchives={openArchives}
+              onTrainingPlanChange={changePlan}
+              worldNewsItems={
+                buildWorldNewsForCareer({
+                  facts: worldFactsFromSave(save),
+                  clubs: professionalClubs,
+                  viewerClubId: save.proSeason?.clubId ?? null,
+                  filter: {},
+                  limit: 5,
+                  cursor: null,
+                }).items
+              }
             />
           )}
           {step === 'pro-offseason' && save && (
@@ -691,6 +830,7 @@ export function App() {
               onAcceptRenewal={handleAcceptRenewal}
               onDeclineRenewal={handleDeclineRenewal}
               onRetire={() => void handleRetire()}
+              onTrainingPlanChange={changePlan}
               onRequestMarket={handleRequestCareerMarket}
               onSignMarketOffer={handleSignMarketOffer}
             />
@@ -767,16 +907,36 @@ export function App() {
               )}
             </section>
           )}
-          {step === 'retired' && save && (
-            <CareerReviewPage save={save} onOpenArchives={openArchives} />
-          )}
+          {step === 'retired' &&
+            (archive || save) &&
+            (archive ? (
+              <CareerReviewPage
+                archive={archive}
+                narrativeClient={localNarrativeClient ?? undefined}
+                onOpenArchives={openArchives}
+              />
+            ) : (
+              <CareerReviewPage
+                save={save!}
+                narrativeClient={localNarrativeClient ?? undefined}
+                onOpenArchives={openArchives}
+              />
+            ))}
           {step === 'event' && save?.story.pendingEvent && (
-            <EventChoicePanel
-              key={save.story.pendingEvent.eventId}
-              event={save.story.pendingEvent}
-              sceneKind={eventSceneKind}
-              onSubmit={decide}
-            />
+            <>
+              {save.monthlyAdvance.nodeAdvance && (
+                <NodeBrief
+                  brief={save.monthlyAdvance.nodeAdvance.brief}
+                  skippedMonths={save.monthlyAdvance.nodeAdvance.skippedMonths}
+                />
+              )}
+              <EventChoicePanel
+                key={save.story.pendingEvent.eventId}
+                event={save.story.pendingEvent}
+                sceneKind={eventSceneKind}
+                onSubmit={decide}
+              />
+            </>
           )}
           {step === 'event-feedback' && save?.story.pendingFeedback && (
             <EventFeedbackPanel
@@ -786,6 +946,7 @@ export function App() {
               onContinue={continueAfterEventFeedback}
               narrativeClient={localNarrativeClient ?? undefined}
               playerName={save.player.identity.name}
+              nodeBrief={save.monthlyAdvance.nodeAdvance}
             />
           )}
         </fieldset>
@@ -797,18 +958,17 @@ export function App() {
 const message = (caught: unknown) =>
   caught instanceof Error ? caught.message : '操作失败，请重试';
 
-const toApplicationSaveV5 = (save: CareerSaveV6): CareerSaveV5 => {
-  const { careerEnd, ...v5 } = save;
-  if (careerEnd !== null) throw new Error('已结束的生涯不能继续操作');
-  return { ...v5, schemaVersion: 5 };
+const toApplicationSaveV5 = (save: CareerSaveV7): CareerSaveV5Like => {
+  if (save.careerEnd !== null) throw new Error('已结束的生涯不能继续操作');
+  // 应用用例仍以 v5-like 结构接收输入，但保留 v7 字段和 schemaVersion。
+  return save as unknown as CareerSaveV5Like;
 };
 
-const hydrateLoadedCareer = (save: CareerSaveV6): CareerSaveV6 => {
+const hydrateLoadedCareer = (save: CareerSaveV7): CareerSaveV7 => {
   if (save.careerEnd) return save;
-  return migrateCareerSaveV6(loadCareer(toApplicationSaveV5(save), youthContent));
+  return migrateCareerSaveV7(createYouthCareerV2(save, youthContent));
 };
-
-const stepFor = (save: CareerSaveV6): Step => {
+const stepFor = (save: CareerSaveV7): Step => {
   if (save.careerPhase === 'retired') return 'retired';
   if (save.story.pendingFeedback) return 'event-feedback';
   if (save.story.pendingEvent) return 'event';

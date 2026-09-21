@@ -21,7 +21,7 @@ test.describe('Bootstrap Career Flow', () => {
     // Step 3: Career dashboard
     await expect(page.getByLabel('青训生涯仪表盘')).toBeVisible();
     await expect(page.getByRole('heading', { name: '林岳' })).toBeVisible();
-    await expect(page.getByText('推进到下个月')).toBeVisible();
+    await expect(page.getByText('推进到下一节点')).toBeVisible();
     await expect(page.getByTestId('scene-art')).toBeVisible();
     await expect(page.getByRole('status', { name: /体能/ })).toBeVisible();
   });
@@ -32,8 +32,13 @@ test.describe('Bootstrap Career Flow', () => {
     await expect(page.getByLabel('逆足')).toHaveCount(0);
     await expect(page.getByLabel('成长背景')).toHaveCount(0);
     await expect(page.getByLabel('性格倾向')).toHaveCount(0);
-    await expect(page.getByLabel('随机种子')).toHaveCount(0);
+    await expect(page.getByLabel('随机种子')).toHaveCount(1);
+    await expect(
+      page.locator('details').filter({ hasText: '世界种子（可选）' }),
+    ).not.toHaveAttribute('open');
 
+    await page.getByText('世界种子（可选）').click();
+    await page.fill('input[aria-label="随机种子"]', '123');
     await page.fill('input[aria-label="球员姓名"]', '测试球员');
     await page.selectOption('select[aria-label="家乡"]', 'shanghai');
     await page.selectOption('select[aria-label="主位置"]', 'CENTER_BACK');

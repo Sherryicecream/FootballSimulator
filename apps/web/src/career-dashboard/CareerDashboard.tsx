@@ -16,6 +16,9 @@ import { CurrentStateBadges } from './CurrentStateBadges';
 import { StoryProgressPanel } from './StoryProgressPanel';
 import { MatchdayRhythmPanel } from './MatchdayRhythmPanel';
 import { TrainingFeedbackPanel } from './TrainingFeedbackPanel';
+import { TrainingPlanEditor } from './TrainingPlanEditor';
+import { CareerActionBar } from './CareerActionBar';
+import { NodeBrief } from './NodeBrief';
 
 interface CareerDashboardProps {
   save: CareerSaveV4Like;
@@ -25,18 +28,13 @@ interface CareerDashboardProps {
   outcome: YouthSeasonOutcome | null;
   advancing: boolean;
   busy?: boolean;
-  onAdvance: () => void;
+  onAdvance?: () => void;
+  onAdvanceToNode?: () => void;
+  onAdvanceOneMonth?: () => void;
   onTrainingPlanChange: (plan: TrainingPlan) => void;
   onOpenArchives: () => void;
 }
 
-const focusLabels: Record<TrainingPlan['focus'], string> = {
-  technical: '技术',
-  position: '位置专项',
-  physical: '身体',
-  tactical: '战术',
-  recovery: '恢复',
-};
 const stageLabels: Record<CareerSaveV4Like['clubContext']['firstTeamStage'], string> = {
   none: '尚未进入视野',
   watchlist: '一线队观察名单',
@@ -52,6 +50,14 @@ const youthPathLabels: Record<YouthSeasonOutcome['nextPath'], string> = {
   trial: '其他机构试训',
   'professional-market': '职业市场',
 };
+const POSITION_LABELS: Record<string, string> = {
+  CENTER_BACK: '中后卫',
+  FULL_BACK: '边后卫',
+  DEFENSIVE_MIDFIELDER: '后腰',
+  MIDFIELDER: '中场',
+  WINGER: '边锋',
+  FORWARD: '前锋',
+};
 
 export function CareerDashboard({
   save,
@@ -62,6 +68,8 @@ export function CareerDashboard({
   advancing,
   busy = false,
   onAdvance,
+  onAdvanceToNode,
+  onAdvanceOneMonth,
   onTrainingPlanChange,
   onOpenArchives,
 }: CareerDashboardProps) {
@@ -85,12 +93,28 @@ export function CareerDashboard({
     report?.momentum?.summary ??
     outcome?.summary ??
     '训练、比赛与选择会在这里汇成你的下一段生涯。';
+  const currentFocus = save.health.activeInjury
+    ? `伤病恢复：${save.health.activeInjury.bodyArea}`
+    : outcome
+      ? '赛季总结已完成，准备决定下一步'
+      : (report?.momentum?.title ??
+        `保持训练与比赛表现，争取${stageLabels[save.clubContext.firstTeamStage]}`);
+  const advanceToNode = onAdvanceToNode ?? onAdvance ?? (() => undefined);
+  const advanceOneMonth = onAdvanceOneMonth ?? onAdvance ?? (() => undefined);
+  const nodeAdvance = save.monthlyAdvance.nodeAdvance;
+
   return (
     <section className="career-shell" aria-label="青训生涯仪表盘">
       <header className="career-hero">
         <div>
           <span className="eyebrow">青训生涯</span>
           <h2>{save.player.identity.name}</h2>
+          <p className="career-player-context">
+            {save.player.age}岁 ·{' '}
+            {POSITION_LABELS[save.player.identity.primaryPosition] ??
+              save.player.identity.primaryPosition}{' '}
+            · 当前俱乐部：{academyName}
+          </p>
         </div>
         <div className="career-meta">
           <span>{academyName}</span>
@@ -98,6 +122,15 @@ export function CareerDashboard({
           <span>第 {save.season.currentWeek} 周</span>
         </div>
       </header>
+
+      <p className="career-focus">
+        <strong>当前关注：</strong>
+        {currentFocus}
+      </p>
+
+      {nodeAdvance && (
+        <NodeBrief brief={nodeAdvance.brief} skippedMonths={nodeAdvance.skippedMonths} />
+      )}
 
       <SceneBanner
         kind={sceneKind}
@@ -197,59 +230,26 @@ export function CareerDashboard({
           </div>
         </section>
 
-        <section className="dashboard-card">
-          <h3>训练计划</h3>
-          <label>
-            重点
-            <select
-              aria-label="训练重点"
-              value={save.trainingPlan.focus}
-              disabled={busy}
-              onChange={(event) =>
-                onTrainingPlanChange({
-                  ...save.trainingPlan,
-                  focus: event.target.value as TrainingPlan['focus'],
-                })
-              }
-            >
-              {Object.entries(focusLabels).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            强度
-            <select
-              aria-label="训练强度"
-              value={save.trainingPlan.intensity}
-              disabled={busy}
-              onChange={(event) =>
-                onTrainingPlanChange({
-                  ...save.trainingPlan,
-                  intensity: event.target.value as TrainingPlan['intensity'],
-                })
-              }
-            >
-              <option value="light">轻量</option>
-              <option value="normal">正常</option>
-              <option value="intense">高强度</option>
-            </select>
-          </label>
-          <p className="muted">设置会持续生效，直到你再次调整。</p>
-        </section>
+        <TrainingPlanEditor
+          plan={save.trainingPlan}
+          disabled={
+            busy || advancing || Boolean(save.story.pendingEvent || save.story.pendingFeedback)
+          }
+          onChange={onTrainingPlanChange}
+        />
 
         <section className="dashboard-card attributes">
-          <h3>球员属性</h3>
-          <div className="attribute-grid">
-            {attributes.map(({ group, key, value }) => (
-              <div key={`${group}-${key}`}>
-                <span>{labelAttribute(key)}</span>
-                <strong>{value}</strong>
-              </div>
-            ))}
-          </div>
+          <details>
+            <summary>查看完整球员属性</summary>
+            <div className="attribute-grid">
+              {attributes.map(({ group, key, value }) => (
+                <div key={`${group}-${key}`}>
+                  <span>{labelAttribute(key)}</span>
+                  <strong>{value}</strong>
+                </div>
+              ))}
+            </div>
+          </details>
         </section>
 
         <section className="dashboard-card timeline">
@@ -275,18 +275,14 @@ export function CareerDashboard({
       </div>
       {codexOpen && <StoryCodex events={events} encounteredEventIds={encounteredEventIds} />}
 
-      <footer className="career-actions">
-        <button
-          className="primary-action"
-          onClick={onAdvance}
-          disabled={busy || advancing || save.season.completed}
-        >
-          {advancing ? '推进中…' : '推进到下个月'}
-        </button>
-        <button className="secondary-action" onClick={onOpenArchives} disabled={busy}>
-          生涯档案
-        </button>
-      </footer>
+      <CareerActionBar
+        busy={busy || advancing}
+        disabled={save.season.completed}
+        label={advancing ? '推进中…' : '推进到下一节点'}
+        onAdvanceToNode={advanceToNode}
+        onAdvanceOneMonth={advanceOneMonth}
+        onOpenArchives={onOpenArchives}
+      />
     </section>
   );
 }

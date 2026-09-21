@@ -1,4 +1,5 @@
 // 由既有 TS 内容源一次性生成（M11 模块 3 内容外置）；编辑后经 zod 校验生效。
+/** @deprecated 仅保留旧存档与旧事件的兼容别名，联赛装配使用各国文件。 */
 import type { ClubProfile } from '@football/contracts';
 
 export const europeClubProfiles: ClubProfile[] = [
@@ -12,6 +13,7 @@ export const europeClubProfiles: ClubProfile[] = [
     overseas: true,
     wageBudget: 92,
     overseasRegion: 'europe',
+    country: 'england',
   },
   {
     id: 'ov-borussia-nord',
@@ -23,6 +25,7 @@ export const europeClubProfiles: ClubProfile[] = [
     overseas: true,
     wageBudget: 89,
     overseasRegion: 'europe',
+    country: 'england',
   },
   {
     id: 'ov-valley-united',
@@ -34,6 +37,7 @@ export const europeClubProfiles: ClubProfile[] = [
     overseas: true,
     wageBudget: 72,
     overseasRegion: 'europe',
+    country: 'england',
   },
   {
     id: 'ov-athletic-costa',
@@ -45,6 +49,7 @@ export const europeClubProfiles: ClubProfile[] = [
     overseas: true,
     wageBudget: 68,
     overseasRegion: 'europe',
+    country: 'england',
   },
   {
     id: 'ov-fortuna-rhein',
@@ -56,6 +61,7 @@ export const europeClubProfiles: ClubProfile[] = [
     overseas: true,
     wageBudget: 60,
     overseasRegion: 'europe',
+    country: 'england',
   },
   {
     id: 'ov-dynamo-vostok',
@@ -67,6 +73,7 @@ export const europeClubProfiles: ClubProfile[] = [
     overseas: true,
     wageBudget: 54,
     overseasRegion: 'europe',
+    country: 'england',
   },
   {
     id: 'ov-real-solaria',
@@ -78,6 +85,7 @@ export const europeClubProfiles: ClubProfile[] = [
     overseas: true,
     wageBudget: 47,
     overseasRegion: 'europe',
+    country: 'spain',
   },
   {
     id: 'ov-citta-laguna',
@@ -89,6 +97,7 @@ export const europeClubProfiles: ClubProfile[] = [
     overseas: true,
     wageBudget: 45,
     overseasRegion: 'europe',
+    country: 'spain',
   },
   {
     id: 'ov-sc-borderland',
@@ -100,6 +109,7 @@ export const europeClubProfiles: ClubProfile[] = [
     overseas: true,
     wageBudget: 37,
     overseasRegion: 'europe',
+    country: 'spain',
   },
   {
     id: 'ov-union-lakeside',
@@ -111,6 +121,7 @@ export const europeClubProfiles: ClubProfile[] = [
     overseas: true,
     wageBudget: 35,
     overseasRegion: 'europe',
+    country: 'spain',
   },
   {
     id: 'ov-sporting-alvor',
@@ -122,6 +133,7 @@ export const europeClubProfiles: ClubProfile[] = [
     overseas: true,
     wageBudget: 33,
     overseasRegion: 'europe',
+    country: 'spain',
   },
   {
     id: 'ov-fk-granit',
@@ -133,5 +145,6 @@ export const europeClubProfiles: ClubProfile[] = [
     overseas: true,
     wageBudget: 31,
     overseasRegion: 'europe',
+    country: 'spain',
   },
 ];

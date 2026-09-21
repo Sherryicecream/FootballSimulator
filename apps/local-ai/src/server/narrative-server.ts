@@ -1,11 +1,32 @@
 import { createHash } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
-import { NarrativePolishRequestSchema, type NarrativePolishRequest } from '@football/contracts';
+import {
+  CareerSummaryOutputSchema,
+  CareerSummaryRequestSchema,
+  MilestoneNarrationOutputSchema,
+  MilestoneNarrationRequestSchema,
+  NarrativePolishOutputSchema,
+  NarrativePolishRequestSchema,
+  type CareerSummaryRequest,
+  type MilestoneNarrationRequest,
+  type NarrativePolishRequest,
+} from '@football/contracts';
+import {
+  fallbackCareerSummary,
+  fallbackMilestoneNarration,
+  fallbackNarrativeDraft,
+  UnsafeNarrativeOutputError,
+  validateCareerSummaryOutput,
+  validateMilestoneNarrationOutput,
+  validateNarrativePolishOutput,
+} from '../validation/narrative';
 import type { NarrativeAdapterResult } from '../providers/types';
 import { getLocalNarrativeHealth } from './health';
 
 export interface NarrativeServerAdapter {
   polish: (request: NarrativePolishRequest) => Promise<NarrativeAdapterResult>;
+  summarize?: (request: CareerSummaryRequest) => Promise<NarrativeAdapterResult>;
+  narrateMilestone?: (request: MilestoneNarrationRequest) => Promise<NarrativeAdapterResult>;
 }
 
 export interface NarrativeServerOptions {
@@ -52,9 +73,15 @@ export const createNarrativeServer = (options: NarrativeServerOptions): Server =
       respondJson(response, 413, { error: 'request-too-large' });
       return;
     }
-    let parsedRequest: NarrativePolishRequest;
+    let parsedRequest: NarrativePolishRequest | CareerSummaryRequest | MilestoneNarrationRequest;
     try {
-      parsedRequest = NarrativePolishRequestSchema.parse(JSON.parse(body));
+      const raw = JSON.parse(body);
+      parsedRequest =
+        raw?.kind === 'career-summary'
+          ? CareerSummaryRequestSchema.parse(raw)
+          : raw?.kind === 'milestone'
+            ? MilestoneNarrationRequestSchema.parse(raw)
+            : NarrativePolishRequestSchema.parse(raw);
     } catch {
       respondJson(response, 400, { error: 'invalid-request' });
       return;
@@ -65,19 +92,82 @@ export const createNarrativeServer = (options: NarrativeServerOptions): Server =
       respondJson(response, 200, cached);
       return;
     }
-    const result = await options.adapter.polish(parsedRequest);
-    // 只缓存 provider 成功结果：回退可能由暂时性故障造成，缓存会延长错误文案的寿命。
-    if (result.source === 'provider') {
-      cache.set(key, result);
+    const result =
+      parsedRequest.kind === 'career-summary'
+        ? options.adapter.summarize
+          ? await options.adapter.summarize(parsedRequest)
+          : {
+              source: 'fallback' as const,
+              reason: 'disabled' as const,
+              draft: {
+                summary:
+                  '本地生涯总结服务未启用，页面将继续使用本地确定性总结，不会改变任何存档事实。'.repeat(
+                    4,
+                  ),
+              },
+            }
+        : parsedRequest.kind === 'milestone'
+          ? options.adapter.narrateMilestone
+            ? await options.adapter.narrateMilestone(parsedRequest)
+            : {
+                source: 'fallback' as const,
+                reason: 'disabled' as const,
+                draft: fallbackMilestoneNarration(parsedRequest),
+              }
+          : await options.adapter.polish(parsedRequest);
+    const safeResult = validateAdapterResult(parsedRequest, result);
+    // 只缓存通过服务端 schema/事实校验的 provider 结果。
+    if (safeResult.source === 'provider') {
+      cache.set(key, safeResult);
       if (cache.size > cacheLimit) {
         const oldest = cache.keys().next().value;
         if (oldest !== undefined) cache.delete(oldest);
       }
     }
-    respondJson(response, 200, result);
+    respondJson(response, 200, safeResult);
   };
 
   return server;
+};
+
+const validateAdapterResult = (
+  request: NarrativePolishRequest | CareerSummaryRequest | MilestoneNarrationRequest,
+  result: NarrativeAdapterResult,
+): NarrativeAdapterResult => {
+  if (result.source !== 'provider') return result;
+  try {
+    if (request.kind === 'career-summary') {
+      const output = CareerSummaryOutputSchema.parse(result.draft);
+      return {
+        source: 'provider',
+        reason: 'provider',
+        draft: validateCareerSummaryOutput(request, output),
+      };
+    }
+    if (request.kind === 'milestone') {
+      const output = MilestoneNarrationOutputSchema.parse(result.draft);
+      return {
+        source: 'provider',
+        reason: 'provider',
+        draft: validateMilestoneNarrationOutput(request, output),
+      };
+    }
+    const output = NarrativePolishOutputSchema.parse(result.draft);
+    return {
+      source: 'provider',
+      reason: 'provider',
+      draft: validateNarrativePolishOutput(request, output),
+    };
+  } catch (error) {
+    const reason = error instanceof UnsafeNarrativeOutputError ? 'unsafe-output' : 'invalid-output';
+    if (request.kind === 'career-summary') {
+      return { source: 'fallback', reason, draft: fallbackCareerSummary(request) };
+    }
+    if (request.kind === 'milestone') {
+      return { source: 'fallback', reason, draft: fallbackMilestoneNarration(request) };
+    }
+    return { source: 'fallback', reason, draft: fallbackNarrativeDraft(request) };
+  }
 };
 
 const respondJson = (response: ServerResponse, status: number, payload: unknown): void => {

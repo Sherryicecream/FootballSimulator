@@ -17,6 +17,8 @@ const roleLabels: Record<ContractOfferV3['squadRole'], string> = {
   'highlighted-prospect': '重点培养新星',
 };
 
+const salaryLabel = (salary: number): string => salary.toLocaleString('zh-CN') + ' 游戏币/年';
+
 const promiseLabel = (offer: ContractOfferV3): string => {
   if (offer.promise.kind === 'playing-time') {
     return `出场承诺：至少 ${Math.round(offer.promise.minimumShare * 100)}% 出场时间`;
@@ -52,14 +54,14 @@ export function OfferComparisonPanel({
           >
             <div className="offer-card-heading">
               <h3>
-                {offer.clubName}（层级 {offer.clubTier}）
+                {offer.clubName}（实力档位 {offer.clubTier}）
               </h3>
               <span className="market-kind">
                 {(offer.offerKind ?? marketMode ?? 'permanent') === 'loan' ? '租借' : '永久转会'}
               </span>
             </div>
             <ul>
-              <li>年薪：{offer.salaryPerYear.toLocaleString('zh-CN')}</li>
+              <li>年薪：{salaryLabel(offer.salaryPerYear)}</li>
               <li>期限：{offer.contractYears} 年</li>
               <li>预计角色：{roleLabels[offer.squadRole]}</li>
               <li>{promiseLabel(offer)}</li>

@@ -12,6 +12,7 @@ const resolution = {
   outcomes: {
     success: {
       label: '沟通奏效',
+      eventOutcome: 'adapted' as const,
       effects: { confidence: 3, coachTrust: 2 },
       response: '你把事实说清楚，教练看见了你的成熟。',
       followUp: '下一场比赛会检验这次沟通。',
@@ -43,6 +44,7 @@ describe('resolveCareerEvent with authored outcomes', () => {
     expect(result.story.pendingFeedback?.resultTitle).toBe('沟通奏效');
     expect(result.story.pendingFeedback?.resultTone).toBe('success');
     expect(result.currentState.confidence).toBeGreaterThan(save.currentState.confidence);
+    expect(result.story.completedStoryIds).toContain('cross-country-adapted');
     expect(result.ledger.at(-1)?.summary).toContain('沟通奏效');
     expect(result.ledger.at(-1)?.outcome).toEqual(
       expect.objectContaining({ outcome: 'success', label: '沟通奏效' }),

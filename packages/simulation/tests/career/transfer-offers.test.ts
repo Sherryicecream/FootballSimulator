@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CareerSaveV5Schema, type ClubProfile, type YouthContentBundle } from '@football/contracts';
 import { createSeededRandomSource } from '../../src/randomness';
-import { generateProfessionalMarketOffers } from '../../src/career/transfer-offers';
+import { generateProfessionalMarketOffers, selectOverseasMarketRepresentatives } from '../../src';
 import { createProSave } from '../fixtures/pro-save';
 
 const content: YouthContentBundle = {
@@ -85,6 +85,60 @@ describe('generateProfessionalMarketOffers', () => {
         'permanent',
       ).every((offer) => !offer.overseas),
     ).toBe(true);
+  });
+
+  it('海外俱乐部扩容后按国别抽取固定代表，避免市场概率随内容数量膨胀', () => {
+    const countries = ['england', 'spain', 'germany', 'italy', 'france', 'japan', 'korea'] as const;
+    const expanded = countries.flatMap((country) =>
+      Array.from({ length: 24 }, (_, index) => ({
+        ...club('expanded-' + country + '-' + index, country + '-' + index, 5 + (index % 2), true),
+        country,
+      })),
+    );
+
+    const representatives = selectOverseasMarketRepresentatives(expanded, 3);
+
+    expect(representatives).toHaveLength(21);
+    expect(
+      Object.fromEntries(
+        countries.map((country) => [
+          country,
+          representatives.filter((club) => club.country === country).length,
+        ]),
+      ),
+    ).toEqual(Object.fromEntries(countries.map((country) => [country, 3])));
+    expect(representatives.filter((club) => club.tier === 5)).toHaveLength(14);
+    expect(representatives.filter((club) => club.tier === 6)).toHaveLength(7);
+  });
+
+  it('跨多个固定市场种子轮换海外国家曝光，不让亚洲高吸引力吞掉欧洲候选', () => {
+    const countries = ['england', 'spain', 'germany', 'italy', 'france', 'japan', 'korea'] as const;
+    const expandedContent: YouthContentBundle = {
+      ...content,
+      overseasClubs: countries.map((country) => ({
+        ...club('market-' + country, country + '-market', 5, true),
+        country,
+      })),
+    };
+    const exposedCountries = new Set<string>();
+
+    for (let seed = 1; seed <= 70; seed += 1) {
+      const save = CareerSaveV5Schema.parse({
+        ...highAbilitySave,
+        randomState: { ...highAbilitySave.randomState, seed },
+      });
+      const offers = generateProfessionalMarketOffers(
+        save,
+        expandedContent,
+        createSeededRandomSource(seed),
+        'permanent',
+      );
+      for (const offer of offers) {
+        if (offer.overseas && offer.country) exposedCountries.add(offer.country);
+      }
+    }
+
+    expect([...exposedCountries]).toEqual(expect.arrayContaining(['spain', 'germany', 'france']));
   });
 });
 

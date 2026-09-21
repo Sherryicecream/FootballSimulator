@@ -163,6 +163,9 @@ describe('职业转会与租借市场', () => {
     expect(returned.activeLoan).toBeNull();
     expect(returned.loanHistory).toHaveLength(1);
     expect(returned.careerPhase).toBe('pro-offseason');
+    expect(returned.ledger.at(-1)).toMatchObject({
+      eventId: 'loan-return-' + activeLoan.seasonId,
+    });
     expect(returnFromLoan(returned, entry)).toEqual(returned);
   });
 

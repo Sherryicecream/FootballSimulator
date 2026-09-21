@@ -17,6 +17,7 @@ export interface ResolveChoiceOutcomeInput {
 
 export interface ChoiceOutcomeResolution {
   outcome: ChoiceOutcomeKind;
+  eventOutcome?: 'adapted' | undefined;
   effects: Record<string, number>;
   delayEffects?: Record<string, number> | undefined;
   memoryKey?: string | undefined;

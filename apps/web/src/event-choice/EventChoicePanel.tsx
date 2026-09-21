@@ -10,11 +10,16 @@ interface EventChoicePanelProps {
   onSubmit: (choiceId: string) => void;
 }
 
-const RISK_LABELS: Record<string, string> = {
+type RiskLabel = 'low' | 'medium' | 'high';
+
+const RISK_LABELS: Record<RiskLabel, string> = {
   low: '低风险',
   medium: '中风险',
   high: '高风险',
 };
+
+const normalizeRiskLabel = (value: string): RiskLabel =>
+  value === 'low' || value === 'medium' || value === 'high' ? value : 'medium';
 
 const RISK_TONES: Record<string, StatusBadgeTone> = {
   low: 'positive',
@@ -62,9 +67,10 @@ export function EventChoicePanel({
         <div className="event-choice-list">
           {event.choices.map((choice) => {
             const isChosen = selectedId === choice.id || event.resolvedChoiceId === choice.id;
-            const riskLabel = RISK_LABELS[choice.riskLabel] ?? '未知风险';
-            const riskTone = RISK_TONES[choice.riskLabel] ?? 'neutral';
-            const riskGlyph = RISK_GLYPHS[choice.riskLabel] ?? 'match';
+            const riskKey = normalizeRiskLabel(choice.riskLabel);
+            const riskLabel = RISK_LABELS[riskKey];
+            const riskTone = RISK_TONES[riskKey] ?? 'neutral';
+            const riskGlyph = RISK_GLYPHS[riskKey] ?? 'match';
             return (
               <button
                 key={choice.id}

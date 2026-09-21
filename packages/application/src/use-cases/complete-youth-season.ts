@@ -1,10 +1,7 @@
-import type {
-  CareerLedgerEntryV2,
-  CareerSaveV3Like,
-  SeasonHistorySummary,
-} from '@football/contracts';
+import type { CareerSaveV3Like, CareerSaveV6Like, SeasonHistorySummary } from '@football/contracts';
 import {
   deriveDevelopmentSignals,
+  stampCareerFact,
   isFinalYouthSeason,
   type DevelopmentSignal,
 } from '@football/simulation';
@@ -56,7 +53,7 @@ export const completeYouthSeason = <S extends CareerSaveV3Like>(
         ? `俱乐部决定结束本阶段培养，但可以继续选择${pathLabel(nextPath)}。`
         : `俱乐部确认继续培养，下赛季从 ${save.clubContext.firstTeamStage} 阶段继续。`,
   };
-  const fact: CareerLedgerEntryV2 = {
+  const fact = stampCareerFact(save as unknown as CareerSaveV6Like, {
     id: `season-outcome-${save.season.id}`,
     weekKey: `${save.season.startDate.slice(0, 4)}-W${String(save.season.currentWeek).padStart(2, '0')}`,
     type: 'season-outcome',
@@ -64,9 +61,12 @@ export const completeYouthSeason = <S extends CareerSaveV3Like>(
     participantIds: save.relationships.persons
       .filter(({ role }) => role === 'youth-coach')
       .map(({ id }) => id),
-  };
+  });
   const seasonSummary = buildSeasonSummary(save, outcome.status, signals);
-  const hasOutcomeFact = save.ledger.some(({ id }) => id === fact.id);
+  const hasOutcomeFact = save.ledger.some(
+    ({ id, type, seasonId }) =>
+      id === fact.id || (type === 'season-outcome' && seasonId === save.season.id),
+  );
   const hasSummary = save.seasonHistory.some(({ seasonId }) => seasonId === save.season.id);
   return {
     save: hasOutcomeFact

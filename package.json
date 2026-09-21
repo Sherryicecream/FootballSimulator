@@ -11,7 +11,7 @@
     "dev:lan": "pnpm --filter @football/web exec vite --host 0.0.0.0",
     "build": "pnpm --filter @football/web exec vite build",
     "test": "pnpm test:unit && pnpm test:architecture",
-    "test:unit": "vitest run --project domain --project web --project local-ai && vitest run --project balance",
+    "test:unit": "vitest run --project domain --project content --project application --project web --project local-ai && vitest run --project balance",
     "test:e2e": "playwright test",
     "balance:youth": "node --experimental-strip-types --import ./tools/balance/register-loader.mjs tools/balance/src/run-youth-seasons.ts",
     "test:architecture": "node --test tools/architecture/tests/repository-config.test.mjs tools/architecture/tests/workspace-policy.test.mjs tools/architecture/tests/workspace-structure.test.mjs",

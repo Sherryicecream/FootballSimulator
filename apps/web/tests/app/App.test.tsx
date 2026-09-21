@@ -3,8 +3,10 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event';
 import { App } from '../../src/app/App';
 import {
+  buildCareerArchive,
   completeYouthSeason,
   createCareerSave,
+  endYouthCareer,
   enterOffseason,
   generateContractOffers,
   signContract,
@@ -12,7 +14,7 @@ import {
   submitAgentPreferences,
 } from '@football/application';
 import { getYouthContent } from '@football/content';
-import { migrateCareerSaveV5, migrateCareerSaveV6 } from '@football/contracts';
+import { migrateCareerSaveV5, migrateCareerSaveV6, migrateCareerSaveV7 } from '@football/contracts';
 import type { CareerSave, MonthlyReport } from '@football/contracts';
 import {
   content as fixtureContent,
@@ -152,7 +154,12 @@ describe('App', () => {
       expect.objectContaining({ seasonId: completed.season.id }),
     );
     expect(stored.ledger).toContainEqual(
-      expect.objectContaining({ id: `season-outcome-${completed.season.id}` }),
+      expect.objectContaining({
+        type: 'season-outcome',
+        seasonId: completed.season.id,
+        occurredOn: expect.any(String),
+        ordinal: expect.any(Number),
+      }),
     );
   });
 
@@ -325,7 +332,7 @@ describe('App', () => {
     await waitFor(() => {
       expect(screen.getByText('青训生涯')).toBeDefined();
     });
-    expect(screen.getByRole('button', { name: '推进到下个月' })).toBeDefined();
+    expect(screen.getByRole('button', { name: '推进到下一节点' })).toBeDefined();
 
     await user.click(screen.getByRole('button', { name: '生涯档案' }));
     expect(await screen.findByRole('button', { name: '继续林岳的生涯' })).toBeVisible();
@@ -389,7 +396,7 @@ describe('App', () => {
       localStorageMock.getItem(`football-save-${original.careerId}`) ?? 'null',
     ) as { data?: { schemaVersion?: number; story?: { pendingFeedback?: { choiceId?: string } } } };
     expect(stored.data).toMatchObject({
-      schemaVersion: 6,
+      schemaVersion: 8,
       story: { pendingFeedback: { choiceId: 'continue' } },
     });
 
@@ -520,7 +527,8 @@ describe('App', () => {
     expect(screen.queryByLabelText('5�S�w^~)�u')).toBeNull();
     await user.click(screen.getByRole('button', { name: '返回生涯档案' }));
     expect(await screen.findByRole('region', { name: '生涯档案' })).toBeDefined();
-    expect(readStoredSave(retired.careerId).careerPhase).toBe('retired');
+    expect(readStoredArchive(retired.careerId).archiveVersion).toBe(1);
+    expect(readStoredArchive(retired.careerId).careerEnd.endedOn).toBe('2025-06-30');
   });
 
   it('stays in the final youth briefing when ending the career cannot be saved', async () => {
@@ -534,7 +542,7 @@ describe('App', () => {
     localStorageMock.failNextSetItem();
     await user.click(screen.getByRole('button', { name: '确认结束并查看回顾' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('保存失败');
+    expect(await screen.findByRole('alert')).toHaveTextContent('历史档案转换失败');
     expect(screen.getByRole('region', { name: '休赛期简报' })).toBeVisible();
     expect(screen.queryByRole('region', { name: '生涯回顾' })).toBeNull();
   });
@@ -550,7 +558,24 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: '确认结束并查看回顾' }));
 
     expect(await screen.findByRole('region', { name: '生涯回顾' })).toBeVisible();
-    expect(readStoredSave(finalYouth.careerId).careerEnd?.kind).toBe('youth-no-contract');
+    expect(readStoredArchive(finalYouth.careerId).careerEnd.kind).toBe('youth-no-contract');
+    expect(readStoredArchive(finalYouth.careerId).history.seasonHistory).toEqual(
+      finalYouth.seasonHistory,
+    );
+  });
+
+  it('loads a compact historical archive into the read-only review page', async () => {
+    const user = userEvent.setup();
+    const terminal = endYouthCareer(migrateCareerSaveV7(createFinalYouthOffseason()));
+    const archive = buildCareerArchive(terminal);
+    storeArchive(archive);
+
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: '查看林岳的回顾' }));
+
+    expect(await screen.findByRole('region', { name: '生涯回顾' })).toBeVisible();
+    expect(screen.getByText(archive.review.commentary)).toBeVisible();
   });
 
   it('offers ending an age-exhausted youth career after a graduation-eligible offseason', async () => {
@@ -576,7 +601,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: '确认离开职业足坛' }));
 
     expect(await screen.findByRole('region', { name: '生涯回顾' })).toBeVisible();
-    expect(readStoredSave(freeAgent.careerId).careerEnd?.kind).toBe('market-exit');
+    expect(readStoredArchive(freeAgent.careerId).careerEnd.kind).toBe('market-exit');
   });
 
   it('uses the saved youth offseason date for a free-agent market exit', async () => {
@@ -595,7 +620,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: '确认离开职业足坛' }));
 
     expect(await screen.findByRole('region', { name: '生涯回顾' })).toBeVisible();
-    expect(readStoredSave(freeAgent.careerId).careerEnd?.endedOn).toBe(
+    expect(readStoredArchive(freeAgent.careerId).careerEnd.endedOn).toBe(
       finalYouth.offseason!.nextSeasonStart,
     );
   });
@@ -613,7 +638,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: '确认离开职业足坛' }));
 
     expect(await screen.findByRole('region', { name: '生涯回顾' })).toBeVisible();
-    expect(readStoredSave(freeAgent.careerId).careerEnd?.endedOn).toBe(
+    expect(readStoredArchive(freeAgent.careerId).careerEnd.endedOn).toBe(
       freeAgent.proSeason!.endDate,
     );
   });
@@ -637,7 +662,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: '确认退役' }));
 
     expect(await screen.findByRole('region', { name: '生涯回顾' })).toBeVisible();
-    expect(readStoredSave(professionalOffseason.careerId).careerEnd?.kind).toBe(
+    expect(readStoredArchive(professionalOffseason.careerId).careerEnd.kind).toBe(
       'voluntary-retirement',
     );
   });
@@ -656,7 +681,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: '确认退役' }));
 
     expect(await screen.findByRole('region', { name: '生涯回顾' })).toBeVisible();
-    expect(readStoredSave(freeAgent.careerId).careerEnd?.kind).toBe('voluntary-retirement');
+    expect(readStoredArchive(freeAgent.careerId).careerEnd.kind).toBe('voluntary-retirement');
   });
 
   it('blocks free-agent offer actions while retirement confirmation is open and restores them on cancel', async () => {
@@ -701,9 +726,36 @@ describe('App', () => {
     expect(await screen.findByRole('button', { name: '开启职业赛季' })).toBeDefined();
   });
 
+  it('keeps a legacy terminal save when archive conversion fails', async () => {
+    const user = userEvent.setup();
+    const base = migrateCareerSaveV6(createCareerSave(startParams));
+    const terminal = migrateCareerSaveV6({
+      ...base,
+      careerPhase: 'retired',
+      retiredOn: '2030-06-30',
+      careerEnd: {
+        kind: 'voluntary-retirement',
+        endedOn: '2030-06-30',
+        summary: '正式结束球员生涯。',
+        evidenceIds: [],
+      },
+    });
+    const key = `football-save-${terminal.careerId}`;
+    const raw = JSON.stringify({ version: 6, savedAt: '2030-06-30T12:00:00.000Z', data: terminal });
+    localStorageMock.setItem(key, raw);
+    localStorageMock.failNextSetItem();
+
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: '查看林岳的回顾' }));
+
+    expect(await screen.findByRole('region', { name: '生涯回顾' })).toBeVisible();
+    expect(await screen.findByRole('alert')).toHaveTextContent('历史档案转换失败');
+    expect(localStorageMock.getItem(key)).toBe(raw);
+  });
+
   describe.each([5, 6])('v%s terminal restoration', (version) => {
     it.each(['pendingEvent', 'pendingFeedback'] as const)(
-      'opens review ahead of residual %s and preserves the stored save',
+      'converts legacy terminal data into a historical archive ahead of residual %s',
       async (pendingNode) => {
         const user = userEvent.setup();
         const base =
@@ -739,13 +791,15 @@ describe('App', () => {
         expect(await screen.findByRole('region', { name: '生涯回顾' })).toBeVisible();
         expect(screen.queryByRole('region', { name: '事件反馈' })).toBeNull();
         expect(screen.queryByText('必须处理的事件')).toBeNull();
-        expect(localStorageMock.getItem(key)).toBe(raw);
+        expect(readStoredArchive(terminal.careerId).archiveVersion).toBe(1);
+        const archivedRaw = localStorageMock.getItem(key);
+        expect(archivedRaw).not.toBe(raw);
 
         first.unmount();
         render(<App />);
         await user.click(await screen.findByRole('button', { name: '查看林岳的回顾' }));
         expect(await screen.findByRole('region', { name: '生涯回顾' })).toBeVisible();
-        expect(localStorageMock.getItem(key)).toBe(raw);
+        expect(localStorageMock.getItem(key)).toBe(archivedRaw);
       },
     );
   });
@@ -923,13 +977,19 @@ const createSaveWithPendingFeedback = () => {
   };
 };
 
-const readStoredSave = (careerId: string): ReturnType<typeof migrateCareerSaveV6> => {
+const readStoredSave = (careerId: string): ReturnType<typeof migrateCareerSaveV7> => {
   const wrapper = JSON.parse(localStorageMock.getItem(`football-save-${careerId}`) ?? 'null') as {
     data: unknown;
   };
-  return migrateCareerSaveV6(wrapper.data);
+  return migrateCareerSaveV7(wrapper.data);
 };
 
+const readStoredArchive = (careerId: string): ReturnType<typeof buildCareerArchive> => {
+  const wrapper = JSON.parse(localStorageMock.getItem(`football-save-${careerId}`) ?? 'null') as {
+    data: ReturnType<typeof buildCareerArchive>;
+  };
+  return wrapper.data;
+};
 const holdLoad = (slotId: string): (() => void) => {
   let release = () => {};
   const wait = new Promise<void>((resolve) => {
@@ -955,5 +1015,18 @@ const storeSave = (save: CareerSave | { careerId: string }): void => {
   localStorage.setItem(
     `football-save-${save.careerId}`,
     JSON.stringify({ version: 6, savedAt: '2030-06-30T12:00:00.000Z', data: save }),
+  );
+};
+
+const storeArchive = (archive: ReturnType<typeof buildCareerArchive>): void => {
+  localStorage.setItem(
+    `football-save-${archive.careerId}`,
+    JSON.stringify({
+      storageVersion: 2,
+      version: 1,
+      kind: 'archive',
+      savedAt: '2038-06-30T10:00:00.000Z',
+      data: archive,
+    }),
   );
 };

@@ -11,7 +11,7 @@ const REPUTATION_CEILING = 100;
  */
 export const applyReputationGain = (current: number, delta: number): number => {
   if (delta <= 0 || current >= REPUTATION_CEILING) {
-    return Math.max(0, Math.min(REPUTATION_CEILING, current + delta));
+    return Math.round(Math.max(0, Math.min(REPUTATION_CEILING, current + delta)));
   }
   const factor = current >= 75 ? 0.15 : current >= 60 ? 0.45 : current >= 45 ? 0.6 : 1;
   return Math.round(Math.max(0, Math.min(REPUTATION_CEILING, current + delta * factor)));

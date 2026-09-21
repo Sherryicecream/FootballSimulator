@@ -123,4 +123,18 @@ test.describe('Iteration 1 career safety', () => {
       )
       .toBe(true);
   });
+  test('a damaged career exposes an original-archive export action', async ({ page }) => {
+    const raw = '{damaged archive';
+    await page.addInitScript((value) => {
+      window.localStorage.setItem('football-save-damaged', value);
+    }, raw);
+    await page.goto('/');
+
+    const archive = page.getByRole('region', { name: '生涯档案' });
+    await expect(archive).toContainText('存档 JSON 解析失败');
+    const downloadPromise = page.waitForEvent('download');
+    await archive.getByRole('button', { name: '导出原始档案' }).click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toContain('damaged');
+  });
 });

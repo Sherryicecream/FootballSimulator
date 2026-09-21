@@ -4,7 +4,12 @@ import {
   createLocalStorageCareerPort,
   createLocalStorageSavePort,
 } from '../../src/persistence/local-storage-save';
-import { migrateCareerSaveV5, migrateCareerSaveV6, type CareerSave } from '@football/contracts';
+import {
+  migrateCareerSaveV5,
+  migrateCareerSaveV6,
+  migrateCareerSaveV7,
+  type CareerSave,
+} from '@football/contracts';
 
 const mockSave: CareerSave = {
   schemaVersion: 1,
@@ -168,7 +173,7 @@ describe('createLocalStorageCareerPort', () => {
     localStorage.clear();
   });
 
-  it('writes a v6 wrapper with a timestamp', async () => {
+  it('writes a v8 wrapper with a timestamp and an empty world registry', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-01T12:00:00.000Z'));
 
@@ -177,15 +182,43 @@ describe('createLocalStorageCareerPort', () => {
       await createLocalStorageCareerPort().save(save.careerId, save);
 
       expect(JSON.parse(localStorage.getItem('football-save-test-career') ?? '')).toMatchObject({
-        version: 6,
+        version: 8,
         savedAt: '2026-03-01T12:00:00.000Z',
-        data: { schemaVersion: 6, careerId: 'test-career' },
+        data: { schemaVersion: 8, careerId: 'test-career', worldRegistry: { entries: [] } },
       });
     } finally {
       vi.useRealTimers();
     }
   });
 
+  it('round-trips v7 mechanics and ledger timing metadata without downgrading', async () => {
+    const source = migrateCareerSaveV7(mockSave);
+    const save = {
+      ...source,
+      ledger: [
+        {
+          ...source.ledger[0]!,
+          occurredOn: '2024-09-08',
+          seasonId: source.season.id,
+          ordinal: 1,
+        },
+      ],
+    };
+
+    await createLocalStorageCareerPort().save(save.careerId, save);
+    const loaded = await createLocalStorageCareerPort().load(save.careerId);
+
+    expect(loaded.status).toBe('loaded');
+    if (loaded.status === 'loaded') {
+      expect(loaded.save.schemaVersion).toBe(8);
+      expect(loaded.save.mechanicsVersion).toBe('experience-v1');
+      expect(loaded.save.ledger[0]).toMatchObject({
+        occurredOn: '2024-09-08',
+        seasonId: source.season.id,
+        ordinal: 1,
+      });
+    }
+  });
   it('loads a legacy wrapper without rewriting it', async () => {
     const key = 'football-save-test-career';
     const raw = JSON.stringify({ version: 1, savedAt: '2024-09-01T00:00:00.000Z', data: mockSave });
@@ -197,8 +230,45 @@ describe('createLocalStorageCareerPort', () => {
       status: 'loaded',
       slotId: 'test-career',
       savedAt: '2024-09-01T00:00:00.000Z',
-      save: { schemaVersion: 6, careerId: 'test-career' },
+      save: { schemaVersion: 8, careerId: 'test-career', worldRegistry: { entries: [] } },
     });
+    expect(localStorage.getItem(key)).toBe(raw);
+  });
+
+  it('upgrades an active v7 wrapper to v8 without losing its world registry', async () => {
+    const key = 'football-save-v7-career';
+    const source = migrateCareerSaveV7(mockSave);
+    const raw = JSON.stringify({
+      storageVersion: 2,
+      version: 7,
+      kind: 'active',
+      savedAt: '2026-01-01T00:00:00.000Z',
+      data: {
+        ...source,
+        worldRegistry: {
+          entries: [
+            {
+              country: 'china',
+              source: 'player',
+              seasonId: 'pro-china-tier-6',
+              completed: false,
+              promoted: [],
+              relegated: [],
+            },
+          ],
+        },
+      },
+    });
+    localStorage.setItem(key, raw);
+
+    const loaded = await createLocalStorageCareerPort().load('v7-career');
+
+    expect(loaded.status).toBe('loaded');
+    if (loaded.status === 'loaded') {
+      expect(loaded.save.schemaVersion).toBe(8);
+      expect(loaded.save.worldRegistry.entries).toHaveLength(1);
+      expect(loaded.save.worldRegistry.entries[0]?.seasonId).toBe('pro-china-tier-6');
+    }
     expect(localStorage.getItem(key)).toBe(raw);
   });
 
@@ -305,6 +375,78 @@ describe('createLocalStorageCareerPort', () => {
       expect(localStorage.getItem('football-save-test-career')).toBe(raw);
     } finally {
       removeItem.mockRestore();
+    }
+  });
+  it('exports the exact raw contents of a damaged slot without parsing or rewriting it', async () => {
+    const raw = '{damaged archive with trailing bytes\n';
+    localStorage.setItem('football-save-damaged', raw);
+
+    const port = createLocalStorageCareerPort() as unknown as {
+      exportRaw(slotId: string): Promise<string>;
+    };
+
+    await expect(port.exportRaw('damaged')).resolves.toBe(raw);
+    expect(localStorage.getItem('football-save-damaged')).toBe(raw);
+  });
+
+  it('exports a valid slot without changing its serialized wrapper', async () => {
+    const save = migrateCareerSaveV6(mockSave);
+    await createLocalStorageCareerPort().save(save.careerId, save);
+    const raw = localStorage.getItem('football-save-test-career');
+
+    const port = createLocalStorageCareerPort() as unknown as {
+      exportRaw(slotId: string): Promise<string>;
+    };
+
+    await expect(port.exportRaw('test-career')).resolves.toBe(raw);
+    expect(localStorage.getItem('football-save-test-career')).toBe(raw);
+  });
+  it('writes and reads a read-only archive envelope', async () => {
+    const { buildCareerArchive } = await import('@football/application');
+    const migrated = migrateCareerSaveV7(mockSave);
+    const terminal = migrateCareerSaveV7({
+      ...migrated,
+      careerPhase: 'retired',
+      retiredOn: '2024-09-08',
+      careerEnd: {
+        kind: 'voluntary-retirement',
+        endedOn: '2024-09-08',
+        summary: '正式宣布退役，结束球员生涯。',
+        evidenceIds: ['retirement-1'],
+      },
+    });
+    const archive = buildCareerArchive(terminal);
+    const port = createLocalStorageCareerPort() as unknown as {
+      saveArchive(slotId: string, archive: typeof archive): Promise<void>;
+    };
+
+    await port.saveArchive('archive-career', archive);
+
+    expect(JSON.parse(localStorage.getItem('football-save-archive-career') ?? '')).toMatchObject({
+      storageVersion: 2,
+      kind: 'archive',
+      data: { archiveVersion: 1, careerId: archive.careerId },
+    });
+    const loaded = await createLocalStorageCareerPort().load('archive-career');
+    expect(loaded.status).toBe('archived');
+    if (loaded.status === 'archived') {
+      expect(loaded.archive.review.tier).toBe(archive.review.tier);
+      expect(loaded.archive.history).toEqual(archive.history);
+    }
+  });
+
+  it('returns a permission-coded invalid result when local storage reads are blocked', async () => {
+    const getItem = vi.spyOn(Storage.prototype, 'getItem').mockImplementationOnce(() => {
+      throw new DOMException('blocked', 'SecurityError');
+    });
+
+    try {
+      await expect(createLocalStorageCareerPort().load('blocked')).resolves.toMatchObject({
+        status: 'invalid',
+        errorCode: 'permission',
+      });
+    } finally {
+      getItem.mockRestore();
     }
   });
 });

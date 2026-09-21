@@ -4,9 +4,11 @@ import type {
   ScheduledYouthFixture,
   YouthAcademyProfile,
   YouthMatchResultV2,
+  Position,
 } from '@football/contracts';
 import type { SeededRandomSource } from '../randomness';
 import { simulateMatch } from './match-engine';
+import { allocatePlayerContribution } from './player-contribution';
 
 export const simulateScheduledYouthMatch = (
   save: CareerSaveV2Like,
@@ -41,20 +43,18 @@ export const simulateScheduledYouthMatch = (
   const played = canPlay && selectionScore + rng.nextInt(-8, 8) >= threshold;
   const minutesPlayed = played ? minutesForRole(save.clubContext.playerRole, rng) : 0;
   const ownGoals = isHome ? result.homeScore : result.awayScore;
-  const attackingWeight = ['FORWARD', 'WINGER'].includes(save.player.identity.primaryPosition)
-    ? 0.36
-    : save.player.identity.primaryPosition === 'MIDFIELDER'
-      ? 0.18
-      : 0.07;
-  const goals = played
-    ? Math.min(
-        ownGoals,
-        Array.from({ length: ownGoals }).filter(() => rng.next() < attackingWeight).length,
-      )
-    : 0;
-  const assists = played
-    ? Math.min(Math.max(0, ownGoals - goals), rng.next() < attackingWeight + 0.08 ? 1 : 0)
-    : 0;
+  const contribution = allocatePlayerContribution({
+    ownGoals,
+    minutes: played ? minutesPlayed : 0,
+    position: save.player.identity.primaryPosition as Position,
+    shooting: save.player.attributes.technical.shooting,
+    passing: save.player.attributes.technical.passing,
+    rng,
+  });
+  // 保留旧版助攻抽样占用的随机位，避免贡献归因改变后续青训路径的随机节奏。
+  if (played) rng.next();
+  const goals = contribution.goals;
+  const assists = contribution.assists;
   const rating = played
     ? Math.min(
         10,

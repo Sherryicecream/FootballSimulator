@@ -1,8 +1,8 @@
 import {
-  CareerSaveV5Schema,
+  CareerSaveV8Schema,
   YouthContentBundleSchema,
-  migrateCareerSaveV5,
-  type CareerSaveV5,
+  migrateCareerSaveV8,
+  type CareerSaveV8,
   type Position,
   type YouthContentBundle,
 } from '@football/contracts';
@@ -11,12 +11,13 @@ import {
   createYouthFixtures,
   initializeYouthRelationships,
 } from '@football/simulation';
+import type { YouthEventInstance, EventFeedback } from '@football/contracts';
 
 export const createYouthCareerV2 = (
   rawSave: unknown,
   rawContent: YouthContentBundle,
-): CareerSaveV5 => {
-  const migrated = migrateCareerSaveV5(rawSave);
+): CareerSaveV8 => {
+  const migrated = migrateCareerSaveV8(rawSave);
   const content = YouthContentBundleSchema.parse(rawContent);
   const academyId = resolveAcademyId(migrated, content);
   const competition = content.competitions.find(({ participatingAcademyIds }) =>
@@ -26,7 +27,7 @@ export const createYouthCareerV2 = (
     throw new Error(`青训机构 ${academyId} 没有可用赛事`);
   }
 
-  return CareerSaveV5Schema.parse({
+  return CareerSaveV8Schema.parse({
     ...migrated,
     relationships:
       migrated.relationships.persons.length > 0
@@ -52,15 +53,15 @@ export const createYouthCareerV2 = (
     story: {
       ...migrated.story,
       pendingEvent: hydratePendingEvent(migrated.story.pendingEvent, content),
-      pendingFeedback: hydratePendingFeedback(migrated.story.pendingFeedback, content),
+      pendingFeedback: hydratePendingFeedback(migrated.story.pendingFeedback ?? null, content),
     },
   });
 };
 
 const hydratePendingEvent = (
-  pendingEvent: CareerSaveV5['story']['pendingEvent'],
+  pendingEvent: YouthEventInstance | null,
   content: YouthContentBundle,
-): CareerSaveV5['story']['pendingEvent'] => {
+): YouthEventInstance | null => {
   if (!pendingEvent) return null;
   const definition = content.events.find(({ id }) => id === pendingEvent.eventId);
   if (!definition) return pendingEvent;
@@ -81,6 +82,7 @@ const hydratePendingEvent = (
         ...(authored.resultTitle !== undefined ? { resultTitle: authored.resultTitle } : {}),
         ...(authored.responses !== undefined ? { responses: authored.responses } : {}),
         ...(authored.followUp !== undefined ? { followUp: authored.followUp } : {}),
+        ...(authored.eventOutcome !== undefined ? { eventOutcome: authored.eventOutcome } : {}),
         ...(authored.narrativeVariants !== undefined
           ? { narrativeVariants: authored.narrativeVariants }
           : {}),
@@ -91,9 +93,9 @@ const hydratePendingEvent = (
 };
 
 const hydratePendingFeedback = (
-  pendingFeedback: CareerSaveV5['story']['pendingFeedback'],
+  pendingFeedback: EventFeedback | null,
   content: YouthContentBundle,
-): CareerSaveV5['story']['pendingFeedback'] => {
+): EventFeedback | null => {
   if (!pendingFeedback) return pendingFeedback;
   const definition = content.events.find(({ id }) => id === pendingFeedback.eventId);
   const authored = definition?.choices.find(({ id }) => id === pendingFeedback.choiceId);
@@ -116,7 +118,7 @@ const hydratePendingFeedback = (
   };
 };
 
-const resolveAcademyId = (save: CareerSaveV5, content: YouthContentBundle): string => {
+const resolveAcademyId = (save: CareerSaveV8, content: YouthContentBundle): string => {
   if (content.academies.some(({ id }) => id === save.season.academyId)) {
     return save.season.academyId;
   }

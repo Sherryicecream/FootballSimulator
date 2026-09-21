@@ -1,8 +1,12 @@
 import { createNarrativeServer } from '../src/server/narrative-server';
 import { getLocalNarrativeHealth } from '../src/server/health';
 import { createSafeNarrativeAdapter } from '../src';
-import type { NarrativePolishRequest } from '@football/contracts';
-import { buildNarrativePolishRequest } from '../src';
+import { MilestoneInputSchema, type NarrativePolishRequest } from '@football/contracts';
+import {
+  buildCareerSummaryRequest,
+  buildMilestoneNarrationRequest,
+  buildNarrativePolishRequest,
+} from '../src';
 import type { AddressInfo, Server } from 'node:http';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -21,6 +25,44 @@ const request: NarrativePolishRequest = buildNarrativePolishRequest({
   playerName: '林河',
   participants: [{ personId: 'coach-1', personName: '周教练', role: 'youth-coach' }],
   draft,
+});
+
+const summaryRequest = buildCareerSummaryRequest({
+  facts: {
+    player: { name: '林河', hometown: '上海', position: '前锋', country: '中国' },
+    tierLabel: '稳健生涯',
+    ending: null,
+    seasons: 1,
+    clubs: 1,
+    totals: { appearances: 10, minutes: 600, goals: 2, assists: 1 },
+    nationalTeam: { capped: false, caps: 0, goals: 0 },
+    overseasSpells: false,
+    honours: [],
+    seasonsTimeline: [],
+    keyMoments: [],
+    dimensions: [],
+    behindTheScenes: { potentials: [], traits: [], missedOpportunities: [] },
+    evidenceIds: [],
+  },
+  mode: 'short',
+  canonicalFactsHash: 'c'.repeat(64),
+});
+
+const milestoneRequest = buildMilestoneNarrationRequest({
+  input: MilestoneInputSchema.parse({
+    kind: 'national-team',
+    playerName: '林河',
+    seasonId: 'national-2030',
+    competitionType: '亚洲杯',
+    competitionName: '2030 亚洲杯',
+    appearances: 4,
+    goals: 2,
+    knockoutRound: '四强',
+    honours: [{ kind: 'cup-champion', label: '足协杯冠军', seasonId: 'pro-2029' }],
+    keyStats: [{ label: '职业生涯出场', value: 168, unit: '次' }],
+    signatureMatches: [],
+  }),
+  canonicalFactsHash: 'd'.repeat(64),
 });
 
 const countingAdapter = () => {
@@ -136,5 +178,86 @@ describe('narrative server', () => {
     expect([200, 400]).toContain(oversized.status);
     const healthAfter = await fetch(`${url}/health`);
     expect(healthAfter.status).toBe(200);
+  });
+
+  it('accepts career-summary requests on the existing narrative endpoint', async () => {
+    let calls = 0;
+    server = createNarrativeServer({
+      adapter: {
+        polish: async () => {
+          throw new Error('not used');
+        },
+        summarize: async () => {
+          calls += 1;
+          return {
+            source: 'provider',
+            reason: 'provider',
+            draft: { summary: '只根据事实包整理表达，不新增荣誉或国家队经历。'.repeat(8) },
+          };
+        },
+      },
+    });
+    const url = await startServer(server);
+    const first = await post(url, JSON.stringify(summaryRequest));
+    const second = await post(url, JSON.stringify(summaryRequest));
+
+    expect(first.status).toBe(200);
+    expect(first.json).toMatchObject({ source: 'provider', reason: 'provider' });
+    expect(second.json).toEqual(first.json);
+    expect(calls).toBe(1);
+  });
+
+  it('accepts milestone requests on the existing narrative endpoint and caches provider output', async () => {
+    let calls = 0;
+    const narrative = '只根据国家队真实出场、荣誉和关键数据组织这一节点，不补写未提供的比赛事实。'
+      .repeat(5)
+      .slice(0, 200);
+    server = createNarrativeServer({
+      adapter: {
+        polish: async () => {
+          throw new Error('not used');
+        },
+        narrateMilestone: async () => {
+          calls += 1;
+          return { source: 'provider', reason: 'provider', draft: { narrative } };
+        },
+      },
+    });
+    const url = await startServer(server);
+    const first = await post(url, JSON.stringify(milestoneRequest));
+    const second = await post(url, JSON.stringify(milestoneRequest));
+
+    expect(first.status).toBe(200);
+    expect(first.json).toMatchObject({ source: 'provider', reason: 'provider' });
+    expect(second.json).toEqual(first.json);
+    expect(calls).toBe(1);
+  });
+
+  it('does not cache an unsafe provider result returned by a custom adapter', async () => {
+    let calls = 0;
+    server = createNarrativeServer({
+      adapter: {
+        polish: async () => {
+          throw new Error('not used');
+        },
+        summarize: async () => {
+          calls += 1;
+          return {
+            source: 'provider',
+            reason: 'provider',
+            draft: { summary: '他赢得了世界杯冠军。'.repeat(16) },
+          };
+        },
+      },
+    });
+    const url = await startServer(server);
+
+    const first = await post(url, JSON.stringify(summaryRequest));
+    const second = await post(url, JSON.stringify(summaryRequest));
+
+    expect(first.status).toBe(200);
+    expect(first.json).toMatchObject({ source: 'fallback' });
+    expect(second.json).toMatchObject({ source: 'fallback' });
+    expect(calls).toBe(2);
   });
 });
