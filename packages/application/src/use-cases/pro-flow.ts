@@ -4,6 +4,7 @@ import type {
   CareerSaveV4Like,
   CareerSaveV5Like,
   CareerSaveV6,
+  CareerSaveV6Like,
   LoanHistoryEntry,
   ClubProfile,
   EventDefinition,
@@ -11,8 +12,11 @@ import type {
   Position,
   SeasonHonour,
   SeasonHistorySummary,
+  WorldRegistry,
 } from '@football/contracts';
-import { retire as retireCareer, returnFromLoan } from './transfer-flow';
+import { inferLegacyClubCountry } from '@football/contracts';
+import { endProfessionalCareer } from './end-career';
+import { returnFromLoan } from './transfer-flow';
 import {
   applyAgeDecline,
   accrueNationalTeam,
@@ -21,6 +25,7 @@ import {
   buildStoryProgress,
   buildTrainingFeedback,
   buildDepthChart,
+  buildCalendarBridge,
   buildRenewalOffer,
   createLeagueFixtures,
   createDomesticCup,
@@ -29,14 +34,19 @@ import {
   generateProSquad,
   isEligibleForNationalTeam,
   mergeDevelopmentAccrual,
+  nextProfessionalSeasonStartDate,
   pickYouthEventForWeek,
   pickMatchMomentForWeek,
   reviewPromise,
   settleMonthlyDevelopment,
   simulateProfessionalWeek,
+  stampCareerFact,
+  stampCareerFacts,
+  professionalSeasonDates,
   weightedAbility,
 } from '@football/simulation';
 import type { DevelopmentAccrual } from '@football/simulation';
+import { createWorldRegistry, writePlayerLeagueReference } from '../world/world-registry';
 import { resolveCareerEvent } from './resolve-career-event';
 import {
   applyReputationGain,
@@ -48,6 +58,9 @@ const ensureContract = (save: CareerSaveV4Like) => {
   if (!save.contract) throw new Error('没有生效的职业合同');
   return save.contract;
 };
+
+// Task11：完整 12 队海外联赛增加了真实曝光场次，校准赛季总声望增量，避免重复放大。
+const PROFESSIONAL_VISIBILITY_CALIBRATION = 0.9;
 
 /** 开启职业赛季（设计 §5）：阵容、双循环赛程与积分榜生成后立即固化。 */
 export const startProfessionalSeason = <S extends CareerSaveV4Like>(
@@ -69,27 +82,40 @@ export const startProfessionalSeason = <S extends CareerSaveV4Like>(
     throw new Error(`租借目标队层级 ${club.tier} 与存档 ${activeLoan.loanClubTier} 不一致`);
   }
 
-  // 首个职业赛季从签署年份开始；续赛季从上个职业赛季年份 +1（8 月开赛）
-  const year = activeLoan
-    ? Number(activeLoan.seasonId.slice(4))
-    : save.careerPhase === 'professional-contract'
-      ? Number(contract.signedOn.slice(0, 4))
-      : save.proSeason
-        ? Number(save.proSeason.startDate.slice(0, 4)) + 1
-        : 0;
+  const country = inferLegacyClubCountry(club);
+  const referenceDate = save.proSeason?.endDate ?? contract.signedOn;
+  const scheduledStartDate = activeLoan
+    ? activeLoan.startedOn
+    : nextProfessionalSeasonStartDate(referenceDate, country);
+  const year = Number(scheduledStartDate.slice(0, 4));
   if (!Number.isFinite(year) || year <= 0) throw new Error('无法确定职业赛季年份');
   if (activeLoan && activeLoan.seasonId !== `pro-${year}`) {
     throw new Error(`租借绑定赛季 ${activeLoan.seasonId} 与开赛年份不一致`);
   }
-  const startDate = `${year}-08-01`;
+  const seasonDates = professionalSeasonDates(country, year);
+  const startDate = scheduledStartDate;
+  const latestClubHistory = (save as Partial<CareerSaveV5Like>).clubHistory?.at(-1);
+  const previousClubHistory =
+    latestClubHistory?.to === contract.signedOn ? latestClubHistory : undefined;
+  const previousClubId = save.proSeason?.clubId ?? previousClubHistory?.clubId;
+  const previousClub = previousClubId ? clubs.find(({ id }) => id === previousClubId) : undefined;
+  const previousSeasonEndDate =
+    save.proSeason?.endDate ?? previousClubHistory?.to ?? contract.signedOn;
+  const calendarBridge = previousClub
+    ? buildCalendarBridge(
+        inferLegacyClubCountry(previousClub),
+        country,
+        previousSeasonEndDate,
+        startDate,
+      )
+    : undefined;
   const effectiveTier =
     activeLoan?.loanClubTier ?? save.proSeason?.nextClubTier ?? contract.clubTier;
-  // 海外联赛按区域分组（M11 模块 1）：留洋亚洲/欧洲只在同区域俱乐部间比赛。
-  const competitionId = `${club.overseas ? `pro-overseas-${club.overseasRegion ?? 'europe'}-tier` : 'pro-tier'}-${effectiveTier}`;
+  const competitionId = `pro-${country}-tier-${effectiveTier}`;
   const eligibleClubs = clubs.filter(
-    ({ overseas, overseasRegion }) =>
-      Boolean(overseas) === Boolean(club.overseas) &&
-      (club.overseas ? overseasRegion === club.overseasRegion : true),
+    (candidate) =>
+      inferLegacyClubCountry(candidate) === country &&
+      Boolean(candidate.overseas) === Boolean(club.overseas),
   );
   const sameTierClubs = eligibleClubs.filter(({ tier }) => tier === effectiveTier);
   const nearbyClubs = eligibleClubs.filter(({ tier }) => Math.abs(tier - effectiveTier) <= 1);
@@ -115,11 +141,13 @@ export const startProfessionalSeason = <S extends CareerSaveV4Like>(
     save.player.identity.primaryPosition as unknown as Position,
     save.player.attributes,
   );
+  const previousSquad = save.proSeason?.clubId === club.id ? save.proSeason.squad : [];
   const squad = generateProSquad(
     club,
     save.player.identity.primaryPosition as Parameters<typeof generateProSquad>[1],
     playerAbility,
     rng,
+    previousSquad,
   );
   const depthChart = buildDepthChart(squad);
   const position: Position = save.player.identity.primaryPosition as unknown as Position;
@@ -152,20 +180,47 @@ export const startProfessionalSeason = <S extends CareerSaveV4Like>(
       );
   const cupSummary = domesticCup ? '，国内杯 7 场' : '';
 
-  const fact: CareerLedgerEntryV2 = {
+  const bridgeSummary = calendarBridge
+    ? calendarBridge.kind === 'long-break'
+      ? `，赛历桥接休整 ${calendarBridge.gapDays} 天`
+      : calendarBridge.kind === 'cross-calendar'
+        ? '，完成跨日历合同桥接'
+        : ''
+    : '';
+  const rawFact: CareerLedgerEntryV2 = {
     id: `pro-season-start-${year}`,
     weekKey: `${year}-W31`,
     type: 'decision',
-    summary: `开启职业赛季：${club.name}（层级 ${effectiveTier}），阵容 ${squad.length} 人，联赛 ${fixtures.length} 场${cupSummary}`,
+    summary: `开启职业赛季：${club.name}（层级 ${effectiveTier}），阵容 ${squad.length} 人，联赛 ${fixtures.length} 场${cupSummary}${bridgeSummary}`,
     participantIds: [],
   };
 
+  const fact = stampCareerFact(save as unknown as CareerSaveV6Like, rawFact, {
+    seasonId: 'pro-' + year,
+    date: startDate,
+    weekIndex: 1,
+  });
   const startingHealth = {
     ...save.health,
     fitness: Math.max(70, save.health.fitness),
     fatigue: Math.min(20, save.health.fatigue),
     recentLoad: 0,
   };
+  const existingWorldRegistry = (save as S & { worldRegistry?: WorldRegistry | undefined })
+    .worldRegistry;
+  const worldRegistry: WorldRegistry = existingWorldRegistry ?? createWorldRegistry();
+  const playerWorldReference =
+    existingWorldRegistry !== undefined || save.schemaVersion >= 7
+      ? {
+          worldRegistry: writePlayerLeagueReference(worldRegistry, {
+            country,
+            seasonId: `pro-${year}`,
+            completed: false,
+            promoted: [],
+            relegated: [],
+          }),
+        }
+      : {};
   return {
     ...save,
     contract: activeLoan ? contract : { ...contract, clubTier: effectiveTier },
@@ -174,13 +229,14 @@ export const startProfessionalSeason = <S extends CareerSaveV4Like>(
     proSeason: {
       id: `pro-${year}`,
       startDate,
-      endDate: `${year + 1}-05-31`,
+      endDate: seasonDates.endDate,
       currentDate: startDate,
       currentWeek: 1,
-      currentMonth: `${year}-08`,
+      currentMonth: startDate.slice(0, 7),
       clubId: club.id,
       competitionId,
       domesticCup,
+      ...(calendarBridge ? { calendarBridge } : {}),
       nextClubTier: null,
       fixtures,
       standings: createLeagueStandings(leagueClubs.map(({ id }) => id)),
@@ -202,7 +258,7 @@ export const startProfessionalSeason = <S extends CareerSaveV4Like>(
       cupAssists: 0,
     },
     monthlyAdvance: {
-      monthKey: `${year}-08`,
+      monthKey: startDate.slice(0, 7),
       nextWeekIndex: 0,
       totalWeeks: 4,
       status: 'idle',
@@ -211,11 +267,13 @@ export const startProfessionalSeason = <S extends CareerSaveV4Like>(
       matchIds: [],
       interactiveEventCount: 0,
       feedbackStartHealth: startingHealth,
+      nodeAdvance: null,
     },
     pendingOffers: [],
     lastMonthlyReport: null,
     health: startingHealth,
     ledger: [...save.ledger, fact],
+    ...playerWorldReference,
   };
 };
 
@@ -270,6 +328,7 @@ export const advanceProMonth = <S extends CareerSaveV4Like>(
       matchIds: resuming ? initialSave.monthlyAdvance.matchIds : [],
       interactiveEventCount: resuming ? initialSave.monthlyAdvance.interactiveEventCount : 0,
       feedbackStartHealth: monthStartHealth,
+      nodeAdvance: null,
     },
   };
 
@@ -345,7 +404,7 @@ export const advanceProMonth = <S extends CareerSaveV4Like>(
         .map(({ attribute, oldValue, newValue }) => `${attribute} ${oldValue}→${newValue}`)
         .join('，')}`
     : '';
-  const settlementFact: CareerLedgerEntryV2 = {
+  const settlementFact = stampCareerFact(save as unknown as CareerSaveV6Like, {
     id: `pro-settlement-${save.proSeason!.currentMonth}`,
     weekKey: `${save.proSeason!.startDate.slice(0, 4)}-W${String(save.proSeason!.currentWeek).padStart(2, '0')}`,
     type: 'monthly-settlement',
@@ -355,7 +414,7 @@ export const advanceProMonth = <S extends CareerSaveV4Like>(
           .join('，')}${ageDeclineSummary}`
       : '月末成长结算：本月没有可见属性提升',
     participantIds: [],
-  };
+  });
   save = {
     ...save,
     player: ageDecline.player,
@@ -370,6 +429,7 @@ export const advanceProMonth = <S extends CareerSaveV4Like>(
       matchIds: [],
       interactiveEventCount: 0,
       feedbackStartHealth: null,
+      nodeAdvance: null,
     },
     ledger: [...save.ledger, settlementFact],
   };
@@ -530,10 +590,14 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
   }
 
   const seasonOutcome = buildSeasonOutcome(save, contract);
-  const outcomeFactAlreadyRecorded = save.ledger.some(({ id }) => id === seasonOutcome.evidenceId);
-  const facts: CareerLedgerEntryV2[] = [];
+  const outcomeFactAlreadyRecorded = save.ledger.some(
+    ({ id, type, seasonId }) =>
+      id === seasonOutcome.evidenceId ||
+      (type === 'season-outcome' && seasonId === save.proSeason!.id),
+  );
+  const rawFacts: CareerLedgerEntryV2[] = [];
   if (!outcomeFactAlreadyRecorded) {
-    facts.push({
+    rawFacts.push({
       id: seasonOutcome.evidenceId,
       weekKey: save.proSeason!.startDate.slice(0, 4) + '-W53',
       type: 'season-outcome',
@@ -542,7 +606,7 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
     });
   }
   if (outcome) {
-    facts.push({
+    rawFacts.push({
       id: `promise-review-${save.proSeason!.id}`,
       weekKey: `${save.proSeason!.startDate.slice(0, 4)}-W53`,
       type: 'promise-review',
@@ -551,6 +615,17 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
     });
   }
 
+  const facts = stampCareerFacts(save as unknown as CareerSaveV6Like, rawFacts, {
+    seasonId: save.proSeason!.id,
+    date: save.proSeason!.endDate,
+    weekIndex: save.proSeason!.currentWeek,
+  });
+  const outcomeEvidenceId =
+    facts.find(({ type }) => type === 'season-outcome')?.id ?? seasonOutcome.evidenceId;
+  const seasonHonours = seasonOutcome.honours.map((honour) => ({
+    ...honour,
+    evidenceId: outcomeEvidenceId,
+  }));
   const leagueAppearances = save.proSeasonStats.leagueAppearances;
   const reserveAppearances = save.proSeasonStats.reserveAppearances;
   const cupAppearances = save.proSeasonStats.cupAppearances ?? 0;
@@ -611,7 +686,7 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
         assists: seasonAssists,
         minutes: seasonMinutes,
         competitionTier: activeLoan.loanClubTier,
-        outcomeEvidenceId: seasonOutcome.evidenceId,
+        outcomeEvidenceId,
       }
     : null;
   let next: S = {
@@ -644,21 +719,19 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
                 : null,
             signals: ['professional-season'],
             endedOn: save.proSeason!.endDate,
-            honours: seasonOutcome.honours,
+            honours: seasonHonours,
           } satisfies SeasonHistorySummary,
         ],
     promiseReviews: outcome ? [...save.promiseReviews, outcome.review] : save.promiseReviews,
     nationalTeam: save.nationalTeam,
     player: {
       ...save.player,
-      // 声望经济 v2（设计 §6）：可见度按联赛层级加权，整体经衰减带入口。
+      // 声望经济 v2（设计 §6）：可见度与承诺结果合并后统一校准，再进入衰减带。
       reputation: applyReputationGain(
         save.player.reputation,
-        Math.round(
-          ((outcome?.reputationDelta ?? 0) +
-            visibilityReputationDelta * leagueTierFactor(contract.clubTier)) *
-            (save.overseasSince ? 1.2 : 1),
-        ),
+        ((outcome?.reputationDelta ?? 0) +
+          visibilityReputationDelta * leagueTierFactor(contract.clubTier)) *
+          PROFESSIONAL_VISIBILITY_CALIBRATION,
       ),
     },
     clubContext: {
@@ -674,7 +747,7 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
     next = returnFromLoan(next, loanHistoryEntry) as S;
   }
   if (next.player.age >= 38) {
-    const forced = retireCareer(next, next.proSeason!.endDate);
+    const forced = endProfessionalCareer(next, next.proSeason!.endDate) as S | CareerSaveV6;
     return { save: forced, review: outcome };
   }
 
@@ -699,6 +772,15 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
         },
       ]
     : [];
+  const stampedNationalFacts = stampCareerFacts(
+    next as unknown as CareerSaveV6Like,
+    nationalFacts,
+    {
+      seasonId: next.proSeason!.id,
+      date: next.proSeason!.endDate,
+      weekIndex: next.proSeason!.currentWeek,
+    },
+  );
   next = {
     ...next,
     nationalTeam: nationalAccrual?.nationalTeam ?? next.nationalTeam,
@@ -747,20 +829,25 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
           },
         }
       : next.story,
-    ledger: [...next.ledger, ...nationalFacts],
+    ledger: [...next.ledger, ...stampedNationalFacts],
   };
   // 国家队大赛（M11 模块 2）：已入选国脚在大赛年夏天经历亚洲杯/世界杯。
   const tournamentYear = Number(next.proSeason!.endDate.slice(0, 4));
   const tournament = simulateSummerTournament(next, tournamentYear);
   if (tournament) {
     const tournamentFactId = `national-tournament-${next.proSeason!.id}`;
-    const tournamentFact: CareerLedgerEntryV2 = {
+    const rawTournamentFact: CareerLedgerEntryV2 = {
       id: tournamentFactId,
       weekKey: `${tournamentYear}-W26`,
       type: 'national-debut',
       summary: tournament.summary,
       participantIds: [],
     };
+    const tournamentFact = stampCareerFact(next as unknown as CareerSaveV6Like, rawTournamentFact, {
+      seasonId: next.proSeason!.id,
+      date: next.proSeason!.endDate,
+      weekIndex: next.proSeason!.currentWeek,
+    });
     const seasonHistory = [...next.seasonHistory];
     const lastSeason = seasonHistory.at(-1);
     if (lastSeason && tournament.honour) {
@@ -774,7 +861,7 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
             label: tournament.honour.label,
             seasonId: next.proSeason!.id,
             clubId: next.proSeason!.clubId,
-            evidenceId: tournamentFactId,
+            evidenceId: tournamentFact.id,
           },
         ],
       };
@@ -800,13 +887,18 @@ export const completeProfessionalSeason = <S extends CareerSaveV5Like>(
   if (expired) {
     const rng = createSeededRandomSource(next.randomState.seed + 7700);
     const offer = buildRenewalOffer(next, () => rng.next());
-    const offerFact: CareerLedgerEntryV2 = {
+    const rawOfferFact: CareerLedgerEntryV2 = {
       id: `renewal-offer-${next.proSeason!.id}`,
       weekKey: `${next.proSeason!.startDate.slice(0, 4)}-W53`,
       type: 'renewal-offer',
       summary: `合同到期，${contract.clubName}提供 ${offer.contractYears} 年续约要约（年薪 ${offer.salaryPerYear}）`,
       participantIds: [],
     };
+    const offerFact = stampCareerFact(next as unknown as CareerSaveV6Like, rawOfferFact, {
+      seasonId: next.proSeason!.id,
+      date: next.proSeason!.endDate,
+      weekIndex: next.proSeason!.currentWeek,
+    });
     next = {
       ...next,
       pendingOffers: [
@@ -858,13 +950,18 @@ export const submitNationalTeamDecision = <S extends CareerSaveV5Like>(
     ),
   );
   if (!accrual) throw new Error('国家队首召已失效，无法固化首秀数据');
-  const fact: CareerLedgerEntryV2 = {
+  const rawFact: CareerLedgerEntryV2 = {
     id: 'national-debut-' + resolved.proSeason!.id,
     weekKey: resolved.proSeason!.startDate.slice(0, 4) + '-W53',
     type: 'national-debut',
     summary: accrual.factSummary,
     participantIds: [],
   };
+  const fact = stampCareerFact(resolved as unknown as CareerSaveV6Like, rawFact, {
+    seasonId: resolved.proSeason!.id,
+    date: resolved.proSeason!.endDate,
+    weekIndex: resolved.proSeason!.currentWeek,
+  });
   return {
     ...resolved,
     nationalTeam: accrual.nationalTeam,
@@ -883,13 +980,18 @@ export const acceptRenewal = <S extends CareerSaveV5Like>(save: S): S => {
   }
   const offer = save.pendingOffers[0];
   if (!offer) throw new Error('没有待处理的续约要约');
-  const fact: CareerLedgerEntryV2 = {
+  const rawFact: CareerLedgerEntryV2 = {
     id: `renewal-signed-${offer.id}`,
     weekKey: `${save.proSeason?.startDate.slice(0, 4) ?? ''}-W53`,
     type: 'renewal-signed',
     summary: `与${offer.clubName}续约 ${offer.contractYears} 年（年薪 ${offer.salaryPerYear}）`,
     participantIds: [],
   };
+  const fact = stampCareerFact(save as unknown as CareerSaveV6Like, rawFact, {
+    seasonId: save.proSeason?.id ?? save.season.id,
+    date: save.proSeason?.endDate ?? save.season.endDate,
+    weekIndex: save.proSeason?.currentWeek ?? save.season.currentWeek,
+  });
   return {
     ...save,
     contract: {
@@ -909,13 +1011,18 @@ export const declineRenewal = <S extends CareerSaveV5Like>(save: S): S => {
     throw new Error(`非法阶段转移：当前阶段 ${save.careerPhase} 不能拒绝续约`);
   }
   if (save.pendingOffers.length === 0) throw new Error('没有待处理的续约要约');
-  const fact: CareerLedgerEntryV2 = {
+  const rawFact: CareerLedgerEntryV2 = {
     id: `renewal-declined-${save.proSeason?.id ?? ''}`,
     weekKey: `${save.proSeason?.startDate.slice(0, 4) ?? ''}-W53`,
     type: 'decision',
     summary: '拒绝续约，成为自由球员',
     participantIds: [],
   };
+  const fact = stampCareerFact(save as unknown as CareerSaveV6Like, rawFact, {
+    seasonId: save.proSeason?.id ?? save.season.id,
+    date: save.proSeason?.endDate ?? save.season.endDate,
+    weekIndex: save.proSeason?.currentWeek ?? save.season.currentWeek,
+  });
   return {
     ...save,
     careerPhase: 'free-agent',

@@ -1,3 +1,9 @@
+import type { ExperienceBudgetReport } from './experience-metrics';
+import type { CountryExperienceCoverageReport } from './country-experience-coverage';
+import type { StoryDivergenceReport } from './story-divergence';
+import type { WorldEcosystemMetric, WorldEcosystemSummary } from './world-ecosystem-metrics';
+import type { Country } from '@football/contracts';
+
 export interface YouthSeasonMetrics {
   seed: number;
   fixtures: number;
@@ -39,6 +45,7 @@ export interface YouthSeasonMetrics {
   retiredReputation: number;
   earlyRetirement: boolean;
   overseasSpent: boolean;
+  experiencedCountries: Country[];
   hadCaps: boolean;
   capCount: number;
   proCupAppearances: number;
@@ -61,6 +68,10 @@ export interface YouthBalanceReport {
   runs: number;
   seedStart: number;
   metrics: YouthSeasonMetrics[];
+  experience: ExperienceBudgetReport;
+  countryExperience: CountryExperienceCoverageReport;
+  divergence?: StoryDivergenceReport;
+  worldMetrics: readonly WorldEcosystemMetric[];
   summary: {
     completionRate: number;
     fixtureMedian: number;
@@ -108,6 +119,7 @@ export interface YouthBalanceReport {
     proRelegationRate: number;
     worldClassRate: number;
     earlyRetirementRate: number;
+    world: WorldEcosystemSummary;
   };
 }
 

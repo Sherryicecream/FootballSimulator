@@ -17,6 +17,10 @@ describe('applyReputationGain', () => {
     expect(applyReputationGain(100, 10)).toBe(100);
     expect(applyReputationGain(30, -5)).toBe(25);
   });
+
+  it('rounds fractional negative deltas to preserve integer save values', () => {
+    expect(applyReputationGain(50, -1.121)).toBe(49);
+  });
 });
 
 describe('leagueTierFactor', () => {

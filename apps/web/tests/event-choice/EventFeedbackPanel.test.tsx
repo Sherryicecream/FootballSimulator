@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { EventFeedback } from '@football/contracts';
+import {
+  buildMilestoneNarrationRequest,
+  MilestoneInputSchema,
+  type EventFeedback,
+  type NodeAdvanceRecord,
+} from '@football/contracts';
 import { EventFeedbackPanel } from '../../src/event-choice/EventFeedbackPanel';
 
 const feedback: EventFeedback = {
@@ -38,6 +43,17 @@ const feedback: EventFeedback = {
     },
   ],
   followUp: '教练会在接下来两周观察你们的沟通。',
+};
+const nodeBrief: NodeAdvanceRecord = {
+  brief: {
+    headline: '2026年8月—10月：关键选择等待你决定',
+    skippedSummary: '3 个月，3 场比赛，球队进球 5，丢球 4；体能保持稳定。',
+    changes: [],
+    nextFocus: '关键选择等待你决定。',
+  },
+  skippedMonths: [],
+  stopReason: 'event',
+  stopEventTitle: '训练场上的误会',
 };
 
 describe('EventFeedbackPanel', () => {
@@ -99,6 +115,20 @@ describe('EventFeedbackPanel', () => {
     expect(clue).toHaveClass('event-feedback-next');
   });
 
+  it('marks increased fatigue as negative and explains the direction', () => {
+    const { container } = render(
+      <EventFeedbackPanel
+        feedback={{
+          ...feedback,
+          stateChanges: [{ key: 'fatigue', oldValue: 20, newValue: 30 }],
+        }}
+        onContinue={() => {}}
+      />,
+    );
+
+    expect(screen.getByText('疲劳增加')).toBeVisible();
+    expect(container.querySelector('.negative')).toContainElement(screen.getByText('20 → 30'));
+  });
   it('continues only after the player acknowledges the feedback', async () => {
     const user = userEvent.setup();
     const onContinue = vi.fn();
@@ -106,6 +136,14 @@ describe('EventFeedbackPanel', () => {
 
     await user.click(screen.getByRole('button', { name: '继续推进' }));
     expect(onContinue).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the node brief above the event feedback', () => {
+    render(<EventFeedbackPanel feedback={feedback} nodeBrief={nodeBrief} onContinue={() => {}} />);
+
+    expect(screen.getByRole('region', { name: '节点简报' })).toBeVisible();
+    expect(screen.getByText(nodeBrief.brief.headline)).toBeVisible();
+    expect(screen.getByRole('region', { name: '事件反馈' })).toBeVisible();
   });
 });
 
@@ -138,6 +176,50 @@ describe('EventFeedbackPanel AI polish', () => {
     expect(screen.getByText('（润色）教练会在接下来两周观察你们的沟通。')).toBeVisible();
     expect(screen.getByText('成功')).toBeVisible();
     expect(screen.getByText('信心')).toBeDefined();
+  });
+
+  it('shows a milestone evaluation beside authored feedback without changing the result', async () => {
+    const client = {
+      polish: vi.fn(async () => null),
+      narrateMilestone: vi.fn(async () => ({
+        narrative: '这段评价只组织已记录事实，早期选择与后来结果在此相连。'.repeat(6),
+      })),
+    };
+    const milestoneInput = MilestoneInputSchema.parse({
+      kind: 'first-contract',
+      playerName: '林河',
+      seasonId: 'pro-2026',
+      club: '杭州城',
+      contractYears: 3,
+      annualSalary: 120,
+      transferFee: null,
+      clubPromise: '提供一线队训练机会',
+      honours: [],
+      keyStats: [{ label: '职业生涯出场', value: 168, unit: '次' }],
+      signatureMatches: [],
+    });
+
+    render(
+      <EventFeedbackPanel
+        feedback={feedback}
+        onContinue={() => {}}
+        narrativeClient={client}
+        playerName="林河"
+        milestoneNarration={{
+          request: buildMilestoneNarrationRequest({
+            input: milestoneInput,
+            canonicalFactsHash: 'd'.repeat(64),
+          }),
+          authoredText: '首份合同把训练场上的选择带到了职业赛场。',
+        }}
+      />,
+    );
+
+    const evaluation = await screen.findByRole('article', { name: '关键节点评价' });
+    expect(within(evaluation).getByText(/这段评价只组织已记录事实/)).toBeVisible();
+    expect(within(evaluation).queryByText('首份合同把训练场上的选择带到了职业赛场。')).toBeNull();
+    expect(screen.getByText('成功')).toBeVisible();
+    expect(client.narrateMilestone).toHaveBeenCalledTimes(1);
   });
 
   it('keeps authored text when no client is configured or polish fails', async () => {

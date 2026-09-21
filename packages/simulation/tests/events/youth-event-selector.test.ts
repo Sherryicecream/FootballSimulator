@@ -450,6 +450,25 @@ describe('pro-phase event conditions', () => {
     ).toEqual(['europe-locker-room']);
   });
 
+  it('gates country-specific events by the current club country', () => {
+    const englandEvent = proEvent('england-media-pressure', 'europe-career', {
+      requireOverseas: true,
+      overseasRegions: ['europe'],
+      requireCountry: 'england',
+    } as EventDefinition['condition']);
+    const base = createYouthSave();
+    const overseas = { ...base, ...overseasState };
+    const englandClub = { ...europeClub, country: 'england' as const };
+    const spainClub = { ...europeClub, country: 'spain' as const };
+
+    expect(
+      filterEligibleYouthEvents([englandEvent], overseas, { currentClub: englandClub }),
+    ).toHaveLength(1);
+    expect(filterEligibleYouthEvents([englandEvent], overseas, { currentClub: spainClub })).toEqual(
+      [],
+    );
+  });
+
   it('gates national-team events by capped status and caps', () => {
     const squadRoom = proEvent('national-squad-room', 'national-team', {
       requireNationalTeam: true,

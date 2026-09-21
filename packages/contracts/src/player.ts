@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { PositionSchema, FootSchema, CareerStageSchema } from './primitives';
+import { CountrySchema } from './country';
 
 // Technical attributes (6): 停球、盘带、传球、射门、防守、空中能力
 export const TechnicalAttributesSchema = z.object({
@@ -76,6 +77,8 @@ export const PlayerIdentitySchema = z.object({
   name: z.string().min(1).max(50),
   hometown: z.string().min(1).max(30),
   homelandId: z.string().min(1).max(40),
+  /** 球员主要足球身份国家；历史存档缺失时由业务层回退到中国。 */
+  country: CountrySchema.optional(),
   dateOfBirth: z.string(), // ISO date string: "2008-06-15"
   primaryPosition: PositionSchema,
   secondaryPosition: PositionSchema.optional(),

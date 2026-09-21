@@ -9,5 +9,12 @@ export const clearEventFeedback = <S extends CareerSaveV2Like>(save: S): S => {
       ...save.story,
       pendingFeedback: null,
     },
+    monthlyAdvance:
+      save.monthlyAdvance.nodeAdvance === undefined
+        ? save.monthlyAdvance
+        : {
+            ...save.monthlyAdvance,
+            nodeAdvance: null,
+          },
   } as S;
 };

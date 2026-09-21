@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react';
-import type { EventFeedback } from '@football/contracts';
-import { buildNarrativePolishRequest, type NarrativePolishOutput } from '@football/contracts';
+import type { EventFeedback, NodeAdvanceRecord } from '@football/contracts';
+import {
+  buildNarrativePolishRequest,
+  type MilestoneNarrationRequest,
+  type NarrativePolishOutput,
+} from '@football/contracts';
 import { SceneBanner } from '../design-system/SceneBanner';
 import { FootballGlyph, type FootballGlyphName } from '../design-system/FootballGlyph';
 import type { SceneKind } from '../design-system/scene-types';
 import type { LocalNarrativeClient } from '../narration/local-ai-client';
+import { NodeBrief } from '../career-dashboard/NodeBrief';
 
 interface EventFeedbackPanelProps {
   feedback: EventFeedback;
@@ -13,6 +18,13 @@ interface EventFeedbackPanelProps {
   onContinue: () => void;
   narrativeClient?: LocalNarrativeClient | undefined;
   playerName?: string | undefined;
+  nodeBrief?: NodeAdvanceRecord | null | undefined;
+  milestoneNarration?: MilestoneNarrationDisplay | undefined;
+}
+
+interface MilestoneNarrationDisplay {
+  request: MilestoneNarrationRequest;
+  authoredText: string;
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -63,6 +75,11 @@ const ATTRIBUTE_LABELS: Record<string, string> = {
   discipline: '纪律',
 };
 
+const stateChangeLabel = (key: string, oldValue: number, newValue: number): string =>
+  key === 'fatigue' && newValue > oldValue ? '疲劳增加' : (STATE_LABELS[key] ?? key);
+
+const stateChangeIsPositive = (key: string, oldValue: number, newValue: number): boolean =>
+  key === 'fatigue' ? newValue <= oldValue : newValue >= oldValue;
 type ResultTone = NonNullable<EventFeedback['resultTone']>;
 const RESULT_TONE_LABELS: Record<ResultTone, string> = {
   success: '成功',
@@ -78,8 +95,11 @@ export function EventFeedbackPanel({
   onContinue,
   narrativeClient,
   playerName,
+  nodeBrief,
+  milestoneNarration,
 }: EventFeedbackPanelProps) {
   const [polished, setPolished] = useState<NarrativePolishOutput | null>(null);
+  const [milestoneText, setMilestoneText] = useState<string | null>(null);
   useEffect(() => {
     setPolished(null);
     if (!narrativeClient || !playerName) return;
@@ -109,6 +129,18 @@ export function EventFeedbackPanel({
     };
   }, [narrativeClient, playerName, feedback]);
 
+  useEffect(() => {
+    setMilestoneText(null);
+    if (!milestoneNarration || !narrativeClient?.narrateMilestone) return;
+    let cancelled = false;
+    void narrativeClient.narrateMilestone(milestoneNarration.request).then((draft) => {
+      if (!cancelled) setMilestoneText(draft?.narrative ?? null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [milestoneNarration, narrativeClient]);
+
   const responseText = polished?.response ?? feedback.response;
   const followUpText = polished?.followUp ?? feedback.followUp;
   const polishedTextFor = (participant: { personId: string; text: string }): string =>
@@ -119,6 +151,7 @@ export function EventFeedbackPanel({
   const resultTitle = feedback.resultTitle ?? feedback.outcome?.label ?? '事件暂告一段落';
   return (
     <section className="event-feedback-panel" aria-label="事件反馈">
+      {nodeBrief && <NodeBrief brief={nodeBrief.brief} skippedMonths={nodeBrief.skippedMonths} />}
       <SceneBanner
         kind={sceneKind}
         eyebrow="事件反馈 · 已记录"
@@ -176,6 +209,13 @@ export function EventFeedbackPanel({
         <p>{responseText}</p>
       </article>
 
+      {milestoneNarration && (
+        <article className="event-feedback-milestone" aria-label="关键节点评价">
+          <span className="event-feedback-kicker">关键节点评价 · 为什么这是你的故事</span>
+          <p>{milestoneText ?? milestoneNarration.authoredText}</p>
+        </article>
+      )}
+
       <section className="event-feedback-section" aria-label="人物回应">
         <div className="event-feedback-section-heading">
           <span>对话</span>
@@ -224,9 +264,13 @@ export function EventFeedbackPanel({
                 <div className="event-feedback-change-grid">
                   {feedback.stateChanges.map((change) => (
                     <div className="event-feedback-change" key={change.key}>
-                      <span>{STATE_LABELS[change.key] ?? change.key}</span>
+                      <span>{stateChangeLabel(change.key, change.oldValue, change.newValue)}</span>
                       <strong
-                        className={change.newValue >= change.oldValue ? 'positive' : 'negative'}
+                        className={
+                          stateChangeIsPositive(change.key, change.oldValue, change.newValue)
+                            ? 'positive'
+                            : 'negative'
+                        }
                       >
                         {change.oldValue} → {change.newValue}
                       </strong>

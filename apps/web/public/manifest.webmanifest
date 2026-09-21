@@ -3,14 +3,14 @@
   "short_name": "生涯模拟器",
   "description": "从 16 岁青训到退役回顾的单机足球生涯模拟",
   "lang": "zh-CN",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#0a120d",
   "theme_color": "#0a120d",
   "icons": [
     {
-      "src": "/icon.svg",
+      "src": "./icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"

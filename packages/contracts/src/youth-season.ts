@@ -168,6 +168,42 @@ export const YouthClubContextSchema = z.strictObject({
 });
 export type YouthClubContext = z.infer<typeof YouthClubContextSchema>;
 
+export const NodeStopReasonSchema = z.enum([
+  'event',
+  'season-end',
+  'injury',
+  'contract',
+  'offer',
+  'national-team',
+]);
+export type NodeStopReason = z.infer<typeof NodeStopReasonSchema>;
+
+export const MonthSummarySchema = z.strictObject({
+  monthKey: z.string().regex(/^\d{4}-\d{2}$/),
+  matchCount: z.number().int().min(0),
+  goalsFor: z.number().int().min(0),
+  goalsAgainst: z.number().int().min(0),
+  fatigueTrend: z.enum(['up', 'down', 'flat']),
+  notableChange: z.string().min(1).max(240).nullable(),
+});
+export type MonthSummary = z.infer<typeof MonthSummarySchema>;
+
+export const NodeBriefSchema = z.strictObject({
+  headline: z.string().min(1).max(160),
+  skippedSummary: z.string().min(1).max(240),
+  changes: z.array(z.string().min(1).max(240)).max(8),
+  nextFocus: z.string().min(1).max(240),
+});
+export type NodeBrief = z.infer<typeof NodeBriefSchema>;
+
+export const NodeAdvanceRecordSchema = z.strictObject({
+  brief: NodeBriefSchema,
+  skippedMonths: z.array(MonthSummarySchema).max(60),
+  stopReason: NodeStopReasonSchema,
+  stopEventTitle: z.string().min(1).max(100).nullable(),
+});
+export type NodeAdvanceRecord = z.infer<typeof NodeAdvanceRecordSchema>;
+
 export const MonthlyAdvanceCursorSchema = z.strictObject({
   monthKey: z.string().regex(/^\d{4}-\d{2}$/),
   nextWeekIndex: z.number().int().min(0).max(5),
@@ -178,6 +214,7 @@ export const MonthlyAdvanceCursorSchema = z.strictObject({
   matchIds: z.array(IdSchema).default([]),
   interactiveEventCount: z.number().int().min(0).max(2).default(0),
   feedbackStartHealth: HealthStateSchema.nullable().optional(),
+  nodeAdvance: NodeAdvanceRecordSchema.nullable().optional(),
 });
 export type MonthlyAdvanceCursor = z.infer<typeof MonthlyAdvanceCursorSchema>;
 
@@ -268,6 +305,8 @@ export const MatchContextSchema = z.strictObject({
   rating: z.number().min(1).max(10).nullable(),
   goals: z.number().int().min(0).max(50),
   assists: z.number().int().min(0).max(50),
+  homeScore: z.number().int().min(0).max(50).optional(),
+  awayScore: z.number().int().min(0).max(50).optional(),
   competitionId: IdSchema.optional(),
   teamImpact: z.number().int().min(-4).max(4).optional(),
 });
@@ -302,6 +341,11 @@ export const CareerLedgerEntryV2Schema = z.strictObject({
   outcome: ChoiceOutcomeSummarySchema.optional(),
   matchContext: MatchContextSchema.optional(),
   trainingContext: TrainingWeekContextSchema.optional(),
+  // v7 事实的可对账时间地址；旧存档缺失时保留原始 weekKey 并按未知日期展示。
+  eventId: IdSchema.optional(),
+  occurredOn: IsoDateSchema.optional(),
+  seasonId: IdSchema.optional(),
+  ordinal: z.number().int().min(1).optional(),
 });
 export type CareerLedgerEntryV2 = z.infer<typeof CareerLedgerEntryV2Schema>;
 

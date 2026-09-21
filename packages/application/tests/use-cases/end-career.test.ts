@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CareerSaveV5Schema, migrateCareerSaveV6 } from '@football/contracts';
+import { CareerSaveV5Schema, migrateCareerSaveV7 } from '@football/contracts';
 import {
   completeYouthSeason,
   enterOffseason,
@@ -50,7 +50,7 @@ const finalYouthOffseason = ({ graduationEligible }: { graduationEligible: boole
   };
   const completed = completeYouthSeason(save);
   const offseason = enterOffseason(completed.save, academies).save;
-  return migrateCareerSaveV6({
+  return migrateCareerSaveV7({
     ...offseason,
     offseason: { ...offseason.offseason!, graduationEligible },
   });
@@ -69,8 +69,8 @@ const professionalOffseason = ({ age }: { age: number }) => {
   save = submitAgentPreferences(save, { leagueTierBias: 'balanced', priority: 'playing-time' });
   save = generateContractOffers(save, content);
   save = signContract(save, save.pendingOffers[0]!.id);
-  const started = startProfessionalSeason(migrateCareerSaveV6(save), content.clubs);
-  return migrateCareerSaveV6({
+  const started = startProfessionalSeason(migrateCareerSaveV7(save), content.clubs);
+  return migrateCareerSaveV7({
     ...started,
     careerPhase: 'pro-offseason',
     proPhase: 'settled',
@@ -104,7 +104,7 @@ describe('生涯终局用例', () => {
       'rejects ending with %s without changing the save',
       (pendingNode) => {
         const base = professionalOffseason({ age: 22 });
-        const save = migrateCareerSaveV6({
+        const save = migrateCareerSaveV7({
           ...base,
           careerPhase: phase,
           story: {
@@ -158,7 +158,9 @@ describe('生涯终局用例', () => {
     expect(ended.randomState).toEqual(save.randomState);
     expect(ended.ledger.at(-1)).toMatchObject({
       type: 'retirement',
-      id: `career-end-youth-${save.season.endDate}`,
+      occurredOn: save.season.endDate,
+      seasonId: save.season.id,
+      ordinal: expect.any(Number),
     });
   });
 
@@ -171,7 +173,7 @@ describe('生涯终局用例', () => {
 
   it('rejects youth-no-contract ending for a schema-valid final offseason with a contract', () => {
     const signedProfessional = professionalOffseason({ age: 22 });
-    const save = migrateCareerSaveV6({
+    const save = migrateCareerSaveV7({
       ...finalYouthOffseason({ graduationEligible: true }),
       contract: signedProfessional.contract,
     });
@@ -181,7 +183,7 @@ describe('生涯终局用例', () => {
   });
 
   it('rejects ending a youth career while another youth season remains available', () => {
-    const save = migrateCareerSaveV6({
+    const save = migrateCareerSaveV7({
       ...finalYouthOffseason({ graduationEligible: false }),
       careerPhase: 'offseason',
       careerEnd: null,
@@ -246,12 +248,14 @@ describe('生涯终局用例', () => {
 
   it('keeps public retirement compatible with a v5 caller while returning v6', () => {
     const v5Source = Object.fromEntries(
-      Object.entries(professionalOffseason({ age: 22 })).filter(([key]) => key !== 'careerEnd'),
+      Object.entries(professionalOffseason({ age: 22 })).filter(
+        ([key]) => !['careerEnd', 'mechanicsVersion', 'moments', 'worldRegistry'].includes(key),
+      ),
     );
     const legacy = CareerSaveV5Schema.parse({ ...v5Source, schemaVersion: 5 });
     const retired = retire(legacy, '2030-06-30');
 
-    expect(retired.schemaVersion.toString()).toBe('6');
+    expect(retired.schemaVersion).toBe(6);
     expect(retired).toMatchObject({
       schemaVersion: 6,
       careerPhase: 'retired',
@@ -259,11 +263,10 @@ describe('生涯终局用例', () => {
     });
   });
 
-  it('keeps ordinary loaded careers on v5 until terminal integration', () => {
+  it('keeps ordinary loaded careers on v7 after migration', () => {
     const loaded = loadCareer(createSave(99), content);
 
-    expect(loaded.schemaVersion).toBe(5);
-    expect('careerEnd' in loaded).toBe(false);
+    expect(loaded.schemaVersion).toBe(8);
   });
 
   it('keeps duplicate terminal submission idempotent', () => {

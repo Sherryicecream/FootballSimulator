@@ -10,6 +10,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['FORWARD', 'WINGER'],
     youthCycle: 'contending',
     overseas: false,
+    country: 'china',
     wageBudget: 90,
   },
   {
@@ -20,6 +21,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['CENTER_BACK', 'MIDFIELDER'],
     youthCycle: 'contending',
     overseas: false,
+    country: 'china',
     wageBudget: 88,
   },
   {
@@ -30,6 +32,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['MIDFIELDER', 'FORWARD'],
     youthCycle: 'contending',
     overseas: false,
+    country: 'china',
     wageBudget: 86,
   },
   {
@@ -40,6 +43,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['FULL_BACK', 'CENTER_BACK'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 84,
   },
   {
@@ -50,6 +54,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['WINGER', 'FULL_BACK'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 80,
   },
   {
@@ -60,6 +65,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['MIDFIELDER', 'CENTER_BACK'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 79,
   },
   {
@@ -70,6 +76,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['FORWARD', 'MIDFIELDER'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 76,
   },
   {
@@ -80,6 +87,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['FULL_BACK', 'WINGER'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 74,
   },
   {
@@ -90,6 +98,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['CENTER_BACK', 'FORWARD'],
     youthCycle: 'contending',
     overseas: false,
+    country: 'china',
     wageBudget: 73,
   },
   {
@@ -100,6 +109,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['MIDFIELDER', 'FULL_BACK'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 71,
   },
   {
@@ -110,6 +120,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['WINGER', 'MIDFIELDER'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 70,
   },
   {
@@ -120,6 +131,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['FORWARD', 'CENTER_BACK'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 69,
   },
   {
@@ -130,6 +142,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['FULL_BACK', 'MIDFIELDER'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 74,
   },
   {
@@ -140,6 +153,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['WINGER', 'FORWARD'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 70,
   },
   {
@@ -150,6 +164,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['MIDFIELDER', 'CENTER_BACK'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 68,
   },
   {
@@ -160,6 +175,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['CENTER_BACK', 'WINGER'],
     youthCycle: 'contending',
     overseas: false,
+    country: 'china',
     wageBudget: 67,
   },
   {
@@ -170,6 +186,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['FORWARD', 'FULL_BACK'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 64,
   },
   {
@@ -180,6 +197,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['MIDFIELDER', 'FORWARD'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 63,
   },
   {
@@ -190,6 +208,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['FULL_BACK', 'MIDFIELDER'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 61,
   },
   {
@@ -200,6 +219,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['WINGER', 'CENTER_BACK'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 60,
   },
   {
@@ -210,6 +230,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['FORWARD', 'MIDFIELDER'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 58,
   },
   {
@@ -220,6 +241,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['CENTER_BACK', 'FULL_BACK'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 57,
   },
   {
@@ -230,6 +252,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['WINGER', 'FORWARD'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 56,
   },
   {
@@ -240,6 +263,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['MIDFIELDER', 'FULL_BACK'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 55,
   },
   {
@@ -250,6 +274,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['MIDFIELDER', 'FULL_BACK'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 62,
   },
   {
@@ -260,6 +285,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['CENTER_BACK', 'FORWARD'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 55,
   },
   {
@@ -270,6 +296,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['FORWARD', 'WINGER'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 54,
   },
   {
@@ -280,6 +307,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['MIDFIELDER', 'CENTER_BACK'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 52,
   },
   {
@@ -290,6 +318,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['FULL_BACK', 'WINGER'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 50,
   },
   {
@@ -300,6 +329,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['CENTER_BACK', 'FORWARD'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 49,
   },
   {
@@ -310,6 +340,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['MIDFIELDER', 'FORWARD'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 48,
   },
   {
@@ -320,6 +351,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['WINGER', 'FULL_BACK'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 47,
   },
   {
@@ -330,6 +362,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['FORWARD', 'CENTER_BACK'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 46,
   },
   {
@@ -340,6 +373,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['MIDFIELDER', 'WINGER'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 45,
   },
   {
@@ -350,6 +384,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['FULL_BACK', 'MIDFIELDER'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 44,
   },
   {
@@ -360,6 +395,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['CENTER_BACK', 'WINGER'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 43,
   },
   {
@@ -370,6 +406,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['FORWARD', 'CENTER_BACK'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 46,
   },
   {
@@ -380,6 +417,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['WINGER', 'MIDFIELDER'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 44,
   },
   {
@@ -390,6 +428,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['MIDFIELDER', 'CENTER_BACK'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 42,
   },
   {
@@ -400,6 +439,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['FORWARD', 'FULL_BACK'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 41,
   },
   {
@@ -410,6 +450,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['CENTER_BACK', 'WINGER'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 40,
   },
   {
@@ -420,6 +461,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['WINGER', 'MIDFIELDER'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 39,
   },
   {
@@ -430,6 +472,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['FULL_BACK', 'FORWARD'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 38,
   },
   {
@@ -440,6 +483,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['MIDFIELDER', 'CENTER_BACK'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 37,
   },
   {
@@ -450,6 +494,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['FORWARD', 'MIDFIELDER'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 36,
   },
   {
@@ -460,6 +505,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['WINGER', 'FULL_BACK'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 35,
   },
   {
@@ -470,6 +516,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['CENTER_BACK', 'FORWARD'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 34,
   },
   {
@@ -480,6 +527,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['MIDFIELDER', 'WINGER'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 33,
   },
   {
@@ -490,6 +538,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['MIDFIELDER', 'FULL_BACK'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 36,
   },
   {
@@ -500,6 +549,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['CENTER_BACK', 'WINGER'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 34,
   },
   {
@@ -510,6 +560,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['FORWARD', 'MIDFIELDER'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 32,
   },
   {
@@ -520,6 +571,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['WINGER', 'CENTER_BACK'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 31,
   },
   {
@@ -530,6 +582,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['FULL_BACK', 'FORWARD'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 30,
   },
   {
@@ -540,6 +593,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['MIDFIELDER', 'WINGER'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 29,
   },
   {
@@ -550,6 +604,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['CENTER_BACK', 'MIDFIELDER'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 28,
   },
   {
@@ -560,6 +615,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['FORWARD', 'FULL_BACK'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 27,
   },
   {
@@ -570,6 +626,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['WINGER', 'MIDFIELDER'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 26,
   },
   {
@@ -580,6 +637,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['FULL_BACK', 'CENTER_BACK'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 25,
   },
   {
@@ -590,6 +648,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['FORWARD', 'WINGER'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 24,
   },
   {
@@ -600,6 +659,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['MIDFIELDER', 'FORWARD'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 23,
   },
   {
@@ -610,6 +670,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['FORWARD', 'MIDFIELDER'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 26,
   },
   {
@@ -620,6 +681,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['FULL_BACK', 'CENTER_BACK'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 22,
   },
   {
@@ -630,6 +692,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['MIDFIELDER', 'WINGER'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 21,
   },
   {
@@ -640,6 +703,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['CENTER_BACK', 'FORWARD'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 20,
   },
   {
@@ -650,6 +714,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['WINGER', 'FULL_BACK'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 19,
   },
   {
@@ -660,6 +725,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['FORWARD', 'MIDFIELDER'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 18,
   },
   {
@@ -670,6 +736,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['MIDFIELDER', 'CENTER_BACK'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 17,
   },
   {
@@ -680,6 +747,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['FULL_BACK', 'WINGER'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 16,
   },
   {
@@ -690,6 +758,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['CENTER_BACK', 'FORWARD'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 15,
   },
   {
@@ -700,6 +769,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['FORWARD', 'FULL_BACK'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 14,
   },
   {
@@ -710,6 +780,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['WINGER', 'MIDFIELDER'],
     youthCycle: 'rebuilding',
     overseas: false,
+    country: 'china',
     wageBudget: 13,
   },
   {
@@ -720,6 +791,7 @@ export const domesticClubProfiles: ClubProfile[] = [
     positionalNeeds: ['MIDFIELDER', 'FORWARD'],
     youthCycle: 'stable',
     overseas: false,
+    country: 'china',
     wageBudget: 12,
   },
 ];

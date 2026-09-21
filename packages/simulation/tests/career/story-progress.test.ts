@@ -74,4 +74,55 @@ describe('buildStoryProgress', () => {
       weekKey: '2024-W08',
     });
   });
+
+  it('groups explicitly registered family nodes into one progressing story', () => {
+    const familyEvents: EventDefinition[] = [
+      {
+        ...opening,
+        id: 'family-opening',
+        storyId: 'family-opening-node',
+        storyFamilyId: 'family-selection-pressure',
+        nextEvents: ['family-middle'],
+      },
+      {
+        ...followUp,
+        id: 'family-middle',
+        storyId: 'family-middle-node',
+        storyFamilyId: 'family-selection-pressure',
+        nextEvents: ['family-resolution'],
+      },
+      {
+        ...followUp,
+        id: 'family-resolution',
+        storyId: 'family-resolution-node',
+        storyFamilyId: 'family-selection-pressure',
+        condition: {},
+        choices: [
+          { id: 'stay', text: 'Stay with the plan', riskLabel: 'low', effects: {} },
+          { id: 'change', text: 'Change the plan', riskLabel: 'medium', effects: {} },
+        ],
+      },
+    ];
+    const base = createYouthSave();
+    const save = createYouthSave({
+      ...base,
+      story: {
+        ...base.story,
+        activeStorylines: ['family-resolution'],
+        completedStoryIds: ['family-opening-node', 'family-middle-node'],
+      },
+    });
+
+    const result = buildStoryProgress(save, familyEvents);
+
+    expect(result.entries).toEqual([
+      expect.objectContaining({
+        storyId: 'family-selection-pressure',
+        status: 'active',
+        completedNodes: 2,
+        totalNodes: 3,
+        progressPercent: 67,
+      }),
+    ]);
+  });
 });

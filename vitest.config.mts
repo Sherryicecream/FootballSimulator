@@ -8,6 +8,8 @@ export default defineConfig({
           name: 'balance',
           environment: 'node',
           include: ['tools/balance/tests/**/*.test.ts'],
+          // Balance files launch their own bounded workers; keep full-suite CPU deterministic.
+          fileParallelism: false,
         },
       },
       {
@@ -15,6 +17,24 @@ export default defineConfig({
           name: 'domain',
           environment: 'node',
           include: ['packages/*/tests/**/*.test.ts'],
+          exclude: [
+            'packages/application/tests/**/*.test.ts',
+            'packages/content/tests/**/*.test.ts',
+          ],
+        },
+      },
+      {
+        test: {
+          name: 'content',
+          environment: 'node',
+          include: ['packages/content/tests/**/*.test.ts'],
+        },
+      },
+      {
+        test: {
+          name: 'application',
+          environment: 'node',
+          include: ['packages/application/tests/**/*.test.ts'],
         },
       },
       {

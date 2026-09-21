@@ -4,7 +4,7 @@ test.describe('Youth season monthly flow', () => {
   test('advances a month, resolves interruptions and restores after refresh', async ({ page }) => {
     await createCareer(page);
     const before = await page.locator('.career-meta').textContent();
-    await page.getByRole('button', { name: '推进到下个月' }).click();
+    await page.getByRole('link', { name: '逐月推进' }).click();
     await resolveUntilDashboard(page);
     await expect(page.getByLabel('月报')).toBeVisible();
     await expect(page.getByLabel('本月节奏')).toBeVisible();
@@ -18,7 +18,7 @@ test.describe('Youth season monthly flow', () => {
     expect(after).not.toBe(before);
     await page.reload();
     await openArchivedCareer(page);
-    await expect(page.getByText('推进到下个月')).toBeVisible();
+    await expect(page.getByText('推进到下一节点')).toBeVisible();
     await expect(page.locator('.career-meta')).toContainText(after?.split('第')[0]?.trim() ?? '');
   });
 
@@ -29,19 +29,20 @@ test.describe('Youth season monthly flow', () => {
       if (await isSeasonComplete(page)) break;
       const monthKey =
         (await page.locator('.career-meta span').nth(1).textContent()) ?? `month-${guard}`;
-      const advance = page.getByRole('button', { name: '推进到下个月' });
+      const advance = page.getByRole('link', { name: '逐月推进' });
       await expect(advance).toBeVisible();
+      await expect(advance).not.toHaveAttribute('aria-disabled', 'true');
       await advance.click();
       const decisions = await resolveUntilDashboard(page, true);
       decisionsByMonth.set(monthKey, decisions);
       expect(decisions, `month ${monthKey}`).toBeLessThanOrEqual(2);
     }
     expect([...decisionsByMonth.values()].every((count) => count <= 2)).toBe(true);
-    await expect(page.getByText('赛季总结')).toBeVisible();
-    await expect(page.getByRole('button', { name: '推进到下个月' })).toBeDisabled();
+    await expect(page.getByRole('heading', { name: '赛季总结' })).toBeVisible();
+    await expect(page.getByRole('button', { name: '推进到下一节点' })).toBeDisabled();
     await page.reload();
     await openArchivedCareer(page);
-    await expect(page.getByText('赛季总结')).toBeVisible();
+    await expect(page.getByRole('heading', { name: '赛季总结' })).toBeVisible();
   });
 
   test('enters the offseason after the season and starts the next campaign', async ({ page }) => {
@@ -58,8 +59,8 @@ test.describe('Youth season monthly flow', () => {
     await expect(page.getByText('休赛期简报')).toBeVisible();
 
     await page.getByRole('button', { name: '开始下赛季' }).click();
-    await expect(page.getByRole('button', { name: '推进到下个月' })).toBeEnabled();
-    await page.getByRole('button', { name: '推进到下个月' }).click();
+    await expect(page.getByRole('button', { name: '推进到下一节点' })).toBeEnabled();
+    await page.getByRole('link', { name: '逐月推进' }).click();
     await resolveUntilDashboard(page);
     await expect(page.getByLabel('月报')).toBeVisible();
     await expect(page.getByLabel('本月节奏')).toBeVisible();
@@ -72,7 +73,7 @@ test.describe('Youth season monthly flow', () => {
     // 下个赛季刷新恢复
     await page.reload();
     await openArchivedCareer(page);
-    await expect(page.getByRole('button', { name: '推进到下个月' })).toBeVisible();
+    await expect(page.getByRole('link', { name: '逐月推进' })).toBeVisible();
   });
 });
 
@@ -80,8 +81,9 @@ test.describe('Youth season monthly flow', () => {
 async function completeSeason(page: Page) {
   for (let guard = 0; guard < 40; guard += 1) {
     if (await isSeasonComplete(page)) return;
-    const advance = page.getByRole('button', { name: '推进到下个月' });
+    const advance = page.getByRole('link', { name: '逐月推进' });
     await expect(advance).toBeVisible();
+    await expect(advance).not.toHaveAttribute('aria-disabled', 'true');
     await advance.click();
     await resolveUntilDashboard(page, true);
   }
@@ -98,7 +100,7 @@ async function createCareer(page: Page) {
   await page.click('text=开始生涯');
   await expect(page.getByText('你的青训机会')).toBeVisible();
   await page.locator('button[aria-pressed]').first().click();
-  await expect(page.getByRole('button', { name: '推进到下个月' })).toBeVisible();
+  await expect(page.getByRole('link', { name: '逐月推进' })).toBeVisible();
   await expect(page.getByRole('heading', { name: '球员档案' })).toBeVisible();
   // 隐藏型背景（late-bloomer）不显示成长背景行；其余背景展示真实出身
   const origin = page.getByText(/青训营|校园足球|社区足球/);
@@ -107,6 +109,7 @@ async function createCareer(page: Page) {
   }
   await expect(page.locator('.strength-chips span')).toHaveCount(3);
 
+  await page.getByText('查看完整球员属性').click();
   await expect(page.getByText('停球')).toBeVisible();
   await expect(page.getByText('关键人物')).toHaveCount(0);
 }
@@ -118,9 +121,14 @@ async function openArchivedCareer(page: Page) {
 async function resolveUntilDashboard(page: Page, allowSeasonEnd = false): Promise<number> {
   let decisions = 0;
   for (let guard = 0; guard < 20; guard += 1) {
-    const dashboard = page.getByRole('button', { name: '推进到下个月' });
-    if (await dashboard.isVisible().catch(() => false)) return decisions;
-    if (allowSeasonEnd && (await isSeasonComplete(page))) return decisions;
+    const dashboard = page.getByRole('link', { name: '逐月推进' });
+    const dashboardVisible = await dashboard.isVisible().catch(() => false);
+    if (dashboardVisible) {
+      if (allowSeasonEnd && (await isSeasonComplete(page))) return decisions;
+      if ((await dashboard.getAttribute('aria-disabled')) !== 'true') return decisions;
+      await expect(dashboard).not.toHaveAttribute('aria-disabled', 'true');
+      return decisions;
+    }
     const feedback = page.getByRole('button', { name: '继续推进' });
     if (await feedback.isVisible().catch(() => false)) {
       await expect(page.getByTestId('scene-art')).toBeVisible();
@@ -146,11 +154,19 @@ async function resolveUntilDashboard(page: Page, allowSeasonEnd = false): Promis
   throw new Error('事件链未在保护步数内返回仪表盘');
 }
 
-const isSeasonComplete = (page: Page): Promise<boolean> =>
-  page
-    .getByText('赛季总结')
-    .isVisible()
-    .catch(() => false);
+const isSeasonComplete = async (page: Page): Promise<boolean> => {
+  if (
+    await page
+      .getByRole('heading', { name: '赛季总结' })
+      .isVisible()
+      .catch(() => false)
+  )
+    return true;
+  const primary = page.getByRole('button', { name: '推进到下一节点' });
+  const primaryDisabled = await primary.isDisabled().catch(() => false);
+  const primaryLabel = (await primary.textContent().catch(() => '')) ?? '';
+  return primaryDisabled && !primaryLabel.includes('推进中');
+};
 
 async function expectNoHorizontalOverflow(page: Page) {
   const dimensions = await page.evaluate(() => ({

@@ -88,8 +88,8 @@ describe('OfferComparisonPanel', () => {
   it('展示全部要约并支持二次确认后签署', () => {
     const onSign = vi.fn();
     render(<OfferComparisonPanel offers={offers} onSign={onSign} onRejectAll={vi.fn()} />);
-    expect(screen.getByText('云梦泽畔（层级 4）')).toBeVisible();
-    expect(screen.getByText('申海港联（层级 8）')).toBeVisible();
+    expect(screen.getByText('云梦泽畔（实力档位 4）')).toBeVisible();
+    expect(screen.getByText('申海港联（实力档位 8）')).toBeVisible();
     expect(screen.getByText(/出场承诺：至少 50%/)).toBeVisible();
     expect(screen.getAllByText(/降级解约条款/).length).toBeGreaterThan(0);
 
@@ -147,7 +147,7 @@ describe('ContractCard', () => {
         }}
       />,
     );
-    expect(screen.getByText(/申海港联（层级 8）/)).toBeVisible();
+    expect(screen.getByText(/申海港联（实力档位 8）/)).toBeVisible();
     expect(screen.getByText(/剩余 1 年/)).toBeVisible();
     expect(screen.getByText(/无特殊承诺：已兑现/)).toBeVisible();
   });

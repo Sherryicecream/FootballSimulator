@@ -6,6 +6,7 @@ import {
   calculatePlayerTeamImpact,
   decideAppearance,
   simulateProfessionalWeek,
+  trainingReadinessModifier,
 } from '../../src/career/professional-week';
 import { createSeededRandomSource } from '../../src/randomness';
 import { createProSave, proClubs } from '../fixtures/pro-save';
@@ -60,6 +61,29 @@ describe('generateProSquad', () => {
     const b = generateProSquad(proClubs[0]!, 'FORWARD', 60, createSeededRandomSource(5));
     expect(a).toEqual(b);
   });
+
+  it('cross-season retention fills every position after an imbalanced core', () => {
+    const firstSeason = generateProSquad(proClubs[0]!, 'FORWARD', 60, createSeededRandomSource(81));
+    const nextSeason = generateProSquad(
+      proClubs[0]!,
+      'FORWARD',
+      60,
+      createSeededRandomSource(5581),
+      firstSeason,
+    );
+    const positions = new Set(nextSeason.map(({ primaryPosition }) => primaryPosition));
+
+    expect(positions).toEqual(
+      new Set([
+        'CENTER_BACK',
+        'FULL_BACK',
+        'DEFENSIVE_MIDFIELDER',
+        'MIDFIELDER',
+        'WINGER',
+        'FORWARD',
+      ]),
+    );
+  });
 });
 
 describe('simulateProfessionalWeek', () => {
@@ -79,6 +103,16 @@ describe('simulateProfessionalWeek', () => {
     const a = simulateProfessionalWeek(createProSave(), proClubs);
     const b = simulateProfessionalWeek(createProSave(), proClubs);
     expect(a).toEqual(b);
+  });
+
+  it('rejects a league fixture that crosses country boundaries', () => {
+    const save = createProSave();
+    const clubs = proClubs.map((club, index) => ({
+      ...club,
+      country: index === 1 ? ('england' as const) : ('china' as const),
+    }));
+
+    expect(() => simulateProfessionalWeek(save, clubs)).toThrow('跨国家');
   });
 
   it('uses unique match fact IDs across professional seasons', () => {
@@ -128,8 +162,8 @@ describe('simulateProfessionalWeek', () => {
     expect(training?.trainingContext).toEqual({
       focus: 'technical',
       intensity: 'normal',
-      trainingLoad: 36,
-      totalLoad: (36 + 8) * 1.15 + ownFixtures.length * 12,
+      trainingLoad: 40,
+      totalLoad: (40 + 5) * 1.05 + ownFixtures.length * 10,
     });
     expect(next.proSeason!.currentWeek).toBe(2);
     expect(next.proSeason!.fixtures.every(({ status }) => status === 'played')).toBe(false);
@@ -152,6 +186,38 @@ describe('simulateProfessionalWeek', () => {
     }
   });
 
+  it('实际出场的个人贡献不超过本队比分，未出场贡献为零', () => {
+    const positions: Position[] = [
+      'CENTER_BACK',
+      'FULL_BACK',
+      'DEFENSIVE_MIDFIELDER',
+      'MIDFIELDER',
+      'WINGER',
+      'FORWARD',
+    ];
+    const base = createProSave();
+
+    for (const position of positions) {
+      for (let seed = 0; seed < 100; seed += 1) {
+        const save = createProSave({
+          player: {
+            ...base.player,
+            identity: { ...base.player.identity, primaryPosition: position },
+          },
+          randomState: { seed, sequencePosition: 0 },
+        });
+        const { matchResult } = simulateProfessionalWeek(save, proClubs);
+        if (!matchResult) continue;
+
+        const ownGoals = matchResult.isHome ? matchResult.homeScore : matchResult.awayScore;
+        expect(matchResult.goals + matchResult.assists).toBeLessThanOrEqual(ownGoals);
+        if (!matchResult.played) {
+          expect(matchResult.goals).toBe(0);
+          expect(matchResult.assists).toBe(0);
+        }
+      }
+    }
+  });
   it('伤病患者无法出场，健康的低评分球员进入预备队', () => {
     const injured = createProSave({
       health: {
@@ -178,7 +244,21 @@ describe('simulateProfessionalWeek', () => {
   });
 });
 
+it('keeps normal training in a sustainable middle range and adds match load separately', () => {
+  const { save: next } = simulateProfessionalWeek(createProSave(), proClubs);
+  const training = next.ledger.find(({ type }) => type === 'training');
+
+  expect(training?.trainingContext?.trainingLoad).toBeGreaterThanOrEqual(40);
+  expect(training?.trainingContext?.trainingLoad).toBeLessThanOrEqual(55);
+  expect(training?.trainingContext?.totalLoad).toBeGreaterThan(
+    training?.trainingContext?.trainingLoad ?? 0,
+  );
+});
 describe('decideAppearance', () => {
+  it('gives a performance advantage to a balanced load, not a permanently low or high load', () => {
+    expect(trainingReadinessModifier(58)).toBeGreaterThan(trainingReadinessModifier(24));
+    expect(trainingReadinessModifier(58)).toBeGreaterThan(trainingReadinessModifier(102));
+  });
   const attributesWithValue = (value: number) => ({
     technical: {
       firstTouch: value,
@@ -407,6 +487,33 @@ describe('decideAppearance', () => {
     const withStrong = decideAppearance(strongRival, healthy, rng(), true);
     const withWeak = decideAppearance(weakRival, healthy, rng(), true);
     expect(withStrong.threshold).toBeGreaterThan(withWeak.threshold);
+  });
+
+  it('friendship does not become a rivalry pressure signal', () => {
+    const friendshipSave = createProSave({
+      proSeason: {
+        ...base.proSeason!,
+        squad: base.proSeason!.squad.map((member) =>
+          member.primaryPosition === 'FORWARD'
+            ? { ...member, currentAbility: 90, relationshipToPlayer: 'friendship' as const }
+            : member,
+        ),
+      },
+    });
+    const rivalrySave = createProSave({
+      proSeason: {
+        ...base.proSeason!,
+        squad: base.proSeason!.squad.map((member) =>
+          member.primaryPosition === 'FORWARD'
+            ? { ...member, currentAbility: 90, relationshipToPlayer: 'rivalry' as const }
+            : member,
+        ),
+      },
+    });
+
+    expect(decideAppearance(friendshipSave, healthy, rng(), true).threshold).toBeLessThan(
+      decideAppearance(rivalrySave, healthy, rng(), true).threshold,
+    );
   });
 
   it('高疲劳惩罚门槛', () => {

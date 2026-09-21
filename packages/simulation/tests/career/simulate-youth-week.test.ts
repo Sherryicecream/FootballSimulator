@@ -36,7 +36,7 @@ describe('simulateYouthWeek', () => {
       const ownGoals = first.matchResult.isHome
         ? first.matchResult.homeScore
         : first.matchResult.awayScore;
-      expect(first.matchResult.goals).toBeLessThanOrEqual(ownGoals);
+      expect(first.matchResult.goals + first.matchResult.assists).toBeLessThanOrEqual(ownGoals);
     } else {
       expect(first.matchResult?.rating).toBeNull();
     }

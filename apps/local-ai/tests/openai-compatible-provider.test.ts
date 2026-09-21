@@ -1,6 +1,11 @@
 import { createServer, type Server } from 'node:http';
 import { afterEach, describe, expect, it } from 'vitest';
-import { buildNarrativePolishRequest, createSafeNarrativeAdapter } from '../src';
+import {
+  buildCareerSummaryRequest,
+  buildMilestoneNarrationRequest,
+  buildNarrativePolishRequest,
+  createSafeNarrativeAdapter,
+} from '../src';
 import {
   createOpenAiCompatibleProvider,
   openAiCompatibleConfigFromEnv,
@@ -22,6 +27,43 @@ const request = buildNarrativePolishRequest({
   playerName: '林河',
   participants: [{ personId: 'coach-1', personName: '周教练', role: 'youth-coach' }],
   draft,
+});
+
+const milestoneRequest = buildMilestoneNarrationRequest({
+  input: {
+    kind: 'injury-return',
+    playerName: '林河',
+    seasonId: 'pro-2027',
+    injuryType: '踝关节扭伤',
+    durationWeeks: 6,
+    recoveryChoices: ['降低训练负荷'],
+    returnOutcome: 'fully-recovered',
+    honours: [],
+    keyStats: [],
+    signatureMatches: [],
+  },
+  canonicalFactsHash: 'c'.repeat(64),
+});
+
+const summaryRequest = buildCareerSummaryRequest({
+  facts: {
+    player: { name: '林河', hometown: '上海', position: '前锋', country: '中国' },
+    tierLabel: '稳健生涯',
+    ending: null,
+    seasons: 1,
+    clubs: 1,
+    totals: { appearances: 10, minutes: 600, goals: 2, assists: 1 },
+    nationalTeam: { capped: false, caps: 0, goals: 0 },
+    overseasSpells: false,
+    honours: [],
+    seasonsTimeline: [],
+    keyMoments: [],
+    dimensions: [],
+    behindTheScenes: { potentials: [], traits: [], missedOpportunities: [] },
+    evidenceIds: [],
+  },
+  mode: 'short',
+  canonicalFactsHash: 'a'.repeat(64),
 });
 
 const polishedContent = {
@@ -103,6 +145,53 @@ describe('openai-compatible provider', () => {
 
     expect(result.source).toBe('provider');
     expect(result.draft.participantResponses[0]?.personId).toBe('coach-1');
+  });
+
+  it('uses the scenario-specific milestone prompt for the compatible provider', async () => {
+    let seenBody = '';
+    const { url } = await startUpstream((_req, res, body) => {
+      seenBody = body;
+      res.setHeader('content-type', 'application/json');
+      res.end(
+        JSON.stringify(
+          completionBody(
+            JSON.stringify({
+              narrative:
+                '林河经历踝关节扭伤，持续 6 周。恢复期降低训练负荷，最终完全恢复。这个节点保留了明确的选择与结果，后续评价只复述事实包中的记录。记录中的空白仍然保持为空白。'
+                  .repeat(4)
+                  .slice(0, 200),
+            }),
+          ),
+        ),
+      );
+    });
+
+    const result = await createSafeNarrativeAdapter(
+      createOpenAiCompatibleProvider({ endpoint: url, model: 'test-model' }),
+    ).narrateMilestone(milestoneRequest);
+
+    expect(result.source).toBe('provider');
+    expect(seenBody).toContain('重大伤病与复出');
+    expect(seenBody).toContain('踝关节扭伤');
+  });
+
+  it('uses the shared career-summary prompt for the compatible provider', async () => {
+    let seenBody = '';
+    const summary = '只根据事实包整理林河的生涯，不新增荣誉或国家队经历。'.repeat(6);
+    const { url } = await startUpstream((_req, res, body) => {
+      seenBody = body;
+      res.setHeader('content-type', 'application/json');
+      res.end(JSON.stringify(completionBody(JSON.stringify({ summary }))));
+    });
+
+    const result = await createSafeNarrativeAdapter(
+      createOpenAiCompatibleProvider({ endpoint: url, model: 'test-model' }),
+    ).summarize(summaryRequest);
+
+    expect(result.source).toBe('provider');
+    expect(seenBody).toContain('career-summary-v1');
+    expect(seenBody).toContain('事实检查');
+    expect(seenBody).toContain('林河');
   });
 
   it('maps http errors and unparseable content to safe fallbacks', async () => {

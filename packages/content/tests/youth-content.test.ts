@@ -269,3 +269,26 @@ describe('overseas club regions', () => {
     }
   });
 });
+
+describe('country club registry', () => {
+  it('assigns every playable club to a supported country', () => {
+    const content = getYouthContent();
+    const allClubs = [...content.clubs, ...content.overseasClubs];
+    const countries = [
+      'china',
+      'england',
+      'spain',
+      'germany',
+      'italy',
+      'france',
+      'japan',
+      'korea',
+    ] as const;
+
+    expect(allClubs.every(({ country }) => country !== undefined)).toBe(true);
+    for (const country of countries) {
+      expect(allClubs.filter((club) => club.country === country).length).toBeGreaterThanOrEqual(6);
+    }
+    expect(content.clubs.every((club) => club.country === 'china')).toBe(true);
+  });
+});

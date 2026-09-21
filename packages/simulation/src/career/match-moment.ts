@@ -2,10 +2,13 @@ import type {
   CareerLedgerEntryV2,
   CareerSaveV2Like,
   MatchContext,
+  Position,
   YouthEventInstance,
 } from '@football/contracts';
 import { createSeededRandomSource } from '../randomness';
 import type { ChoiceResolutionAttribute } from '@football/contracts';
+
+type RiskLabel = 'low' | 'medium' | 'high';
 
 export interface ImportantMatchInput {
   competitionId?: string | undefined;
@@ -23,6 +26,9 @@ export const isImportantMatchContext = (input: ImportantMatchInput): boolean => 
 };
 
 const MATCH_SUMMARY = /^(.+?)\s+(\d+):(\d+)(?:；|;)/;
+
+const riskLabelForDifficulty = (difficulty: number): RiskLabel =>
+  difficulty >= 60 ? 'high' : difficulty >= 56 ? 'medium' : 'low';
 
 interface PositionIntentInput {
   id: string;
@@ -46,7 +52,7 @@ const ZERO_STATE_MODIFIERS = {
 const intent = (input: PositionIntentInput) => ({
   id: input.id,
   text: input.text,
-  riskLabel: '关键抉择',
+  riskLabel: riskLabelForDifficulty(input.difficulty),
   effects: { confidence: 1 },
   response: input.partial,
   followUp: '这场重要比赛的表现会被教练组和关注你的人记在心里。',
@@ -95,15 +101,15 @@ interface PositionIntentChoice {
   };
 }
 
-const POSITION_INTENTS: Record<string, PositionIntentChoice[]> = {
+const POSITION_INTENTS: Record<Position, PositionIntentChoice[]> = {
   FORWARD: [
     intent({
       id: 'fm-attack-space',
       text: '反越位前插，抢在门将之前处理球',
       attribute: 'shooting',
       difficulty: 62,
-      success: '你精准判断了防线身后的空当，接球、调整、出手一气呵成，全场都看到了这次跑位的价值。',
-      partial: '你跑到了位置，但最后一下的处理被门将抢先半拍，威胁没能转化成进球。',
+      success: '你精准判断了防线身后的空当，接球、调整、完成了一次干净的处理，跑位价值被清楚看见。',
+      partial: '你跑到了位置，但最后一下处理被门将抢先半拍，没能形成有效攻门。',
       failure: '启动时机晚了一步，你被中卫提前卡住身位，这次进攻以越位告终。',
     }),
     intent({
@@ -111,7 +117,7 @@ const POSITION_INTENTS: Record<string, PositionIntentChoice[]> = {
       text: '回撤做球，为队友拉出进攻空当',
       attribute: 'passing',
       difficulty: 55,
-      success: '你回撤接应后的一脚出球直接打穿了中场线，队友获得的这次推进让看台都站了起来。',
+      success: '你回撤接应后的一脚出球直接打穿了中场线，队友因此获得了向前推进的空间。',
       partial: '你把球安全地做了出去，进攻得以延续，但没有真正撕开对手的阵型。',
       failure: '回撤拿球后被就地反抢，对手由守转攻，队友不得不回追补位。',
     }),
@@ -140,7 +146,7 @@ const POSITION_INTENTS: Record<string, PositionIntentChoice[]> = {
       text: '强行下底，把传中送进危险区',
       attribute: 'passing',
       difficulty: 57,
-      success: '你硬吃了边卫完成下底，那记倒三角传中助攻队友轻松推射入网。',
+      success: '你硬吃了边卫完成下底，那记倒三角传中把球送到危险区域，队友获得了直接处理的机会。',
       partial: '你的传中造成了一片混乱，可惜包抄的队友没能碰到皮球。',
       failure: '下底被边卫贴死，你的传中直接出了底线，看台传来一阵叹息。',
     }),
@@ -152,6 +158,35 @@ const POSITION_INTENTS: Record<string, PositionIntentChoice[]> = {
       success: '你第三次冲击身后时终于甩开了防守，单刀机会让对手防线风声鹤唳。',
       partial: '你两次冲击身后制造了角球和任意球，威胁在持续累积。',
       failure: '对手开始造越位，你两次掉进陷阱，冲刺的体力也见了底。',
+    }),
+  ],
+  DEFENSIVE_MIDFIELDER: [
+    intent({
+      id: 'dm-protect-center-back',
+      text: '保护中卫身前区域',
+      attribute: 'defending',
+      difficulty: 54,
+      success: '你及时回收到中卫身前，切断了对手最直接的推进线路，防线因此获得了重新落位的时间。',
+      partial: '你回收到了危险区域，对手的推进被迫放慢，但防线仍承受着压力。',
+      failure: '你回收的时机慢了一拍，对手在中卫身前找到接应点，防线被迫持续后退。',
+    }),
+    intent({
+      id: 'dm-intercept-lane',
+      text: '拦截对手的传球线路',
+      attribute: 'decision',
+      difficulty: 59,
+      success: '你提前读到传球方向并完成拦截，球队立刻获得了向前推进的空间。',
+      partial: '你封住了最危险的线路，对手只能横向转移，进攻速度被压了下来。',
+      failure: '你判断错了传球时机，对手从另一侧绕开了拦截区域。',
+    }),
+    intent({
+      id: 'dm-first-pass',
+      text: '完成第一脚向前出球',
+      attribute: 'passing',
+      difficulty: 55,
+      success: '你停球后第一脚出球准确找到前场队友，球队顺利把防守转换成了进攻。',
+      partial: '你稳稳把球送离压力区域，球队得以重新组织，但推进速度并不快。',
+      failure: '你第一脚出球被对手逼得仓促，球队只好重新回收阵型。',
     }),
   ],
   MIDFIELDER: [
@@ -189,7 +224,7 @@ const POSITION_INTENTS: Record<string, PositionIntentChoice[]> = {
       text: '套边前插，参与这一波进攻',
       attribute: 'stamina',
       difficulty: 58,
-      success: '你的套边前插让边锋获得了出球线路，这次助攻来自你精准的时机把握。',
+      success: '你的套边前插让边锋获得了出球线路，前插形成了清晰的进攻配合。',
       partial: '你前插到位并送出了传中，可惜落点被对方中卫解围。',
       failure: '前插后球权转换，你身后的空当被打穿，回追消耗了巨大的体能。',
     }),
@@ -236,16 +271,17 @@ const POSITION_INTENTS: Record<string, PositionIntentChoice[]> = {
       text: '定位球前插攻坚',
       attribute: 'aerialAbility',
       difficulty: 62,
-      success: '你在角球进攻中力压防守队员头槌破门，全场为你起立欢呼。',
+      success: '你在角球进攻中力压防守队员完成头球攻门，门将作出了关键扑救。',
       partial: '你的头球攻门稍稍高出横梁，差之毫厘。',
       failure: '定位球进攻中你被提前卡住位置，这次机会化为乌有。',
     }),
   ],
 };
 
-const POSITION_LABELS: Record<string, string> = {
+const POSITION_LABELS: Record<Position, string> = {
   FORWARD: '锋线',
   WINGER: '边路',
+  DEFENSIVE_MIDFIELDER: '后腰',
   MIDFIELDER: '中场',
   FULL_BACK: '边卫',
   CENTER_BACK: '防线',
@@ -291,8 +327,8 @@ export const buildMatchMomentEvent = (
   const outcome = parseMatchOutcome(fact, context);
   if (outcome === null) return null;
 
-  const position = save.player.identity.primaryPosition;
-  const intents = POSITION_INTENTS[position] ?? POSITION_INTENTS.MIDFIELDER!;
+  const position = save.player.identity.primaryPosition as Position;
+  const intents = POSITION_INTENTS[position] ?? POSITION_INTENTS.MIDFIELDER;
   const positionLabel = POSITION_LABELS[position] ?? '中场';
   const match = MATCH_SUMMARY.exec(fact.summary);
   const opponentName = match?.[1]?.trim() ?? '对手';

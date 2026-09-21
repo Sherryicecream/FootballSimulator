@@ -245,7 +245,7 @@ const buildReplay = (save: CareerSaveV5Like): CareerReplayMoment[] => {
     return [
       {
         evidenceId: entry.id,
-        timeKey: entry.weekKey,
+        timeKey: entry.occurredOn ?? (save.schemaVersion === 7 ? '时间不详' : entry.weekKey),
         kind,
         title: REPLAY_TITLES[kind],
         summary: entry.summary,
@@ -372,6 +372,16 @@ const HONOUR_WEIGHTS: Record<SeasonHonour['kind'], number> = {
   'world-cup-runner-up': 12,
 };
 
+const LEGENDARY_HONOUR_WEIGHTS: Record<SeasonHonour['kind'], number> = {
+  'league-champion': 12,
+  'cup-champion': 8,
+  promotion: 4,
+  relegation: 0,
+  'asian-cup-champion': 18,
+  'world-cup-champion': 30,
+  'world-cup-runner-up': 10,
+};
+
 const buildDimensions = (
   save: CareerSaveV5Like,
   honours: SeasonHonour[],
@@ -379,10 +389,6 @@ const buildDimensions = (
 ): CareerDimension[] => {
   const legendaryEvidence = replay.filter(({ kind }) => kind === 'international');
   const legendaryMatchCount = replay.filter(({ kind }) => kind === 'match').length;
-  const championCount = honours.filter(({ kind }) =>
-    ['league-champion', 'cup-champion', 'asian-cup-champion', 'world-cup-champion'].includes(kind),
-  ).length;
-
   const clubIds = new Set([
     ...save.clubHistory.map(({ clubId }) => clubId),
     ...save.loanHistory.map(({ loanClubId }) => loanClubId),
@@ -410,7 +416,9 @@ const buildDimensions = (
       : 0;
 
   const legendaryScore =
-    legendaryEvidence.length * 12 + legendaryMatchCount * 6 + championCount * 12;
+    legendaryEvidence.length * 12 +
+    legendaryMatchCount * 6 +
+    honours.reduce((total, { kind }) => total + LEGENDARY_HONOUR_WEIGHTS[kind], 0);
 
   return [
     dimension('competition', '竞技水平', save.player.reputation),

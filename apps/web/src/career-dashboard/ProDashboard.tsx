@@ -1,4 +1,4 @@
-import type { CareerSaveV5Like } from '@football/contracts';
+import type { CareerSaveV5Like, TrainingPlan, WorldNewsItem } from '@football/contracts';
 import { labelAttribute } from './career-presentation';
 import { pickLeadBeat, sceneKindForBeat } from './career-presentation';
 import { ContractCard } from './ContractCard';
@@ -9,7 +9,13 @@ import { CurrentStateBadges } from './CurrentStateBadges';
 import { StoryProgressPanel } from './StoryProgressPanel';
 import { MatchdayRhythmPanel } from './MatchdayRhythmPanel';
 import { TrainingFeedbackPanel } from './TrainingFeedbackPanel';
+import { TrainingPlanEditor } from './TrainingPlanEditor';
+import { WorldFootballPanel } from './WorldFootballPanel';
+import { CareerActionBar } from './CareerActionBar';
+import { NodeBrief } from './NodeBrief';
 import { FootballGlyph } from '../design-system/FootballGlyph';
+import { countClubFixtures } from '@football/application';
+import { allClubProfiles, overseasClubs, youthClubs } from '@football/content';
 import type { ProCupState } from '@football/contracts';
 import {
   contractClubName,
@@ -23,8 +29,12 @@ interface ProDashboardProps {
   report: MonthlyReport | null;
   advancing: boolean;
   busy?: boolean;
-  onAdvance: () => void;
+  onAdvance?: () => void;
+  onAdvanceToNode?: () => void;
+  onAdvanceOneMonth?: () => void;
   onOpenArchives: () => void;
+  onTrainingPlanChange?: (plan: TrainingPlan) => void;
+  worldNewsItems?: readonly WorldNewsItem[];
 }
 
 const POSITION_LABELS: Record<string, string> = {
@@ -51,10 +61,10 @@ const CUP_ROUND_LABELS: Record<ProCupState['currentRound'], string> = {
 
 const tierMovementLabel = (currentTier: number | undefined, nextTier: number | null): string => {
   if (nextTier === null) return '赛季进行中';
-  if (currentTier === undefined) return '下一季层级 ' + nextTier;
+  if (currentTier === undefined) return '下一季实力档位 ' + nextTier;
   if (nextTier > currentTier) return '升级';
   if (nextTier < currentTier) return '降级';
-  return '层级保持';
+  return '实力档位保持';
 };
 
 export function ProDashboard({
@@ -63,7 +73,11 @@ export function ProDashboard({
   advancing,
   busy = false,
   onAdvance,
+  onAdvanceToNode,
+  onAdvanceOneMonth,
   onOpenArchives,
+  onTrainingPlanChange = () => undefined,
+  worldNewsItems = [],
 }: ProDashboardProps) {
   const pro = save.proSeason;
   if (!pro) return null;
@@ -77,6 +91,12 @@ export function ProDashboard({
   const cup = pro.domesticCup;
   const cupFixtures = cup?.fixtures ?? [];
   const cupPlayed = cupFixtures.filter(({ status }) => status === 'played').length;
+  const cupClubPlayed = cup ? countClubFixtures(cupFixtures, pro.clubId) : 0;
+  const cupProgress = cup
+    ? cupPlayed === 0
+      ? '尚未开赛'
+      : '赛事总进度：已完成 ' + cupPlayed + '/' + cupFixtures.length + ' 场'
+    : '本赛季暂无杯赛记录';
   const cupRound = cup ? CUP_ROUND_LABELS[cup.currentRound] : '暂无杯赛记录';
   const currentSeasonPrefix = pro.startDate.slice(0, 4) + '-';
   const recentCupFact = [...save.ledger]
@@ -90,7 +110,16 @@ export function ProDashboard({
   const cupRecent =
     recentCupFact?.summary ??
     (cup
-      ? '最近杯赛：已完成 ' + cupPlayed + ' 场，当前轮次为' + cupRound
+      ? cupPlayed === 0
+        ? '最近杯赛：国内杯尚未开赛；本队已赛 0 场，当前轮次为' + cupRound
+        : '最近杯赛：国内杯赛事总进度：已完成 ' +
+          cupPlayed +
+          '/' +
+          cupFixtures.length +
+          ' 场；本队已赛 ' +
+          cupClubPlayed +
+          ' 场，当前轮次为' +
+          cupRound
       : '最近杯赛：本赛季暂无杯赛记录');
   const tierMovement = tierMovementLabel(
     save.activeLoan?.loanClubTier ?? save.contract?.clubTier,
@@ -106,10 +135,22 @@ export function ProDashboard({
     report?.momentum?.summary ??
     '训练、比赛与队内竞争正在共同决定你的下一次出场。';
 
+  const currentFocus = save.health.activeInjury
+    ? '伤病恢复：' + save.health.activeInjury.bodyArea
+    : (report?.momentum?.title ??
+      (save.activeLoan ? '租借出场与回归安排' : '适应球队节奏与队内竞争'));
+  const advanceToNode = onAdvanceToNode ?? onAdvance ?? (() => undefined);
+  const advanceOneMonth = onAdvanceOneMonth ?? onAdvance ?? (() => undefined);
+  const nodeAdvance = save.monthlyAdvance.nodeAdvance;
   return (
     <section className="pro-dashboard" aria-label="职业仪表盘">
       <header className="career-hero">
+        <span className="eyebrow">职业赛季</span>
         <h2>{actualClubName}</h2>
+        <p className="career-player-context">
+          {save.player.identity.name} · {save.player.age}岁 ·{' '}
+          {POSITION_LABELS[position] ?? position} · 当前俱乐部：{actualClubName}
+        </p>
         <div className="career-meta">
           <span>{pro.currentDate}</span>
           <span>第 {pro.currentWeek} 周</span>
@@ -119,6 +160,22 @@ export function ProDashboard({
           </span>
         </div>
       </header>
+
+      <p className="career-focus">
+        <strong>当前关注：</strong>
+        {currentFocus}
+      </p>
+
+      {pro.calendarBridge?.kind === 'long-break' && (
+        <p className="calendar-bridge-note" role="status">
+          赛历桥接休整：从 {pro.calendarBridge.fromDate} 到 {pro.calendarBridge.toDate}，共{' '}
+          {pro.calendarBridge.gapDays} 天；期间不安排比赛，也不计入疲劳和成长消耗。
+        </p>
+      )}
+
+      {nodeAdvance && (
+        <NodeBrief brief={nodeAdvance.brief} skippedMonths={nodeAdvance.skippedMonths} />
+      )}
 
       {save.activeLoan && (
         <section className="dashboard-card loan-status-card" aria-label="租借状态">
@@ -154,6 +211,13 @@ export function ProDashboard({
             injuryWeeks={save.health.activeInjury?.expectedRecoveryWeeks}
           />
         </section>
+        <TrainingPlanEditor
+          plan={save.trainingPlan}
+          disabled={
+            busy || advancing || Boolean(save.story.pendingEvent || save.story.pendingFeedback)
+          }
+          onChange={onTrainingPlanChange}
+        />
         <section className="dashboard-card competition-card" aria-label="本赛季赛事">
           <div className="card-heading competition-heading">
             <span className="card-kicker">赛季走势</span>
@@ -172,16 +236,17 @@ export function ProDashboard({
               <span className="competition-stat-label">国内杯</span>
               <strong>{cupRound}</strong>
               <small>
-                {cup
-                  ? '已完成 ' + cupPlayed + '/' + cupFixtures.length + ' 场'
-                  : '本赛季暂无杯赛记录'}
+                {cupProgress}
+                {cup && cupPlayed > 0 ? '；本队已赛 ' + cupClubPlayed + ' 场' : ''}
               </small>
             </div>
             <div className="competition-stat">
-              <span className="competition-stat-label">层级变化</span>
+              <span className="competition-stat-label">球队实力档位变化</span>
               <strong>{tierMovement}</strong>
               <small>
-                {pro.nextClubTier === null ? '赛季结算后更新' : '下一赛季层级 ' + pro.nextClubTier}
+                {pro.nextClubTier === null
+                  ? '赛季结算后更新'
+                  : '下一赛季实力档位 ' + pro.nextClubTier}
               </small>
             </div>
           </div>
@@ -248,36 +313,38 @@ export function ProDashboard({
         </section>
 
         <section className="dashboard-card standings-card">
-          <h3>联赛积分榜</h3>
-          <table className="standings">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>俱乐部</th>
-                <th>赛</th>
-                <th>胜</th>
-                <th>平</th>
-                <th>负</th>
-                <th>分</th>
-              </tr>
-            </thead>
-            <tbody>
-              {standings.map((standing, index) => (
-                <tr
-                  key={standing.clubId}
-                  className={standing.clubId === pro.clubId ? 'self' : undefined}
-                >
-                  <td>{index + 1}</td>
-                  <td>{clubName(save, standing.clubId)}</td>
-                  <td>{standing.played}</td>
-                  <td>{standing.won}</td>
-                  <td>{standing.drawn}</td>
-                  <td>{standing.lost}</td>
-                  <td>{standing.points}</td>
+          <details>
+            <summary>查看完整联赛积分榜</summary>
+            <table className="standings">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>俱乐部</th>
+                  <th>赛</th>
+                  <th>胜</th>
+                  <th>平</th>
+                  <th>负</th>
+                  <th>分</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {standings.map((standing, index) => (
+                  <tr
+                    key={standing.clubId}
+                    className={standing.clubId === pro.clubId ? 'self' : undefined}
+                  >
+                    <td>{index + 1}</td>
+                    <td>{clubName(save, standing.clubId)}</td>
+                    <td>{standing.played}</td>
+                    <td>{standing.won}</td>
+                    <td>{standing.drawn}</td>
+                    <td>{standing.lost}</td>
+                    <td>{standing.points}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </details>
         </section>
 
         <section className="dashboard-card national-team-card">
@@ -301,6 +368,8 @@ export function ProDashboard({
             <p>尚未入选国家队</p>
           )}
         </section>
+
+        <WorldFootballPanel items={worldNewsItems} clubs={allClubProfiles()} />
 
         {save.contract && <ContractCard contract={save.contract} />}
 
@@ -333,24 +402,20 @@ export function ProDashboard({
         )}
       </div>
 
-      <footer className="career-actions">
-        <button
-          className="primary-action"
-          onClick={onAdvance}
-          disabled={busy || advancing || pro.completed}
-        >
-          {advancing ? '推进中…' : '推进到下个月'}
-        </button>
-        <button className="secondary-action" onClick={onOpenArchives} disabled={busy}>
-          生涯档案
-        </button>
-      </footer>
+      <CareerActionBar
+        busy={busy || advancing}
+        disabled={pro.completed}
+        label={advancing ? '推进中…' : '推进到下一节点'}
+        onAdvanceToNode={advanceToNode}
+        onAdvanceOneMonth={advanceOneMonth}
+        onOpenArchives={onOpenArchives}
+      />
     </section>
   );
 }
 
 const memberName = (pro: NonNullable<CareerSaveV5Like['proSeason']>, personId: string): string =>
-  pro.squad.find(({ personId: id }) => id === personId)?.name ?? personId;
+  pro.squad.find(({ personId: id }) => id === personId)?.name ?? '待核实名单';
 
 const clubName = (save: CareerSaveV5Like, clubId: string): string => {
   if (clubId === save.proSeason?.clubId) return professionalClubName(save);
@@ -358,6 +423,6 @@ const clubName = (save: CareerSaveV5Like, clubId: string): string => {
   return clubDisplayName(clubId);
 };
 
-import { youthClubs } from '@football/content';
+const playableClubs = [...youthClubs, ...overseasClubs];
 const clubDisplayName = (clubId: string): string =>
-  youthClubs.find(({ id }) => id === clubId)?.name ?? clubId;
+  playableClubs.find(({ id }) => id === clubId)?.name ?? clubId;

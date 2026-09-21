@@ -1,10 +1,12 @@
 import type {
   CareerLedgerEntryV2,
   CareerSaveV4Like,
+  CareerSaveV6Like,
   ClubProfile,
   LeagueStanding,
   YouthMatchResultV2,
 } from '@football/contracts';
+import { inferLegacyClubCountry } from '@football/contracts';
 import { advanceDomesticCup } from './domestic-cup';
 import {
   accrueWeeklyDevelopment,
@@ -13,6 +15,7 @@ import {
 } from '../player-development/development';
 import { simulateInjuryRisk } from '../health/injury-model';
 import { simulateMatch } from '../match/match-engine';
+import { allocatePlayerContribution } from '../match/player-contribution';
 import { calculatePlayerTeamImpact } from './player-team-impact';
 
 export { calculatePlayerTeamImpact } from './player-team-impact';
@@ -20,6 +23,7 @@ import type { Position, TeamStrength } from '@football/contracts';
 import { createSeededRandomSource } from '../randomness';
 import { deriveAge } from './simulate-youth-week';
 import { depthRank } from './pro-squad';
+import { stampCareerFacts } from './career-moment';
 
 export interface ProWeekTransition<S = CareerSaveV4Like> {
   save: S;
@@ -44,7 +48,11 @@ const addDays = (isoDate: string, days: number): string => {
 };
 
 const trainingLoad = (intensity: CareerSaveV4Like['trainingPlan']['intensity']) =>
-  ({ light: 20, normal: 36, intense: 54 })[intensity];
+  ({ light: 24, normal: 40, intense: 54 })[intensity];
+export const trainingReadinessModifier = (weeklyLoad: number): number => {
+  if (weeklyLoad < 32 || weeklyLoad > 96) return -4;
+  return Math.max(-4, Math.min(4, Math.round(4 - Math.abs(weeklyLoad - 64) / 8)));
+};
 const recoveryBonus = (focus: CareerSaveV4Like['trainingPlan']['focus']) =>
   focus === 'recovery' ? 8 : 3;
 
@@ -99,8 +107,8 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
 
   const trainingContribution = trainingLoad(save.trainingPlan.intensity);
   const load =
-    (trainingContribution + 8) * 1.15 +
-    ownFixtures.length * 12 * (save.trainingPlan.intensity === 'light' ? 0.5 : 1);
+    (trainingContribution + 5) * 1.05 +
+    ownFixtures.length * 10 * (save.trainingPlan.intensity === 'light' ? 0.5 : 1);
   const recoveredInjury = advanceInjury(save.health.activeInjury);
   let health = {
     ...save.health,
@@ -136,6 +144,9 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
     const home = clubById.get(fixture.homeClubId);
     const away = clubById.get(fixture.awayClubId);
     if (!home || !away) throw new Error(`固定赛程引用了未知俱乐部：${fixture.id}`);
+    if (inferLegacyClubCountry(home) !== inferLegacyClubCountry(away)) {
+      throw new Error(`联赛固定赛程跨国家：${fixture.id}`);
+    }
     const isOwn = fixture.homeClubId === pro.clubId || fixture.awayClubId === pro.clubId;
     const isHome = fixture.homeClubId === pro.clubId;
     const opponent = clubStrength(isHome ? away : home).overall;
@@ -153,6 +164,17 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
     );
     standings = updateStandings(standings, fixture, result.homeScore, result.awayScore);
     if (isOwn && selection.appearance !== 'unavailable') {
+      const contribution = allocatePlayerContribution({
+        ownGoals: isHome ? result.homeScore : result.awayScore,
+        minutes:
+          selection.appearance === 'starter' || selection.appearance === 'bench'
+            ? selection.minutes
+            : 0,
+        position: save.player.identity.primaryPosition as Position,
+        shooting: save.player.attributes.technical.shooting,
+        passing: save.player.attributes.technical.passing,
+        rng,
+      });
       const match: YouthMatchResultV2 = {
         id: `pro-${pro.startDate.slice(0, 4)}-${fixture.id}`,
         fixtureId: fixture.id,
@@ -166,9 +188,9 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
         rating:
           selection.appearance === 'reserve'
             ? reserveRating(rng)
-            : matchRating(rng, selection.minutes, result, isHome),
-        goals: playerGoals(selection, rng),
-        assists: playerAssists(selection, rng),
+            : matchRating(rng, selection.minutes, result, isHome, contribution),
+        goals: contribution.goals,
+        assists: contribution.assists,
       };
       playerMatches.push({
         match,
@@ -204,6 +226,17 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
       cupRng,
     );
     if (isOwn && selection.appearance !== 'unavailable') {
+      const contribution = allocatePlayerContribution({
+        ownGoals: isHome ? result.homeScore : result.awayScore,
+        minutes:
+          selection.appearance === 'starter' || selection.appearance === 'bench'
+            ? selection.minutes
+            : 0,
+        position: save.player.identity.primaryPosition as Position,
+        shooting: save.player.attributes.technical.shooting,
+        passing: save.player.attributes.technical.passing,
+        rng: cupRng,
+      });
       const match: YouthMatchResultV2 = {
         id: `pro-${pro.startDate.slice(0, 4)}-${fixture.id}`,
         fixtureId: fixture.id,
@@ -217,9 +250,9 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
         rating:
           selection.appearance === 'reserve'
             ? reserveRating(cupRng)
-            : matchRating(cupRng, selection.minutes, result, isHome),
-        goals: playerGoals(selection, cupRng),
-        assists: playerAssists(selection, cupRng),
+            : matchRating(cupRng, selection.minutes, result, isHome, contribution),
+        goals: contribution.goals,
+        assists: contribution.assists,
       };
       playerMatches.push({
         match,
@@ -237,7 +270,7 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
     );
   }
   const matchResult = playerMatches.at(-1)?.match ?? null;
-  const facts = createProFacts(
+  const rawFacts = createProFacts(
     save,
     weekKey,
     trainingContribution,
@@ -246,6 +279,11 @@ export const simulateProfessionalWeek = <S extends CareerSaveV4Like>(
     selection,
     injury,
   );
+  const facts = stampCareerFacts(save as unknown as CareerSaveV6Like, rawFacts, {
+    seasonId: pro.id,
+    date: pro.currentDate,
+    weekIndex: nextWeek,
+  });
   const nextDate = addDays(pro.currentDate, 7);
   const playedIds = new Set(leagueFixtures.map(({ id }) => id));
   const fixtures = pro.fixtures.map((fixture) =>
@@ -358,7 +396,12 @@ export const decideAppearance = (
     'player',
   );
   const depthScore = Math.max(20, 100 - (rank - 1) * 12);
-  const trainingPerf = clamp(50 + save.player.development.professionalism / 4 + rng.next() * 20);
+  const trainingPerf = clamp(
+    50 +
+      save.player.development.professionalism / 4 +
+      trainingReadinessModifier(health.recentLoad) +
+      rng.next() * 20,
+  );
   let threshold = 62;
   if (contract?.squadRole === 'first-team-rotation') threshold -= 6;
   else if (contract?.squadRole === 'rotation') threshold -= 3;
@@ -369,8 +412,10 @@ export const decideAppearance = (
   if (promise?.kind === 'position-guarantee') threshold -= 3;
   const rivals = pro.squad
     .filter(
-      ({ primaryPosition, personId }) =>
-        primaryPosition === save.player.identity.primaryPosition && personId !== 'player',
+      ({ primaryPosition, personId, relationshipToPlayer }) =>
+        primaryPosition === save.player.identity.primaryPosition &&
+        personId !== 'player' &&
+        (relationshipToPlayer === undefined || relationshipToPlayer === 'rivalry'),
     )
     .map(({ currentAbility }) => currentAbility);
   const playerAbility = weightedPlayerAbility(save);
@@ -420,34 +465,22 @@ const weightedPlayerAbility = (save: CareerSaveV4Like): number => {
   return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
 };
 
-const playerGoals = (
-  selection: ProAppearanceDecision,
-  rng: ReturnType<typeof createSeededRandomSource>,
-): number => {
-  if (selection.appearance === 'unavailable') return 0;
-  const chance = (selection.minutes / 90) * 0.22;
-  return rng.next() < chance ? 1 : 0;
-};
-
-const playerAssists = (
-  selection: ProAppearanceDecision,
-  rng: ReturnType<typeof createSeededRandomSource>,
-): number => {
-  if (selection.appearance === 'unavailable') return 0;
-  const chance = (selection.minutes / 90) * 0.26;
-  return rng.next() < chance ? 1 : 0;
-};
-
 const matchRating = (
   rng: ReturnType<typeof createSeededRandomSource>,
   minutes: number,
   result: { homeScore: number; awayScore: number },
   isHome: boolean,
+  contribution: { goals: number; assists: number },
 ): number => {
   if (minutes <= 0) return 0;
   const own = isHome ? result.homeScore : result.awayScore;
   const against = isHome ? result.awayScore : result.homeScore;
-  let rating = 6 + (own > against ? 0.6 : own === against ? 0.1 : -0.4) + (rng.next() - 0.5) * 2;
+  let rating =
+    6 +
+    (own > against ? 0.6 : own === against ? 0.1 : -0.4) +
+    contribution.goals * 0.35 +
+    contribution.assists * 0.2 +
+    (rng.next() - 0.5) * 2;
   return Math.min(10, Math.max(3, Math.round(rating * 10) / 10));
 };
 
@@ -457,6 +490,7 @@ const reserveRating = (rng: ReturnType<typeof createSeededRandomSource>): number
 /** 留洋适应损耗（设计 §6）：首季每周 -(100-适应力)/25，次季减半，之后归零。 */
 const overseasMoralePenalty = (save: CareerSaveV4Like): number => {
   if (!save.overseasSince) return 0;
+  if (save.story.completedStoryIds.includes('cross-country-adapted')) return 0;
   const seasonYear = Number(save.proSeason?.startDate.slice(0, 4) ?? 0);
   const years = seasonYear - Number(save.overseasSince.slice(0, 4));
   const full = (100 - save.player.development.adaptability) / 25;
@@ -522,6 +556,8 @@ const createProFacts = (
         rating: match.rating,
         goals: match.goals,
         assists: match.assists,
+        homeScore: match.homeScore,
+        awayScore: match.awayScore,
       },
       summary: `${competitionId === 'domestic-cup' ? '国内杯' : '联赛'}：${match.opponentName} ${match.homeScore}:${match.awayScore}；${appearanceText}${match.rating != null ? `，评分 ${match.rating}` : ''}${match.goals + match.assists > 0 ? `；${match.goals} 球 ${match.assists} 助攻` : ''}`,
       participantIds: ['player'],

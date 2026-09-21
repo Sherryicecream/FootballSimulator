@@ -4,6 +4,7 @@ import { getAllRegions } from '@football/content';
 import type { BootstrapContentPort } from '@football/application';
 import type { CareerSave } from '@football/contracts';
 import { POSITION_OPTIONS, FOOT_OPTIONS } from './creation-options';
+import { parseSeedInput } from './seed-input';
 
 interface CareerCreationFormProps {
   onComplete: (save: CareerSave) => void;
@@ -20,6 +21,7 @@ export function CareerCreationForm({
   const [homelandId, setHomelandId] = useState('');
   const [primaryPosition, setPrimaryPosition] = useState('');
   const [preferredFoot, setPreferredFoot] = useState('RIGHT');
+  const [seedText, setSeedText] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const regions = getAllRegions();
@@ -46,13 +48,22 @@ export function CareerCreationForm({
       setError('所选家乡资料不可用');
       return;
     }
+
+    let seed: number;
+    try {
+      seed = parseSeedInput(seedText) ?? seedFactory();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : '种子输入无效');
+      return;
+    }
+
     const params: StartCareerParams = {
       playerName: trimmedName,
       hometown: region.name,
       primaryPosition: primaryPosition as StartCareerParams['primaryPosition'],
       preferredFoot: preferredFoot as StartCareerParams['preferredFoot'],
       regionId: homelandId,
-      seed: seedFactory(),
+      seed,
     };
 
     const save = createCareerSave(params);
@@ -60,7 +71,7 @@ export function CareerCreationForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ fontFamily: 'var(--font-serif)' }}>
+    <form noValidate onSubmit={handleSubmit} style={{ fontFamily: 'var(--font-serif)' }}>
       <div
         style={{
           borderBottom: '2px solid var(--color-accent)',
@@ -89,6 +100,17 @@ export function CareerCreationForm({
           基本信息
         </div>
       </div>
+
+      <p
+        style={{
+          margin: 'calc(-1 * var(--space-md)) 0 var(--space-xl)',
+          color: 'var(--color-text-secondary)',
+          fontSize: 'var(--text-sm)',
+          lineHeight: 1.7,
+        }}
+      >
+        你将从一名16岁的中国球员开始，按月推进生涯；游戏会自动保存，已提交的选择不可回退。
+      </p>
 
       {error && (
         <div
@@ -169,6 +191,45 @@ export function CareerCreationForm({
       </div>
 
       <div style={{ marginBottom: 'var(--space-lg)' }}>
+        <details>
+          <summary
+            style={{
+              cursor: 'pointer',
+              color: 'var(--color-ink)',
+              fontWeight: 700,
+              marginBottom: 'var(--space-sm)',
+            }}
+          >
+            世界种子（可选）
+          </summary>
+          <p
+            style={{
+              color: 'var(--color-text-secondary)',
+              fontSize: 'var(--text-sm)',
+              lineHeight: 1.6,
+              margin: '0 0 var(--space-sm)',
+            }}
+          >
+            留空会随机生成；输入同一种子和相同选择，可以复现相同的机械开局。
+          </p>
+          <label style={labelStyle}>
+            随机种子
+            <input
+              type="text"
+              value={seedText}
+              onChange={(event) => setSeedText(event.target.value)}
+              style={inputStyle}
+              aria-label="随机种子"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              placeholder="留空以随机生成"
+              maxLength={10}
+            />
+          </label>
+        </details>
+      </div>
+
+      <div style={{ marginBottom: 'var(--space-lg)' }}>
         <label style={labelStyle}>
           惯用脚
           <div style={{ display: 'flex', gap: 'var(--space-sm)', marginTop: 'var(--space-xs)' }}>
@@ -194,7 +255,7 @@ export function CareerCreationForm({
                   value={f.value}
                   checked={preferredFoot === f.value}
                   onChange={(e) => setPreferredFoot(e.target.value)}
-                  style={{ display: 'none' }}
+                  style={{ marginRight: 'var(--space-xs)', accentColor: 'var(--color-accent)' }}
                   aria-label={f.label}
                 />
                 {f.label}
@@ -215,7 +276,7 @@ export function CareerCreationForm({
           type="submit"
           style={{
             background: 'var(--color-accent)',
-            color: '#fff',
+            color: 'var(--color-ink)',
             border: 'none',
             padding: 'var(--space-md) 40px',
             borderRadius: 'var(--radius-sm)',

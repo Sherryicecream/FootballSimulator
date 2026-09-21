@@ -191,6 +191,7 @@ export function createPlayer(
     name: params.name,
     hometown: params.hometown,
     homelandId: params.regionId,
+    country: 'china',
     dateOfBirth: (() => {
       const birthYear = 2008;
       const birthMonth = rng.nextInt(1, 12);

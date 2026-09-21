@@ -37,7 +37,17 @@ const createYouthSave = (playerName: string, seed: number) =>
     content,
   );
 
-const asV6 = (save: unknown): CareerSaveV6 => CareerSaveV6Schema.parse(migrateCareerSaveV6(save));
+const asV6 = (save: unknown): CareerSaveV6 => {
+  if (save && typeof save === 'object' && 'schemaVersion' in save) {
+    const record = save as Record<string, unknown>;
+    if (record.schemaVersion === 7 || record.schemaVersion === 8) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { mechanicsVersion, moments, worldRegistry, ...v6like } = record;
+      return CareerSaveV6Schema.parse({ ...v6like, schemaVersion: 6 });
+    }
+  }
+  return CareerSaveV6Schema.parse(migrateCareerSaveV6(save));
+};
 
 const submitDecision = <S extends Parameters<typeof submitCareerDecision>[0]>(save: S) => {
   const event = save.story.pendingEvent;

@@ -31,6 +31,14 @@ const signalLabels: Record<string, string> = {
   'competition-pressure': '竞争压力',
   'release-risk': '被放弃风险',
 };
+const POSITION_LABELS: Record<string, string> = {
+  CENTER_BACK: '中后卫',
+  FULL_BACK: '边后卫',
+  DEFENSIVE_MIDFIELDER: '后腰',
+  MIDFIELDER: '中场',
+  WINGER: '边锋',
+  FORWARD: '前锋',
+};
 
 export function OffseasonBriefing({
   save,
@@ -47,6 +55,15 @@ export function OffseasonBriefing({
   if (!state) return null;
   const { briefing, graduationEligible, eligibilityReport } = state;
   const released = outcome?.status === 'released';
+  const academyName =
+    academies.find(({ id }) => id === save.season.academyId)?.name ?? '当前青训机构';
+  const positionLabel =
+    POSITION_LABELS[save.player.identity.primaryPosition] ?? save.player.identity.primaryPosition;
+  const currentFocus = released
+    ? '寻找新的青训路径'
+    : graduationEligible
+      ? '评估职业市场与下一份合同'
+      : '根据赛季评估继续训练';
   const candidates =
     released && outcome
       ? academies.filter(({ pathway }) => pathway === pathwayByNextPath[outcome.nextPath])
@@ -60,6 +77,14 @@ export function OffseasonBriefing({
         title="休赛期简报"
         detail="赛季哨声已经结束，身体、声望和下一条路都在这里重新排位。"
       />
+      <p className="career-player-context">
+        {save.player.identity.name} · {save.player.age}岁 · {positionLabel} · 当前俱乐部：
+        {academyName} · 实际日期：{state.nextSeasonStart}
+      </p>
+      <p className="career-focus">
+        <strong>当前关注：</strong>
+        {currentFocus}
+      </p>
       <ul className="offseason-list">
         <li>{briefing.healthClearance}</li>
         <li>
@@ -98,7 +123,7 @@ export function OffseasonBriefing({
 
       {released && canContinueYouth ? (
         candidates.length > 0 && (
-          <div className="offseason-actions">
+          <div className="offseason-actions" aria-label="休赛期操作">
             <p>俱乐部结束了本阶段培养，请选择补救路线：</p>
             {candidates.map((academy) => (
               <button
@@ -112,7 +137,7 @@ export function OffseasonBriefing({
           </div>
         )
       ) : (
-        <div className="offseason-actions">
+        <div className="offseason-actions" aria-label="休赛期操作">
           {graduationEligible && onSeekOffers && (
             <button onClick={onSeekOffers}>寻找经纪人报价</button>
           )}

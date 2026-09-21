@@ -6,6 +6,23 @@ import { createYouthCareerV2 } from '../../src/use-cases/create-youth-career-v2'
 import { enterOffseason } from '../../src/use-cases/enter-offseason';
 
 describe('createYouthCareerV2', () => {
+  it('initializes newly created careers as v8 with a world registry', () => {
+    const created = createYouthCareerV2(
+      createCareerSave({
+        playerName: '林岳',
+        hometown: '上海',
+        primaryPosition: 'CENTER_BACK',
+        preferredFoot: 'RIGHT',
+        regionId: 'shanghai',
+        seed: 42,
+      }),
+      createContent(),
+    );
+
+    expect(created.schemaVersion).toBe(8);
+    expect(created.worldRegistry).toEqual({ entries: [], clubPulses: [] });
+  });
+
   it('creates the same fixed full-season schedule from the same seed and content', () => {
     const legacy = createCareerSave({
       playerName: '林岳',
@@ -96,13 +113,17 @@ describe('createYouthCareerV2', () => {
         ([key]) =>
           ![
             'activeLoan',
+            'careerEnd',
             'clubHistory',
             'freeAgentSeasons',
             'loanHistory',
+            'mechanicsVersion',
+            'moments',
             'nationalTeam',
             'overseasSince',
             'retiredOn',
             'totals',
+            'worldRegistry',
           ].includes(key),
       ),
     );

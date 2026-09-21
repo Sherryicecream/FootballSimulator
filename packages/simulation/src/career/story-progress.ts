@@ -8,6 +8,7 @@ import type {
 type StoryNode = {
   event: EventDefinition;
   storyId: string;
+  familyId?: string;
 };
 
 const WAIT_REASONS: Record<string, string> = {
@@ -31,7 +32,11 @@ export const buildStoryProgress = (
 ): StoryProgressSnapshot => {
   const nodes = events
     .filter((event): event is EventDefinition & { storyId: string } => Boolean(event.storyId))
-    .map((event) => ({ event, storyId: event.storyId! }));
+    .map((event) => ({
+      event,
+      storyId: event.storyId!,
+      ...(event.storyFamilyId ? { familyId: event.storyFamilyId } : {}),
+    }));
   const eventsById = new Map(events.map((event) => [event.id, event]));
   const storyIds = [...new Set(nodes.map(({ storyId }) => storyId))].sort();
   const parents = new Map(storyIds.map((storyId) => [storyId, storyId]));
@@ -61,6 +66,17 @@ export const buildStoryProgress = (
       if (!nextEvent?.storyId || !parents.has(nextEvent.storyId)) continue;
       incoming.set(nextEvent.storyId, (incoming.get(nextEvent.storyId) ?? 0) + 1);
       union(storyId, nextEvent.storyId);
+    }
+  }
+
+  const firstNodeByFamily = new Map<string, string>();
+  for (const node of nodes) {
+    if (!node.familyId) continue;
+    const firstStoryId = firstNodeByFamily.get(node.familyId);
+    if (firstStoryId) {
+      union(firstStoryId, node.storyId);
+    } else {
+      firstNodeByFamily.set(node.familyId, node.storyId);
     }
   }
 
@@ -98,7 +114,7 @@ export const buildStoryProgress = (
             : '故事线暂时没有待处理场景';
 
       return {
-        storyId: rootNode.storyId,
+        storyId: rootNode.familyId ?? rootNode.storyId,
         title: rootNode.event.title,
         status,
         completedNodes,

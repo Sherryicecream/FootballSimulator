@@ -22,7 +22,7 @@ export interface ProPhaseEventState {
 
 /** 事件评估上下文：职业推进方提供当前俱乐部档案，青训推进方可省略。 */
 export interface YouthEventFilterContext {
-  currentClub?: Pick<ClubProfile, 'id' | 'overseas' | 'overseasRegion'>;
+  currentClub?: Pick<ClubProfile, 'id' | 'overseas' | 'overseasRegion' | 'country'>;
 }
 
 export function filterEligibleYouthEvents(
@@ -105,6 +105,10 @@ export function filterEligibleYouthEvents(
     if (condition.overseasRegions && condition.overseasRegions.length > 0) {
       const region = save.overseasSince ? context.currentClub?.overseasRegion : undefined;
       if (!region || !condition.overseasRegions.includes(region)) return false;
+    }
+    if (condition.requireCountry) {
+      const country = save.overseasSince ? context.currentClub?.country : undefined;
+      if (country !== condition.requireCountry) return false;
     }
     if (
       condition.requireNationalTeam !== undefined &&

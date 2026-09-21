@@ -384,9 +384,11 @@ describe('ProDashboard', () => {
     expect(screen.getByRole('heading', { name: '职业俱乐部1' })).toBeVisible();
     expect(screen.getByText('位置深度图（前锋）')).toBeVisible();
     expect(screen.getByText(/林河（你）/)).toBeVisible();
-    expect(screen.getByText('联赛积分榜')).toBeVisible();
+    expect(screen.getByText(/队友1/)).toBeVisible();
+    expect(screen.queryByText('pro-club-1-p1')).not.toBeInTheDocument();
+    expect(screen.getByText('查看完整联赛积分榜')).toBeVisible();
     expect(screen.getByText(/合同剩余/)).toBeVisible();
-    expect(screen.getByRole('button', { name: '推进到下个月' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '推进到下一节点' })).toBeEnabled();
   });
 
   it('不把上一赛季的杯赛事实误显示为本赛季最近结果', () => {
@@ -613,7 +615,7 @@ describe('ProOffseasonPanel', () => {
       />,
     );
     expect(screen.getByText('合同到期')).toBeVisible();
-    expect(screen.getByText(/年薪 9,500/)).toBeVisible();
+    expect(screen.getByText(/年薪 9,500 游戏币\/年/)).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: '接受续约' }));
     expect(onAccept).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole('button', { name: '拒绝续约，成为自由球员' }));

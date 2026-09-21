@@ -6,8 +6,8 @@ const POSSESSION_MIDFIELD_WEIGHT = 0.8;
 const BASE_SHOTS_HOME = 15;
 const BASE_SHOTS_AWAY = 12;
 const SHOT_ACCURACY_BASELINE = 0.38;
-const CONVERSION_RATE_BASELINE = 0.28;
-const CONVERSION_RATE_RANGE = 0.18;
+const CONVERSION_RATE_BASELINE = 0.2;
+const CONVERSION_RATE_RANGE = 0.34;
 const MAX_GOALS = 10;
 
 export function simulateMatch(
@@ -99,8 +99,6 @@ function calculateGoals(
   const conversionRate =
     CONVERSION_RATE_BASELINE + (attack - defence) / 300 + rng.next() * CONVERSION_RATE_RANGE;
   const rawGoals = shotsOnTarget * Math.max(0.05, Math.min(0.5, conversionRate));
-  return Math.min(
-    MAX_GOALS,
-    Math.max(0, Math.round(rawGoals + (rng.next() < 0.2 ? rng.nextInt(-1, 1) : 0))),
-  );
+  const variation = rng.next() < 0.2 ? rng.nextInt(-1, 1) : 0;
+  return Math.min(MAX_GOALS, Math.max(0, Math.round(rawGoals + variation)));
 }

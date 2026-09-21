@@ -1,4 +1,4 @@
-import type { CareerPhase, CareerSaveV6 } from '@football/contracts';
+import type { CareerPhase, CareerSaveV6, CareerSaveV7 } from '@football/contracts';
 import type { LoadedCareerSlot } from '../persistence/local-storage-save';
 
 export interface CareerSaveSummary {
@@ -10,6 +10,9 @@ export interface CareerSaveSummary {
   currentDate: string;
   savedAt: string;
   terminal: boolean;
+  seed: number;
+  mechanicsVersion: string;
+  contentVersion: string;
 }
 
 const PHASE_LABELS: Record<CareerPhase, string> = {
@@ -30,10 +33,13 @@ const TERMINAL_LABELS = {
   'market-exit': '离开职业足坛',
 } as const;
 
-const terminalLabelFor = (save: CareerSaveV6): string =>
+const terminalLabelFor = (save: CareerSaveV6 | CareerSaveV7): string =>
   save.careerEnd ? TERMINAL_LABELS[save.careerEnd.kind] : '生涯已结束';
 
-const locationFor = (save: CareerSaveV6, academyNames: ReadonlyMap<string, string>): string => {
+const locationFor = (
+  save: CareerSaveV6 | CareerSaveV7,
+  academyNames: ReadonlyMap<string, string>,
+): string => {
   if (save.careerPhase === 'retired') return terminalLabelFor(save);
   if (save.activeLoan) return save.activeLoan.loanClubName;
   if (save.contract) return save.contract.clubName;
@@ -45,6 +51,10 @@ export const buildCareerSaveSummary = (
   academyNames: ReadonlyMap<string, string>,
 ): CareerSaveSummary => {
   const { save } = record;
+  const mechanicsVersion =
+    'mechanicsVersion' in save && typeof save.mechanicsVersion === 'string'
+      ? save.mechanicsVersion
+      : 'experience-v1';
   return {
     slotId: record.slotId,
     playerName: save.player.identity.name,
@@ -52,8 +62,14 @@ export const buildCareerSaveSummary = (
     location: locationFor(save, academyNames),
     phaseLabel: PHASE_LABELS[save.careerPhase],
     currentDate:
-      save.proSeason?.currentDate ?? save.offseason?.nextSeasonStart ?? save.season.currentDate,
+      save.careerEnd?.endedOn ??
+      save.proSeason?.currentDate ??
+      save.offseason?.nextSeasonStart ??
+      save.season.currentDate,
     savedAt: record.savedAt,
     terminal: save.careerPhase === 'retired',
+    seed: save.randomState.seed,
+    mechanicsVersion,
+    contentVersion: save.contentVersion,
   };
 };

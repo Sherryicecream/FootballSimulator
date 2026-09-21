@@ -35,6 +35,7 @@ export const createDomesticCup = (
 
   const rng = createSeededRandomSource(seed + Number(seasonYear) * 31 + 7400);
   const entrants = rng.shuffle([playerClubId, ...candidates.map(({ id }) => id)]).slice(0, 8);
+  if (!entrants.includes(playerClubId)) entrants[entrants.length - 1] = playerClubId;
   const fixtures = [
     ...makeRoundFixtures('qf', QUARTERFINAL_WEEK, seasonYear, entrants),
     ...makeRoundFixtures('sf', SEMIFINAL_WEEK, seasonYear, [

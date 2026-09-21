@@ -1,3 +1,4 @@
+import { buildCareerSummaryPrompt, buildMilestonePrompt } from '@football/contracts';
 import type { NarrativeProvider } from './types';
 
 export interface OpenAiCompatibleProviderConfig {
@@ -7,12 +8,25 @@ export interface OpenAiCompatibleProviderConfig {
   apiKey?: string | undefined;
 }
 
-const SYSTEM_PROMPT = [
+const NARRATIVE_SYSTEM_PROMPT = [
   '你是足球生涯模拟器的叙事润色助手。',
   '你只能润色用户提供的中文文案，使其更有现场感和人物语气。',
   '禁止添加新的人物、比赛、荣誉、数字、日期或地点；禁止改变事实、因果与语气指向。',
   'participantResponses 的 personId 与人物对应关系必须原样保留，不得增删。',
   '只输出一个 JSON 对象，字段为：{"response": string, "participantResponses": [{"personId": string, "text": string}], "followUp": string}，不要输出任何其他文字。',
+].join('\n');
+
+const SUMMARY_SYSTEM_PROMPT = [
+  '你是足球生涯模拟器的总结助手。',
+  '你只能根据用户提供的结构化事实包组织中文总结，禁止添加不存在的荣誉、国家队经历、人物、数字、日期或比赛结果。',
+  '只输出一个 JSON 对象，字段为：{"summary": string}，不要输出任何其他文字。',
+].join('\n');
+
+const MILESTONE_SYSTEM_PROMPT = [
+  '你是足球生涯模拟器的关键节点评价助手。',
+  '你只能根据输入事实包写 150-250 字中文“为什么这是你的故事”，禁止添加不存在的荣誉、数字、比赛、人物、日期、伤病因果或转会金额。',
+  '荣誉、关键生涯数据和独特比赛数据只能引用输入中明确提供的项目；没有提供的事实必须保持空白。',
+  '只输出一个 JSON 对象，字段为：{"narrative": string}，不要输出任何其他文字。',
 ].join('\n');
 
 export const createOpenAiCompatibleProvider = (
@@ -33,8 +47,24 @@ export const createOpenAiCompatibleProvider = (
           temperature: 0,
           stream: false,
           messages: [
-            { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: JSON.stringify(request) },
+            {
+              role: 'system',
+              content:
+                request.kind === 'career-summary'
+                  ? SUMMARY_SYSTEM_PROMPT
+                  : request.kind === 'milestone'
+                    ? MILESTONE_SYSTEM_PROMPT
+                    : NARRATIVE_SYSTEM_PROMPT,
+            },
+            {
+              role: 'user',
+              content:
+                request.kind === 'milestone'
+                  ? buildMilestonePrompt(request.input)
+                  : request.kind === 'career-summary'
+                    ? buildCareerSummaryPrompt(request.facts, request.mode)
+                    : JSON.stringify(request),
+            },
           ],
         }),
       });

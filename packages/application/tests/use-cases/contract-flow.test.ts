@@ -6,7 +6,7 @@ import {
   rejectOffers,
 } from '../../src/use-cases/contract-flow';
 import { generateFreeAgentOffers, signTransfer } from '../../src/use-cases/transfer-flow';
-import { migrateCareerSaveV5 } from '@football/contracts';
+import { migrateCareerSaveV5, migrateCareerSaveV7 } from '@football/contracts';
 import { completeYouthSeason, enterOffseason } from '../../src/index';
 import { finishSeason, createSave, content } from '../fixtures/youth-save';
 
@@ -119,6 +119,22 @@ describe('毕业签约流程', () => {
     expect(run()).toEqual(run());
   });
 
+  it('v7 contract facts include traceable career timing metadata', () => {
+    let save = migrateCareerSaveV7(eligibleOffseasonSave());
+    save = submitAgentPreferences(save, { leagueTierBias: 'balanced', priority: 'playing-time' });
+    save = generateContractOffers(save, content);
+    const signed = signContract(save, save.pendingOffers[0]!.id);
+    const fact = signed.ledger.at(-1)!;
+
+    expect(signed.schemaVersion).toBe(7);
+    expect(signed.mechanicsVersion).toBe('experience-v1');
+    expect(fact).toMatchObject({
+      type: 'contract-signed',
+      occurredOn: signed.contract!.signedOn,
+      seasonId: expect.any(String),
+      ordinal: expect.any(Number),
+    });
+  });
   it('未获得毕业资格的玩家不能寻求要约', () => {
     let save = finishSeason(createSave(42));
     const completed = completeYouthSeason(save);

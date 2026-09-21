@@ -51,6 +51,7 @@ describe('match moment presentation', () => {
     );
     expect(screen.getByRole('heading', { name: '关键时刻 · 对阵强敌' })).toBeDefined();
     expect(screen.getByText('反越位前插，抢在门将之前处理球')).toBeDefined();
+    expect(screen.queryByText('未知风险')).toBeNull();
   });
 
   it('renders moment feedback with the match scene', () => {

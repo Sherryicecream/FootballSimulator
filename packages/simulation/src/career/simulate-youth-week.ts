@@ -2,6 +2,7 @@ import type {
   CareerLedgerEntryV2,
   CareerSaveV2,
   CareerSaveV2Like,
+  CareerSaveV6Like,
   YouthAcademyProfile,
   YouthMatchResultV2,
 } from '@football/contracts';
@@ -14,6 +15,7 @@ import { simulateInjuryRisk } from '../health/injury-model';
 import { createSeededRandomSource } from '../randomness';
 import { academyStrength } from '../match/scheduled-youth-match';
 import { simulateScheduledYouthMatch } from '../match/scheduled-youth-match';
+import { stampCareerFacts } from './career-moment';
 
 export type YouthWeekInputShape = CareerSaveV2Like;
 
@@ -67,7 +69,7 @@ export const simulateYouthWeek = <S extends YouthWeekInputShape>(
     save.monthlyAdvance.developmentAccrual as DevelopmentAccrual,
     weeklyAccrual,
   );
-  const facts = createFacts(
+  const rawFacts = createFacts(
     save,
     weekKey,
     trainingContribution,
@@ -77,6 +79,11 @@ export const simulateYouthWeek = <S extends YouthWeekInputShape>(
     academies,
     matchTags(save, matchResult, academies),
   );
+  const facts = stampCareerFacts(save as unknown as CareerSaveV6Like, rawFacts, {
+    seasonId: save.season.id,
+    date: save.season.currentDate,
+    weekIndex: nextWeek,
+  });
   const nextDate = addDays(save.season.currentDate, 7);
   const fixtures = save.season.fixtures.map((candidate) =>
     fixture && candidate.id === fixture.id
@@ -179,6 +186,8 @@ const createFacts = (
         rating: match.rating,
         goals: match.goals,
         assists: match.assists,
+        homeScore: match.homeScore,
+        awayScore: match.awayScore,
       },
       type: 'match',
       summary: `${match.opponentName} ${match.homeScore}:${match.awayScore}；${match.played ? `出场 ${match.minutesPlayed} 分钟，评分 ${match.rating}` : '未出场'}${tags.length ? `；${tags.join('、')}` : ''}`,

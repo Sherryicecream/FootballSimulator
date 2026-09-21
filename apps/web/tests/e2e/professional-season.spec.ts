@@ -14,8 +14,16 @@ import {
 import { startProfessionalSeason } from '../../../../packages/application/src/use-cases/pro-flow';
 import { getYouthContent } from '../../../../packages/content/src';
 import { CareerSaveV5Schema } from '../../../../packages/contracts/src';
+import { migrateCareerSaveV5 } from '../../../../packages/contracts/src';
 
 const content = getYouthContent();
+
+/** Strip v7/v6 fields and set schemaVersion to 5 so that v5 schemas accept the object. */
+const toV5 = (save: Record<string, unknown>): Record<string, unknown> => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { mechanicsVersion, moments, worldRegistry, careerEnd, ...rest } = save;
+  return { ...rest, schemaVersion: 5 };
+};
 
 /** 无界面流程：青训 → 毕业签约 →（可选）完整职业赛季 → 返回 v4 存档。 */
 function buildProSave(options: { completeSeason: boolean }) {
@@ -85,14 +93,15 @@ function buildProSave(options: { completeSeason: boolean }) {
     keys: Object.keys(save).length,
     careerPhase: (save as { careerPhase?: string }).careerPhase,
   };
-  if (!CareerSaveV5Schema.safeParse(save).success) {
+  const v5like = toV5(save as unknown as Record<string, unknown>);
+  if (!CareerSaveV5Schema.safeParse(v5like).success) {
     throw new Error(
       JSON.stringify(debugInfo) +
-        JSON.stringify(CareerSaveV5Schema.safeParse(save).error?.issues.slice(0, 3)),
+        JSON.stringify(CareerSaveV5Schema.safeParse(v5like).error?.issues.slice(0, 3)),
     );
   }
-  const v4 = CareerSaveV5Schema.parse(save);
-  const proSave = startProfessionalSeason(v4, content.clubs);
+  const v5 = migrateCareerSaveV5(v5like as unknown as Parameters<typeof migrateCareerSaveV5>[0]);
+  const proSave = startProfessionalSeason(v5, content.clubs);
   if (!options.completeSeason) return proSave;
 
   let current = proSave;
@@ -144,7 +153,7 @@ test.describe('职业赛季流程', () => {
           .catch(() => false)
       )
         return;
-      const advance = page.getByRole('button', { name: '推进到下个月' });
+      const advance = page.getByRole('link', { name: '逐月推进' });
       if (await advance.isVisible().catch(() => false)) return;
       const choice = page.locator('main button').first();
       await expect(choice).toBeVisible();
@@ -159,20 +168,20 @@ test.describe('职业赛季流程', () => {
     await openArchivedCareer(page);
 
     await expect(page.getByRole('region', { name: '职业仪表盘' })).toBeVisible();
-    await expect(page.getByText('联赛积分榜')).toBeVisible();
+    await expect(page.getByText('查看完整联赛积分榜')).toBeVisible();
     await expect(page.getByText('位置深度图')).toBeVisible();
     await expect(page.getByRole('region', { name: '本赛季赛事' })).toBeVisible();
-    await expect(page.getByText('国内杯')).toBeVisible();
+    await expect(page.getByText('国内杯', { exact: true })).toBeVisible();
     await expect(page.getByTestId('scene-art')).toBeVisible();
     await expect(page.getByRole('status', { name: /体能/ })).toBeVisible();
     await expect(page.getByRole('status', { name: /教练评价/ })).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
-    await page.getByRole('button', { name: '推进到下个月' }).click();
+    await page.getByRole('link', { name: '逐月推进' }).click();
     await resolveUntilProDashboard(page);
 
     for (let month = 0; month < 7; month += 1) {
-      await page.getByRole('button', { name: '推进到下个月' }).click();
+      await page.getByRole('link', { name: '逐月推进' }).click();
       await resolveUntilProDashboard(page);
     }
     await expect(page.getByRole('region', { name: '本赛季赛事' })).toContainText('国内杯');
@@ -182,8 +191,8 @@ test.describe('职业赛季流程', () => {
 
     await page.reload();
     await openArchivedCareer(page);
-    await expect(page.getByText('联赛积分榜')).toBeVisible();
-    await expect(page.getByRole('button', { name: '推进到下个月' })).toBeVisible();
+    await expect(page.getByText('查看完整联赛积分榜')).toBeVisible();
+    await expect(page.getByRole('link', { name: '逐月推进' })).toBeVisible();
     await expectNoHorizontalOverflow(page);
   });
 
@@ -246,7 +255,7 @@ test.describe('职业赛季流程', () => {
           .catch(() => false)
       )
         break;
-      const advance = page.getByRole('button', { name: '推进到下个月' });
+      const advance = page.getByRole('link', { name: '逐月推进' });
       if (!(await advance.isVisible().catch(() => false))) {
         await resolveUntilProDashboard(page);
         continue;

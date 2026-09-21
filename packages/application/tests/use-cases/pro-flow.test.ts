@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { migrateCareerSaveV5 } from '@football/contracts';
+import { migrateCareerSaveV5, migrateCareerSaveV7, migrateCareerSaveV8 } from '@football/contracts';
 import type { CareerSaveV4, EventDefinition } from '@football/contracts';
 import {
   acceptRenewal,
@@ -30,8 +30,13 @@ import {
   submitCareerDecision,
 } from '../../src/index';
 import { createSave, content, finishSeason } from '../fixtures/youth-save';
+import { updateTrainingPlan } from '../../src/use-cases/update-training-plan';
 import { buildCareerReview } from '@football/application';
-import { advanceDomesticCup, createDomesticCup } from '@football/simulation';
+import {
+  advanceDomesticCup,
+  createDomesticCup,
+  simulateProfessionalWeek,
+} from '@football/simulation';
 
 /** 构造一名已签署职业合同的 v4 存档（1 年短合同便于测试到期分支）。 */
 function signedProSave(overrides: Partial<CareerSaveV4> = {}): CareerSaveV4 {
@@ -229,6 +234,21 @@ function saveAtTierBoundary(tier: number, playerRank: number): CareerSaveV4 {
 }
 
 describe('职业赛季流程', () => {
+  it('v7 professional seasons cannot begin before the first contract and record timing', () => {
+    const signed = migrateCareerSaveV7(signedProSave());
+    const started = startProfessionalSeason(signed, content.clubs);
+    const fact = started.ledger.at(-1)!;
+
+    expect(started.proSeason!.startDate >= signed.contract!.signedOn).toBe(true);
+    expect(started.schemaVersion).toBe(7);
+    expect(fact).toMatchObject({
+      type: 'decision',
+      occurredOn: started.proSeason!.startDate,
+      seasonId: started.proSeason!.id,
+      ordinal: expect.any(Number),
+    });
+  });
+
   it('requires event feedback acknowledgement before resuming a professional month', () => {
     const started = startProfessionalSeason(signedProSave(), content.clubs);
     const save = {
@@ -312,7 +332,7 @@ describe('职业赛季流程', () => {
       content.clubs,
     );
 
-    expect(next.proSeason!.competitionId).toBe('pro-tier-7');
+    expect(next.proSeason!.competitionId).toBe('pro-china-tier-7');
     expect(next.contract!.clubTier).toBe(7);
     expect(next.proSeason!.domesticCup?.entrants).toContain(next.proSeason!.clubId);
   });
@@ -391,6 +411,32 @@ describe('职业赛季流程', () => {
     );
     expect(outcomeFact?.participantIds).toContain('player');
     expect(outcomeFact?.id).toBe(honours[0]?.evidenceId);
+  });
+
+  it('applies professional visibility calibration before reputation attenuation', () => {
+    const base = saveWithCompletedLeagueAndCup({ playerRank: 4, cupChampion: false });
+    const save = {
+      ...base,
+      player: { ...base.player, reputation: 58 },
+      health: { ...base.health, previousInjuries: [] },
+      proSeasonStats: {
+        ...base.proSeasonStats,
+        leagueAppearances: 5,
+        minutes: 0,
+        cupAppearances: 0,
+        cupMinutes: 0,
+        ratingCount: 0,
+        ratingSum: 0,
+      },
+    };
+
+    const settled = completeProfessionalSeason(save).save;
+
+    expect(settled.player.reputation).toBe(58);
+    expect(settled.promiseReviews.at(-1)).toMatchObject({
+      status: 'broken',
+      cause: 'club',
+    });
   });
 
   it('protects tier 8 from promotion and tier 3 from relegation', () => {
@@ -475,10 +521,63 @@ describe('职业赛季流程', () => {
     );
     expect(feedback?.trainingWeeks).toBeGreaterThanOrEqual(4);
     expect(feedback?.trainingWeeks).toBeLessThanOrEqual(5);
-    expect(feedback?.totalTrainingLoad).toBe((feedback?.trainingWeeks ?? 0) * 36);
+    expect(feedback?.totalTrainingLoad).toBe((feedback?.trainingWeeks ?? 0) * 40);
     expect(outcome.save.lastMonthlyReport).toEqual(outcome.report);
   });
 
+  it('updates a v7 training plan without losing professional state and uses it next week', () => {
+    const started = startProfessionalSeason(signedProSave(), content.clubs);
+    const v7 = migrateCareerSaveV7(started);
+    const updated = updateTrainingPlan(v7, {
+      ...v7.trainingPlan,
+      focus: 'recovery',
+      intensity: 'light',
+    });
+
+    expect(updated.schemaVersion).toBe(7);
+    expect(updated.proSeason).toEqual(v7.proSeason);
+    expect(updated.trainingPlan).toMatchObject({
+      focus: 'recovery',
+      intensity: 'light',
+    });
+
+    const next = simulateProfessionalWeek(updated, content.clubs);
+    const training = next.save.ledger.filter(({ type }) => type === 'training').at(-1);
+    expect(training?.trainingContext).toEqual(
+      expect.objectContaining({
+        focus: 'recovery',
+        intensity: 'light',
+        trainingLoad: 24,
+      }),
+    );
+  });
+  it('rejects training changes while a decision feedback is still pending', () => {
+    const save = signedProSave();
+    const pending = {
+      ...save,
+      story: {
+        ...save.story,
+        pendingFeedback: {
+          eventId: 'event-pending',
+          title: '待处理事件',
+          choiceId: 'choice-1',
+          choiceText: '继续',
+          response: '结果待确认',
+          participantResponses: [],
+          stateChanges: [],
+          relationshipChanges: [],
+          followUp: '请先确认结果。',
+        },
+      },
+    };
+
+    expect(() =>
+      updateTrainingPlan(pending, {
+        ...save.trainingPlan,
+        intensity: 'intense',
+      }),
+    ).toThrow('请先处理当前事件');
+  });
   it('月度推进：青训赛季月份推进与赛季完成', () => {
     let save = startProfessionalSeason(signedProSave(), content.clubs);
     let guard = 0;
@@ -627,8 +726,8 @@ describe('职业赛季流程', () => {
     const nextSeason = startProfessionalSeason(signed, content.clubs);
     expect(nextSeason.careerPhase).toBe('pro-season');
     expect(nextSeason.proSeason!.clubId).toBe(offer!.clubId);
-    expect(nextSeason.proSeason!.competitionId).toBe(`pro-tier-${offer!.clubTier}`);
-    expect(nextSeason.proSeason!.startDate).toBe('2026-08-01');
+    expect(nextSeason.proSeason!.competitionId).toBe(`pro-china-tier-${offer!.clubTier}`);
+    expect(nextSeason.proSeason!.startDate).toBe('2027-03-01');
   });
 
   it('keeps an overseas career in an overseas-only league schedule', () => {
@@ -653,7 +752,7 @@ describe('职业赛季流程', () => {
     };
     const next = startProfessionalSeason(save, [...content.clubs, ...overseasLeague]);
 
-    expect(next.proSeason!.competitionId).toBe('pro-overseas-europe-tier-5');
+    expect(next.proSeason!.competitionId).toBe('pro-england-tier-5');
     expect(next.proSeason!.fixtures).toHaveLength(
       overseasLeague.length * (overseasLeague.length - 1),
     );
@@ -741,6 +840,10 @@ describe('职业赛季流程', () => {
     expect(accepted.currentState.confidence).toBe(settled.currentState.confidence + 3);
     expect(accepted.health.fatigue).toBe(settled.health.fatigue + 2);
     expect(accepted.ledger.some(({ type }) => type === 'national-debut')).toBe(true);
+    expect(accepted.proSeason?.squad).toEqual(settled.proSeason?.squad);
+    expect(accepted.ledger.filter(({ type }) => type === 'transfer-signed')).toEqual(
+      settled.ledger.filter(({ type }) => type === 'transfer-signed'),
+    );
   });
 
   it('accumulates another international window after a debut', () => {
@@ -818,8 +921,8 @@ describe('职业赛季流程', () => {
     expect(() => startProfessionalSeason(retired, content.clubs)).toThrow();
   });
 
-  it('forces retirement at 38 after professional season settlement', () => {
-    const initial = signedProSave();
+  it('forces retirement at 38 after professional season settlement without downgrading v7', () => {
+    const initial = migrateCareerSaveV7(signedProSave());
     let save = startProfessionalSeason(
       {
         ...initial,
@@ -845,7 +948,7 @@ describe('职业赛季流程', () => {
     const settled = completeProfessionalSeason(save).save;
 
     expect(settled.careerPhase).toBe('retired');
-    expect(settled.retiredOn).toBe('2026-05-31');
+    expect(settled.retiredOn).toBe('2026-11-30');
   });
 
   it('career review includes professional seasons in its timeline', () => {
@@ -865,7 +968,7 @@ describe('职业赛季流程', () => {
     const review = buildCareerReview(settled);
 
     expect(review.seasons).toBeGreaterThan(0);
-    expect(review.timeline.some(({ seasonId }) => seasonId === 'pro-2025')).toBe(true);
+    expect(review.timeline.some(({ seasonId }) => seasonId === 'pro-2026')).toBe(true);
   });
 
   it('keeps every same-week league and cup match in the monthly report', () => {
@@ -886,7 +989,9 @@ describe('职业赛季流程', () => {
         currentMonth: '2026-02',
         currentWeek: 26,
         fixtures: pro.fixtures.map((fixture) =>
-          fixture.id === leagueFixture.id ? { ...fixture, weekKey: '2025-W27' } : fixture,
+          fixture.id === leagueFixture.id
+            ? { ...fixture, weekKey: `${pro.startDate.slice(0, 4)}-W27` }
+            : fixture,
         ),
       },
       monthlyAdvance: {
@@ -1114,7 +1219,7 @@ describe('海外联赛区域分组', () => {
       },
       allClubs,
     );
-    expect(save.proSeason!.competitionId).toBe('pro-overseas-asia-tier-4');
+    expect(save.proSeason!.competitionId).toBe('pro-japan-tier-4');
     const leagueClubIds = new Set(
       save.proSeason!.fixtures.flatMap(({ homeClubId, awayClubId }) => [homeClubId, awayClubId]),
     );
@@ -1140,7 +1245,7 @@ describe('海外联赛区域分组', () => {
       },
       allClubs,
     );
-    expect(save.proSeason!.competitionId).toBe('pro-overseas-europe-tier-5');
+    expect(save.proSeason!.competitionId).toBe('pro-england-tier-5');
     const leagueClubIds = new Set(
       save.proSeason!.fixtures.flatMap(({ homeClubId, awayClubId }) => [homeClubId, awayClubId]),
     );
@@ -1148,6 +1253,62 @@ describe('海外联赛区域分组', () => {
       const club = allClubs.find(({ id }) => id === clubId);
       expect(club?.overseasRegion).toBe('europe');
     }
+  });
+
+  it('separates countries that share the legacy europe region', () => {
+    const englandClubs = [0, 1, 2, 3].map((index) => ({
+      ...content.clubs[0]!,
+      id: `england-group-${index + 1}`,
+      name: `英格兰测试${index + 1}`,
+      tier: 5,
+      overseas: true,
+      country: 'england' as const,
+      overseasRegion: 'europe' as const,
+    }));
+    const spainClubs = [0, 1, 2, 3].map((index) => ({
+      ...content.clubs[1]!,
+      id: `spain-group-${index + 1}`,
+      name: `西班牙测试${index + 1}`,
+      tier: 5,
+      overseas: true,
+      country: 'spain' as const,
+      overseasRegion: 'europe' as const,
+    }));
+    const initial = signedProSave();
+    const save = startProfessionalSeason(
+      {
+        ...initial,
+        contract: {
+          ...initial.contract!,
+          clubId: englandClubs[0]!.id,
+          clubName: englandClubs[0]!.name,
+          clubTier: 5,
+          overseas: true,
+        },
+        overseasSince: '2025-07-01',
+      },
+      [...content.clubs, ...englandClubs, ...spainClubs],
+    );
+
+    expect(save.proSeason!.competitionId).toBe('pro-england-tier-5');
+    const leagueClubIds = new Set(
+      save.proSeason!.fixtures.flatMap(({ homeClubId, awayClubId }) => [homeClubId, awayClubId]),
+    );
+    expect([...leagueClubIds].every((clubId) => clubId.startsWith('england-group-'))).toBe(true);
+  });
+
+  it('registers the player league as the current player world reference', () => {
+    const initial = migrateCareerSaveV8(signedProSave());
+    const started = startProfessionalSeason(initial, content.clubs);
+
+    expect(started.worldRegistry.entries).toContainEqual({
+      country: 'china',
+      source: 'player',
+      seasonId: started.proSeason!.id,
+      completed: false,
+      promoted: [],
+      relegated: [],
+    });
   });
 });
 
@@ -1192,7 +1353,9 @@ describe('国家队大赛窗口', () => {
   it('世界杯年结算：大赛出场计入国家队并写入账本', () => {
     // pro-2029 在 2030 年夏天收官 → 世界杯窗口
     const settled = completeProfessionalSeason(playSeasonToSettlement('2029-07-01')).save;
-    const fact = settled.ledger.find(({ id }) => id === 'national-tournament-pro-2029');
+    const fact = settled.ledger.find(
+      ({ id }) => id === `national-tournament-${settled.proSeason!.id}`,
+    );
     expect(fact).toBeDefined();
     expect(fact!.summary).toContain('世界杯');
     expect(settled.nationalTeam!.caps).toBeGreaterThanOrEqual(16);

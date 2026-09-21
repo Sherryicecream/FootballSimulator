@@ -9,6 +9,7 @@ export type { BatchAdvanceResult } from './use-cases/batch-advance';
 export { projectWeekResult } from './use-cases/project-week-result';
 export { createYouthCareerV2 } from './use-cases/create-youth-career-v2';
 export { updateTrainingPlan } from './use-cases/update-training-plan';
+export { countClubFixtures } from '@football/simulation';
 export { advanceCareerMonth } from './use-cases/advance-career-month';
 export type { AdvanceMonthOutcome } from './use-cases/advance-career-month';
 export { submitCareerDecision } from './use-cases/submit-career-decision';
@@ -52,3 +53,20 @@ export {
   retire,
 } from './use-cases/end-career';
 export { buildCareerReview } from '@football/simulation';
+export { buildCareerSummaryFacts, generateCareerSummary } from './ai/career-summary';
+export type { CareerSummarySource } from './ai/career-summary';
+export { buildCareerSummaryPrompt } from './ai/career-summary-prompt';
+export { buildMilestonePrompt } from './ai/milestone-prompt';
+export { detectFactualContradiction } from './ai/ai-guard';
+export type { CareerFact, CareerFactBag } from './ai/ai-guard';
+export { buildCareerArchive } from './use-cases/build-career-archive';
+export { buildNodeBrief } from './use-cases/build-node-brief';
+export { buildWorldNewsForCareer } from './use-cases/build-world-news';
+export type { BuildWorldNewsForCareerInput } from './use-cases/build-world-news';
+export { settleWorldTransferWindow } from './use-cases/settle-world-transfer-window';
+export type {
+  SettleWorldTransferWindowInput,
+  SettleWorldTransferWindowResult,
+} from './use-cases/settle-world-transfer-window';
+export { advanceToNextNode } from './use-cases/advance-to-node';
+export type { AdvanceToNodeContent, AdvanceToNodeResult } from './use-cases/advance-to-node';

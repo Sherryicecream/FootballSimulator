@@ -2,6 +2,7 @@ import type {
   CareerLedgerEntryV2,
   CareerSaveV2Like,
   CareerSaveV3Like,
+  CareerSaveV6Like,
   MonthlyReport,
   YouthAcademyProfile,
   YouthMatchResultV2,
@@ -18,6 +19,8 @@ import {
   buildStoryProgress,
   settleMonthlyDevelopment,
   simulateYouthWeek,
+  stampCareerFact,
+  stampCareerFacts,
   type DevelopmentAccrual,
 } from '@football/simulation';
 import { resolveCareerEvent } from './resolve-career-event';
@@ -68,6 +71,7 @@ export const advanceCareerMonth = <
       matchIds: resuming ? initialSave.monthlyAdvance.matchIds : [],
       interactiveEventCount: resuming ? initialSave.monthlyAdvance.interactiveEventCount : 0,
       feedbackStartHealth: monthStartHealth,
+      nodeAdvance: null,
     },
   };
 
@@ -125,7 +129,7 @@ export const advanceCareerMonth = <
   const monthFactIds = save.monthlyAdvance.factIds;
   const matchIds = save.monthlyAdvance.matchIds;
   const facts = save.ledger.filter(({ id }) => monthFactIds.includes(id));
-  const settlementFact: CareerLedgerEntryV2 = {
+  const rawSettlementFact: CareerLedgerEntryV2 = {
     id: `settlement-${monthKey}`,
     weekKey: `${save.season.startDate.slice(0, 4)}-W${String(save.season.currentWeek).padStart(2, '0')}`,
     type: 'monthly-settlement',
@@ -137,6 +141,12 @@ export const advanceCareerMonth = <
   const pathwayRng = createSeededRandomSource(save.randomState.seed);
   pathwayRng.skip(save.randomState.sequencePosition);
   const pathway = advanceFirstTeamPathway(save, pathwayRng);
+  const settlementFact = stampCareerFact(save as unknown as CareerSaveV6Like, rawSettlementFact);
+  const ledgerWithSettlement = [...save.ledger, settlementFact];
+  const pathwayFacts = stampCareerFacts(
+    { ...save, ledger: ledgerWithSettlement } as unknown as CareerSaveV6Like,
+    pathway.facts,
+  );
   save = {
     ...save,
     player: settlement.player,
@@ -155,11 +165,12 @@ export const advanceCareerMonth = <
       matchIds: [],
       interactiveEventCount: 0,
       feedbackStartHealth: null,
+      nodeAdvance: null,
     },
-    ledger: [...save.ledger, settlementFact, ...pathway.facts],
+    ledger: [...ledgerWithSettlement, ...pathwayFacts],
     randomState: { ...save.randomState, sequencePosition: pathwayRng.getPosition() },
   };
-  const reportFacts = [...facts, settlementFact, ...pathway.facts];
+  const reportFacts = [...facts, settlementFact, ...pathwayFacts];
   const trainingFeedback = buildTrainingFeedback({
     plan: save.trainingPlan,
     facts: reportFacts,

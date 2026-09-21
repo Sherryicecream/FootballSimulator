@@ -1,10 +1,10 @@
 import type {
-  CareerLedgerEntryV2,
   CareerSaveV3Like,
+  CareerSaveV6Like,
   OffseasonBriefing,
   YouthAcademyProfile,
 } from '@football/contracts';
-import { createSeededRandomSource, evaluateOffseason } from '@football/simulation';
+import { createSeededRandomSource, evaluateOffseason, stampCareerFact } from '@football/simulation';
 
 export const enterOffseason = <S extends CareerSaveV3Like>(
   save: S,
@@ -22,13 +22,13 @@ export const enterOffseason = <S extends CareerSaveV3Like>(
   const nextSeasonStart = `${Number(save.season.endDate.slice(0, 4))}-09-01`;
   const rng = createSeededRandomSource(save.randomState.seed + 9100 + save.seasonHistory.length);
   const settlement = evaluateOffseason(save, academy, nextSeasonStart, rng);
-  const fact: CareerLedgerEntryV2 = {
+  const fact = stampCareerFact(save as unknown as CareerSaveV6Like, {
     id: `offseason-${save.season.id}`,
     weekKey: `${save.season.startDate.slice(0, 4)}-W${String(save.season.currentWeek).padStart(2, '0')}`,
     type: 'offseason-settlement',
     summary: `休赛期结算：${settlement.briefing.healthClearance}；声望 ${settlement.briefing.reputationChange >= 0 ? '+' : ''}${settlement.briefing.reputationChange}；年龄 ${settlement.briefing.ageUpdate.from}→${settlement.briefing.ageUpdate.to}`,
     participantIds: [],
-  };
+  });
   return {
     save: { ...settlement.save, ledger: [...settlement.save.ledger, fact] },
     briefing: settlement.briefing,

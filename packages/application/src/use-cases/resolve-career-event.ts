@@ -1,14 +1,18 @@
 import {
   CareerSaveV3Schema,
   CareerSaveV5Schema,
+  CareerSaveV7Schema,
+  CareerSaveV8Schema,
   type CareerLedgerEntryV2,
   type CareerSaveV2Like,
   type CareerSaveV4Like,
+  type CareerSaveV6Like,
 } from '@football/contracts';
 import {
   applyRelationshipEffects,
   buildEventFeedback,
   resolveChoiceOutcome,
+  stampCareerFact,
 } from '@football/simulation';
 
 export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId: string): S => {
@@ -59,8 +63,9 @@ export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId
     },
   );
   const automatic = event.interaction === 'automatic';
-  const fact: CareerLedgerEntryV2 = {
+  const rawFact: CareerLedgerEntryV2 = {
     id: `${automatic ? 'event' : 'decision'}-${event.eventId}-${eventTime.idSuffix}`,
+    eventId: event.eventId,
     weekKey: eventTime.weekKey,
     type: automatic ? 'event' : 'decision',
     summary: resolvedChoice.summary
@@ -69,15 +74,26 @@ export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId
     participantIds: event.participantIds,
     outcome: resolvedChoice.summary ?? undefined,
   };
+  const fact = {
+    ...stampCareerFact(save as unknown as CareerSaveV6Like, rawFact),
+    id: rawFact.id,
+  };
   const activeStorylines = save.story.activeStorylines.filter((id) => id !== event.eventId);
   const nextEventIds = resolvedChoice.nextEventIds ?? choice.nextEventIds ?? event.nextEventIds;
+  const completedStoryIds = new Set(save.story.completedStoryIds);
+  if (event.storyId) completedStoryIds.add(event.storyId);
+  if (resolvedChoice.eventOutcome === 'adapted') completedStoryIds.add('cross-country-adapted');
 
-  // 按输入版本选择校验 Schema：v4 存档保留 v4 字段，v2/v3 走原路径
-  // v3 走原 Schema；v4/v5 归一化为 v5（补默认字段且保留新字段）
+  // 按输入版本选择校验 Schema：v3 → CareerSaveV3Schema；v5 → CareerSaveV5Schema；v6/v7 → CareerSaveV7Schema
   const isV3 = (save as { schemaVersion?: number }).schemaVersion === 3;
+  const isV6or7 =
+    (save as { schemaVersion?: number }).schemaVersion === 6 ||
+    (save as { schemaVersion?: number }).schemaVersion === 7;
+  const isV8 = (save as { schemaVersion?: number }).schemaVersion === 8;
+  const targetVersion = isV3 ? 3 : isV8 ? 8 : isV6or7 ? 7 : 5;
   const resolvedSave = {
     ...save,
-    schemaVersion: isV3 ? 3 : 5,
+    schemaVersion: targetVersion,
     currentState,
     health,
     clubContext,
@@ -85,10 +101,7 @@ export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId
     story: {
       ...save.story,
       activeStorylines: [...new Set([...activeStorylines, ...nextEventIds])],
-      completedStoryIds:
-        event.storyId && !save.story.completedStoryIds.includes(event.storyId)
-          ? [...save.story.completedStoryIds, event.storyId]
-          : save.story.completedStoryIds,
+      completedStoryIds: [...completedStoryIds],
       pendingDelayedEffects: resolvedChoice.delayEffects
         ? [
             ...save.story.pendingDelayedEffects,
@@ -111,7 +124,14 @@ export const resolveCareerEvent = <S extends CareerSaveV2Like>(save: S, choiceId
     ledger: [...save.ledger, fact],
   } as S;
   const feedback = buildEventFeedback(save, resolvedSave, event, choice, resolvedChoice);
-  return (isV3 ? CareerSaveV3Schema : CareerSaveV5Schema).parse({
+  const targetSchema = isV3
+    ? CareerSaveV3Schema
+    : isV8
+      ? CareerSaveV8Schema
+      : isV6or7
+        ? CareerSaveV7Schema
+        : CareerSaveV5Schema;
+  return targetSchema.parse({
     ...resolvedSave,
     story: {
       ...resolvedSave.story,

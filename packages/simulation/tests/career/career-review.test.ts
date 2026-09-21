@@ -330,6 +330,46 @@ describe('career review dimensions and behind-the-scenes', () => {
 });
 
 describe('tournament honours in review', () => {
+  it('keeps a domestic cup title meaningful but below a league title in legendary weight', () => {
+    const makeSave = (kind: 'league-champion' | 'cup-champion') =>
+      CareerSaveV5Schema.parse({
+        ...migrateCareerSaveV5(createYouthSave()),
+        careerPhase: 'retired',
+        retiredOn: '2038-06-30',
+        seasonHistory: [
+          {
+            seasonId: 'pro-2029',
+            age: 21,
+            status: 'retained',
+            appearances: 20,
+            goals: 4,
+            assists: 3,
+            avgRating: 7,
+            signals: ['professional-season'],
+            endedOn: '2030-06-30',
+            honours: [
+              {
+                id: 'pro-2029-' + kind,
+                kind,
+                label: kind === 'league-champion' ? '联赛冠军' : '国内杯冠军',
+                seasonId: 'pro-2029',
+                clubId: 'pro-club-1',
+                evidenceId: 'pro-2029-outcome',
+              },
+            ],
+          },
+        ],
+      });
+
+    const leagueReview = buildCareerReview(makeSave('league-champion'));
+    const cupReview = buildCareerReview(makeSave('cup-champion'));
+    const legendaryScore = (review: ReturnType<typeof buildCareerReview>) =>
+      review.dimensions.find(({ key }) => key === 'legendary')!.score;
+
+    expect(legendaryScore(cupReview)).toBeLessThan(legendaryScore(leagueReview));
+    expect(legendaryScore(cupReview)).toBeGreaterThan(0);
+  });
+
   it('counts national tournament honours into team honours and legendary dimensions', () => {
     const save = CareerSaveV5Schema.parse({
       ...migrateCareerSaveV5(createYouthSave()),

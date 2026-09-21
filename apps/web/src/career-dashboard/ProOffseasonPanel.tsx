@@ -6,6 +6,7 @@ import type {
   PromiseReview,
   ProCupState,
   SeasonHonour,
+  TrainingPlan,
 } from '@football/contracts';
 import { SceneBanner } from '../design-system/SceneBanner';
 import type { FootballGlyphName } from '../design-system/FootballGlyph';
@@ -13,6 +14,8 @@ import { FootballGlyph } from '../design-system/FootballGlyph';
 import { StatusBadge } from '../design-system/StatusBadge';
 import { professionalLeagueRank } from './pro-presentation';
 import { OfferComparisonPanel } from './OfferComparisonPanel';
+import { TrainingPlanEditor } from './TrainingPlanEditor';
+import { countClubFixtures } from '@football/application';
 
 interface ProOffseasonPanelProps {
   save: CareerSaveV4Like;
@@ -20,6 +23,7 @@ interface ProOffseasonPanelProps {
   onAcceptRenewal: () => void;
   onDeclineRenewal: () => void;
   onRetire: () => void;
+  onTrainingPlanChange?: (plan: TrainingPlan) => void;
   onRequestMarket?: (kind: ContractOfferV3['offerKind']) => void;
   onSignMarketOffer?: (offerId: string) => void;
 }
@@ -49,10 +53,10 @@ const HONOUR_GLYPHS: Record<SeasonHonour['kind'], FootballGlyphName> = {
 
 const tierMovementLabel = (currentTier: number | undefined, nextTier: number | null): string => {
   if (nextTier === null) return '赛季进行中';
-  if (currentTier === undefined) return '下一季层级 ' + nextTier;
+  if (currentTier === undefined) return '下一季实力档位 ' + nextTier;
   if (nextTier > currentTier) return '升级';
   if (nextTier < currentTier) return '降级';
-  return '层级保持';
+  return '实力档位保持';
 };
 
 /** 职业休赛期：承诺对照报告 + 续约/下赛季选择。 */
@@ -62,6 +66,7 @@ export function ProOffseasonPanel({
   onAcceptRenewal,
   onDeclineRenewal,
   onRetire,
+  onTrainingPlanChange = () => undefined,
   onRequestMarket,
   onSignMarketOffer,
 }: ProOffseasonPanelProps) {
@@ -72,14 +77,20 @@ export function ProOffseasonPanel({
   const marketOffers = save.pendingOffers.filter(({ id }) => id.startsWith('offer-'));
   const renewalOffer = save.pendingOffers.find(({ id }) => id.startsWith('renewal-')) ?? null;
   const stats = save.proSeasonStats;
-  const playedLeague =
-    save.proSeason?.fixtures.filter(({ status }) => status === 'played').length ?? 0;
+  const proClubId = save.proSeason?.clubId ?? '';
+  const playedLeague = countClubFixtures(save.proSeason?.fixtures ?? [], proClubId);
   const leagueRank = save.proSeason
     ? professionalLeagueRank(save.proSeason.standings, save.proSeason.clubId)
     : null;
   const cup = save.proSeason?.domesticCup;
   const cupFixtures = cup?.fixtures ?? [];
-  const playedCup = cupFixtures.filter(({ status }) => status === 'played').length;
+  const playedCup = countClubFixtures(cupFixtures, proClubId);
+  const cupPlayedTotal = cupFixtures.filter(({ status }) => status === 'played').length;
+  const cupProgress = cup
+    ? cupPlayedTotal === 0
+      ? '尚未开赛'
+      : '赛事总进度：已赛 ' + cupPlayedTotal + '/' + cupFixtures.length + ' 场'
+    : '本赛季暂无杯赛记录';
   const cupRound = cup ? CUP_ROUND_LABELS[cup.currentRound] : '暂无杯赛记录';
   const tierMovement = tierMovementLabel(
     activeLoan?.loanClubTier ?? save.contract?.clubTier,
@@ -90,7 +101,11 @@ export function ProOffseasonPanel({
   const returnedFromLoan = Boolean(
     !activeLoan &&
     save.proSeason?.completed &&
-    save.ledger.some(({ id }) => id === 'loan-return-' + save.proSeason?.id),
+    save.ledger.some(
+      ({ eventId, id }) =>
+        eventId === 'loan-return-' + save.proSeason?.id ||
+        id === 'loan-return-' + save.proSeason?.id,
+    ),
   );
 
   return (
@@ -119,18 +134,17 @@ export function ProOffseasonPanel({
               <span>国内杯</span>
               <strong>{cupRound}</strong>
               <small>
-                {cup
-                  ? '已赛 ' + playedCup + '/' + cupFixtures.length + ' 场'
-                  : '本赛季暂无杯赛记录'}
+                {cupProgress}
+                {cup && cupPlayedTotal > 0 ? '；本队已赛 ' + playedCup + ' 场' : ''}
               </small>
             </div>
             <div>
-              <span>层级变化</span>
+              <span>球队实力档位变化</span>
               <strong>{tierMovement}</strong>
               <small>
                 {save.proSeason?.nextClubTier === null || !save.proSeason
                   ? '赛季结算后更新'
-                  : '下一赛季层级 ' + save.proSeason.nextClubTier}
+                  : '下一赛季实力档位 ' + save.proSeason.nextClubTier}
               </small>
             </div>
           </div>
@@ -172,6 +186,12 @@ export function ProOffseasonPanel({
         </div>
       )}
 
+      <TrainingPlanEditor
+        plan={save.trainingPlan}
+        disabled={Boolean(save.story.pendingEvent || save.story.pendingFeedback)}
+        onChange={onTrainingPlanChange}
+      />
+
       <ul className="offseason-list">
         <li>
           联赛出场 {stats.leagueAppearances} 次，预备队出场 {stats.reserveAppearances} 次，联赛分钟{' '}
@@ -186,8 +206,8 @@ export function ProOffseasonPanel({
             : '。'}
         </li>
         <li>
-          本赛季联赛已赛 {playedLeague} 场；国内杯{' '}
-          {cup ? '已赛 ' + playedCup + '/' + cupFixtures.length + ' 场' : '本赛季暂无杯赛记录'}。
+          本队本赛季联赛已赛 {playedLeague} 场；国内杯 {cupProgress}
+          {cup && cupPlayedTotal > 0 ? '，本队已赛 ' + playedCup + ' 场' : ''}。
         </li>
       </ul>
 
@@ -237,7 +257,7 @@ export function ProOffseasonPanel({
           <h3>合同到期</h3>
           <p>
             {renewalOffer.clubName} 提供为期 {renewalOffer.contractYears} 年的续约合同：年薪{' '}
-            {renewalOffer.salaryPerYear.toLocaleString('zh-CN')}，角色{' '}
+            {renewalOffer.salaryPerYear.toLocaleString('zh-CN')} 游戏币/年，角色{' '}
             {ROLE_LABELS[renewalOffer.squadRole]}。
           </p>
           <button className="confirm" onClick={onAcceptRenewal}>
