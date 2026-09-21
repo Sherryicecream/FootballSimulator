@@ -1094,12 +1094,14 @@ it('flags overstated appearances', () => {
 - Input: push 到 career-experience-upgrade 或 master，或手动 workflow_dispatch。
 - Output: GitHub Pages artifact，部署地址 https://sherryicecream.github.io/FootballSimulator/。
 
-- [ ] Step 1: 写 Pages workflow，固定 pnpm 11.9.0 和 Node 24.16.0，使用 frozen lockfile，注入 /FootballSimulator/，上传 apps/web/dist，并申请最小 Pages 权限。
-- [ ] Step 2: 写 docs/INSTALLATION.md，说明 Windows 双击、命令行备用方式、GitHub Pages、Android Chrome 安装、同 Wi-Fi 局域网访问、防火墙和 PWA/HTTP 限制。
-- [ ] Step 3: 更新发布说明，链接安装文档并明确在线版、局域网版和当前 package 0.0.0 状态。
-- [ ] Step 4: 使用 VITE_BASE_PATH=/FootballSimulator/ 执行生产构建，检查 dist 中 manifest、sw.js、index.html 和资源引用没有回到根路径。
-- [ ] Step 5: 运行格式检查、PWA 测试、构建和 E2E；提交 Task24C，提交信息为 feat: add GitHub Pages delivery and install docs。
+- [x] Step 1: 写 Pages workflow，固定 pnpm 11.9.0 和 Node 24.16.0，使用 frozen lockfile，注入 /FootballSimulator/，上传 apps/web/dist，并申请最小 Pages 权限。
+- [x] Step 2: 写 docs/INSTALLATION.md，说明 Windows 双击、命令行备用方式、GitHub Pages、Android Chrome 安装、同 Wi-Fi 局域网访问、防火墙和 PWA/HTTP 限制。
+- [x] Step 3: 更新发布说明，链接安装文档并明确在线版、局域网版和当前 package 0.0.0 状态。
+- [x] Step 4: 使用 VITE_BASE_PATH=/FootballSimulator/ 执行生产构建，检查 dist 中 manifest、sw.js、index.html 和资源引用没有回到根路径。
+- [x] Step 5: 运行格式检查、PWA 测试、构建和 E2E；提交 Task24C，提交信息为 feat: add GitHub Pages delivery and install docs。
 
+
+**Task24C 执行记录（2026-09-21）：** 新增 GitHub Pages workflow，固定 Node 24.16.0、pnpm 11.9.0、frozen lockfile，并使用官方 Pages artifact/deploy actions；新增 Windows/Android/GitHub Pages 安装说明，发布说明加入在线入口。Pages 交付回归 3/3、PWA/Pages 回归 7/7、E2E 38/38；`/FootballSimulator/` 生产产物中的 manifest、Service Worker、JS/CSS 资源前缀检查通过。提交 `7cb1fbd`。
 ### Task 24D：Git 保存、敏感信息审计与远程推送
 
 **Files:**
