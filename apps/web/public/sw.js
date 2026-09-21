@@ -1,6 +1,10 @@
 /* 足球生涯模拟器离线服务程序：缓存构建产物，离线时完整可玩（AI 叙事除外）。 */
 const CACHE = 'football-sim-v1';
-const PRECACHE = ['/', '/index.html', '/manifest.webmanifest', '/icon.svg'];
+const APP_ROOT = new URL('./', self.registration.scope).pathname;
+const APP_INDEX = new URL('index.html', self.registration.scope).pathname;
+const APP_MANIFEST = new URL('manifest.webmanifest', self.registration.scope).pathname;
+const APP_ICON = new URL('icon.svg', self.registration.scope).pathname;
+const PRECACHE = [APP_ROOT, APP_INDEX, APP_MANIFEST, APP_ICON];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -31,7 +35,7 @@ self.addEventListener('fetch', (event) => {
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request).catch(() =>
-        caches.match('/index.html').then((cached) => cached ?? Response.error()),
+        caches.match(APP_INDEX).then((cached) => cached ?? Response.error()),
       ),
     );
     return;
