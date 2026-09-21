@@ -1117,9 +1117,11 @@ it('flags overstated appearances', () => {
 - [x] Step 2: 运行 git diff --cached --check 和敏感词检查；发现问题时停止，不推送。
 - [x] Step 3: 将本次完整交付成果保存为描述性提交，不使用 reset、checkout 或 force push。
 - [x] Step 4: 运行 pnpm test、pnpm typecheck、pnpm lint、pnpm format:check、pnpm build 和 pnpm test:e2e。
-- [ ] Step 5: 执行 git push -u origin career-experience-upgrade；记录远程提交和 Pages workflow 地址，不自动合并 master。
-- [ ] Step 6: 更新 ROADMAP 与本计划，记录电脑/Android 安装入口和当前真人测试仍待补充的限制。
+- [x] Step 5: 执行 git push -u origin career-experience-upgrade；记录远程提交和 Pages workflow 地址，不自动合并 master。
+- [x] Step 6: 更新 ROADMAP 与本计划，记录电脑/Android 安装入口和当前真人测试仍待补充的限制。
 
+
+**Task24D 执行记录（2026-09-21）：** 完成全工作区 staged 审计，未发现 `.env`、API key、token、node_modules、dist、artifacts 或用户存档进入提交；敏感模式无匹配。最终门禁通过：pnpm test 普通 162/905、balance 5/22、架构 10/10，pnpm typecheck、pnpm lint、pnpm format:check、pnpm build、pnpm test:e2e 38/38。完整交付保存为 `185cacd`，并已非强制推送到 `origin/career-experience-upgrade`；PR 入口为 https://github.com/Sherryicecream/FootballSimulator/pull/new/career-experience-upgrade。GitHub Pages 地址为 https://sherryicecream.github.io/FootballSimulator/，需首次 Actions 成功并在仓库 Settings → Pages 选择 GitHub Actions 后访问；真人体验指标仍待补充。
 **Task24 验收标准：**
 - Windows 用户双击启动足球模拟器.cmd 可以打开本地游戏。
 - Android 可通过 GitHub Pages HTTPS 地址使用并添加到主屏幕。
